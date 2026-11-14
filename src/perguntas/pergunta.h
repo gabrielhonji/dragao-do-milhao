@@ -25,9 +25,9 @@
     char enunciado[501];
     Alternativa alternativa;
     char resposta;
-    Dificuldade dificuldade;
+    Dificuldade dificuldade;  
     char dica[201];
     int identificador; //auxilia na identificação da pergunta mesmo se ela mudar de posição no vetor
  } Pergunta;
 
- #endif
+ #endif /*PERGUNTA_H*/
