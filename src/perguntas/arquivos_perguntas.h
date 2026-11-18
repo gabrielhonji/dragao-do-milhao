@@ -16,9 +16,9 @@
 
     int carregar_csv(Banco_perguntas *banco_perguntas, FILE **arquivo_csv); //carrega o arquivo csv inicial com as perguntas
 
-    int salvar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_bin); //salva os dados em um arquivo binário
+    int salvar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat); //salva os dados em um arquivo binário
 
-    int carregar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_bin); //carrega os dados salvos do arquivo binário
+    int carregar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat); //carrega os dados salvos do arquivo binário
 
     int exportar_csv(Banco_perguntas *banco_perguntas, FILE **arquivo_exportacao_csv); //exporta as perguntas para um outro arquivo_csv, contendo as alterações feitas nas perguntas
 
