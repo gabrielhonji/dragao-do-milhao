@@ -15,13 +15,13 @@
     #include "pergunta.h"
 
     typedef struct{
-        Pergunta *perguntas;
-        int quant_perguntas;
-        int capacidade_reservada;
-        int proximo_id;
-    } Banco_perguntas;
+        Pergunta *perguntas; //chamo a struct Pergunta já declarada anteriormente em pergunta.h, perguntas é um ponteiro para o vetor dinâmico de perguntas
+        int quant_perguntas; //inteiro que armazena a quantidade de perguntas atuais
+        int capacidade_reservada; //inteiro que armazena quantos espaços estão alocados para o vetor
+        int proximo_id; //identificador reservado para o próximo cadastro
+    } Banco_perguntas; //estrutura criada para a organização do código
 
-    void inicializa_banco(Banco_perguntas *banco_perguntas);
+    void inicializa_banco(Banco_perguntas *banco_perguntas); //inicializacão da estrutura zerando ela
 
     void inserir_pergunta(Banco_perguntas *banco_perguntas); //insiro novas perguntas
 
@@ -29,14 +29,14 @@
 
     int pesquisar_pergunta(Banco_perguntas *banco_pergunta, int id_pergunta_procurada); //pesquiso uma pergunta pelo seu ID e retorno sua posição no vetor
 
-    void exibir_pergunta(Banco_perguntas *banco_perguntas, int indice); //exibo a pergunta a partir do seu ID digitado
+    void exibir_pergunta(Banco_perguntas *banco_perguntas, int indice); //exibo a pergunta a partir do indice recebido
 
-    void alterar_pergunta(Banco_perguntas *banco_perguntas, int id_pergunta_alteracao); //altera a pergunta a partir do seu ID
+    void alterar_pergunta(Banco_perguntas *banco_perguntas, int id_pergunta_alteracao); //altera a pergunta a partir do seu ID recebido 
 
     void cadastro_pergunta(Banco_perguntas *banco_perguntas, int indice); //pede ao usuário as informações da pergunta
 
-    void excluir_pergunta(Banco_perguntas *banco_perguntas, int id_pergunta_excluida); //pede ao usuário o id da pergunta a ser excluída e excloi ela, modificando o vetor
+    void excluir_pergunta(Banco_perguntas *banco_perguntas, int id_pergunta_excluida); //exclui a pergunta a partir do seu ID recebido
 
-    void listar_por_dificuldade(Banco_perguntas *banco_perguntas, Dificuldade dificuldade_procurada); //pede para o usuário digitar uma dificuldade e lista todas as perguntas que se encontram nessa dificuldade
+    void listar_por_dificuldade(Banco_perguntas *banco_perguntas, Dificuldade dificuldade_procurada); //recebe uma dificuldade por parâmetro e permite ao usuário navegar entre as perguntas que possuem essa dificuldade
 
  #endif /*BANCO_PERGUNTAS_H*/

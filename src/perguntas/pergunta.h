@@ -13,20 +13,21 @@
     #define PERGUNTA_H
 
  typedef enum {muito_facil=1, facil, medio, dificil, muito_dificil} Dificuldade;
+ //os valores das dificuldades variam de 1 a 5, começando em 1 por muito_facil e acabando em 5 com muito_dificil
 
  typedef struct{
-    char A[101];
-    char B[101];
-    char C[101];
-    char D[101];
+    char A[101]; //texto da alternativa A
+    char B[101]; //texto da alternativa B
+    char C[101]; //texto da alternativa C
+    char D[101]; //texto da alternativa D
  } Alternativa;
 
  typedef struct{
-    char enunciado[501];
-    Alternativa alternativa;
-    char resposta;
-    Dificuldade dificuldade;  
-    char dica[201];
+    char enunciado[501]; //string que armazena o enunciado da pergunta
+    Alternativa alternativa; //chamo a struct Alternativa que contém as strings A, B, C e D
+    char resposta; //char que armazena a letra da alternativa correta
+    Dificuldade dificuldade; //chamo a enum Dificuldade que associa números a nomes definidos
+    char dica[201]; //string que armazena a dica da pergunta
     int identificador; //auxilia na identificação da pergunta mesmo se ela mudar de posição no vetor
  } Pergunta;
 

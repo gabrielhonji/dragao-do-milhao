@@ -1,2 +1,99 @@
-# dragao-do-milhao
-O projeto continua sendo um Jogo do Milhão em essência: perguntas de múltipla escolha, quinze questões, progressão por dificuldade e uso de ajudas. Em vez de um programa apenas textual, o jogo contará uma pequena narrativa de fantasia medieval em pixel art: um dragão tenta libertar uma princesa que foi aprisionada por um príncipe tirano
+# Dragão do Milhão 
+
+Projeto desenvolvido em linguagem C pela equipe **Sete Copas**, para a disciplina de Fundamentos de Programação 2 da UTFPR — Campus Apucarana.
+
+A proposta é um Jogo do Milhão com temática de games e narrativa de fantasia medieval. Um dragão parte para libertar uma princesa aprisionada por um príncipe tirano. A partida planejada terá 15 perguntas, progressão por dificuldade e ajudas associadas a minigames.
+
+Atualmente, o projeto conta com a parte básica de gerenciamento das perguntas, executada pelo terminal. A partida e os recursos gráficos serão desenvolvidos na etapa criativa.
+
+## Equipe
+
+- Enzo Andreassa Pizza;
+- Gabriel Yudi Honji;
+- Murilo Henrique Alves Martins.
+
+## Funcionalidades implementadas
+
+- Cadastrar perguntas em um vetor dinâmico;
+- Listar todas as perguntas;
+- Pesquisar, alterar e excluir perguntas pelo ID;
+- Navegar pelas perguntas de uma dificuldade escolhida;
+- Importar as perguntas iniciais de um CSV;
+- Salvar e recuperar o banco em arquivo binário;
+- Exportar o banco atual para CSV.
+
+Cada pergunta possui identificador, enunciado, quatro alternativas, resposta correta, dificuldade e dica. Os IDs são preservados durante alterações e deslocamentos no vetor.
+
+## Compilação e execução
+
+Para compilar no Linux, são necessários GCC, GNU Make e as bibliotecas de sistema usadas pelo Makefile, incluindo OpenGL e X11. Os cabeçalhos e a biblioteca da raylib fornecidos pelo professor estão nas pastas `include/` e `lib/`.
+
+Execute os comandos **na raiz do repositório**, onde está o Makefile:
+
+| Comando       | Operação                   |
+| `make`        | Compila o projeto          |
+| `make run`    | Compila e executa          |
+| `make clean`  | Remove o executável gerado |
+
+Durante a execução, escolha uma opção do menu pelo número correspondente. A opção `0` encerra o programa e salva o banco em binário.
+
+## Arquivos de dados
+
+| Arquivo                           | Finalidade                          |
+| `dados/perguntas_iniciais.csv`    | Base inicial preparada pela equipe  |
+| `dados/perguntas.bin`             | Banco atualizado, salvo ao encerrar |
+| `dados/perguntas_exportadas.csv`  | Exportação solicitada pela opção 7  |
+
+Na primeira execução, quando o binário ainda não existe, o programa importa o CSV inicial. Nas execuções seguintes, recupera o banco pelo binário. Alterar o CSV inicial depois disso não atualiza automaticamente o banco salvo.
+
+A exportação gera uma cópia do banco atual em texto e substitui uma exportação anterior.
+
+## Formato do CSV
+
+O CSV utiliza uma pergunta por linha, seguindo este cabeçalho:
+
+```csv
+id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,dificuldade,dica
+```
+
+As respostas devem ser letras maiúsculas de `A` a `D`. Os níveis de dificuldade são:
+
+| Valor | Dificuldade   |
+| 1     | Muito fácil   |
+| 2     | Fácil         |
+| 3     | Médio         |
+| 4     | Difícil       |
+| 5     | Muito difícil |
+
+A implementação atual utiliza CSV simples, com textos sem vírgulas ou quebras de linha dentro dos campos. A importação comporta até 100 perguntas. Os limites de texto são 500 bytes para o enunciado, 100 para cada alternativa e 200 para a dica.
+
+Os campos numéricos da interface pressupõem a digitação de números. Valores fora dos intervalos permitidos são tratados pelo programa.
+
+## Organização do código
+
+A organização principal do código é:
+
+```text
+src/
+├── main.c
+└── perguntas/
+    ├── pergunta.h
+    ├── banco_perguntas.c
+    ├── banco_perguntas.h
+    ├── arquivos_perguntas.c
+    └── arquivos_perguntas.h
+```
+
+A `main` coordena o menu e a inicialização. O módulo `banco_perguntas` gerencia a coleção e as consultas. O módulo `arquivos_perguntas` cuida da importação, persistência e exportação.
+
+## Banco inicial de perguntas
+
+O arquivo `dados/perguntas_iniciais.csv` contém as 80 perguntas iniciais do projeto, distribuídas entre os cinco níveis de dificuldade:
+
+| Dificuldade   | Quantidade |
+| Muito fácil   | 20         |
+| Fácil         | 20         |
+| Médio         | 15         |
+| Difícil       | 15         |
+| Muito difícil | 10         |
+| **Total**     | **80**     |
