@@ -133,7 +133,6 @@
         default:
             break;
         }//switch da dificuldade
-        printf("    Dica: %s\n", banco_perguntas->perguntas[indice].dica);
  }//EXIBIR PERGUNTA
 
 
@@ -219,10 +218,6 @@
     banco_perguntas->perguntas[indice].dificuldade = opcao;
     setbuf(stdin,NULL); //limpeza de buffer
 
-    printf("Dica: ");
-    fgets(banco_perguntas->perguntas[indice].dica, 200, stdin);
-    banco_perguntas->perguntas[indice].dica[strcspn(banco_perguntas->perguntas[indice].dica, "\n")] = '\0';
-    setbuf(stdin, NULL); //limpeza de buffer
  }//CADASTRO PERGUNTA
 
 

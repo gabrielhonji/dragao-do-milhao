@@ -123,17 +123,8 @@
 
         //DIFICULDADE
         campos[7] = virgulas[6]+1;
-        virgulas[7] = strchr(campos[7], ',');
-        if(virgulas[7] == NULL){
-            continue;
-        }
-        *virgulas[7] = '\0';
+        campos[7][strcspn(campos[7], "\n")] = '\0'; //como é o fim da pergunta, preciso ver onde está o \n e não mais a linha
         banco_perguntas->perguntas[banco_perguntas->quant_perguntas].dificuldade = strtol(campos[7], &fim, 10); //transformando o texto de dificuldade para número
-
-        //DICA
-        campos[8] = virgulas[7]+1;
-        campos[8][strcspn(campos[8], "\n")] = '\0'; //como é o fim da pergunta, preciso ver onde está o \n e não mais a linha
-        strcpy(banco_perguntas->perguntas[banco_perguntas->quant_perguntas].dica, campos[8]);
         
         banco_perguntas->quant_perguntas++;
     }//for que percorre todas as perguntas do csv
@@ -291,7 +282,7 @@
         return -1; //retorna -1 caso o arquivo não consiga ser criado
     }
 
-    retorno_fprintf = fprintf(*arquivo_exportacao_csv, "id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,dificuldade,dica\n");//imprimindo o cabeçalho
+    retorno_fprintf = fprintf(*arquivo_exportacao_csv, "id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,dificuldade\n");//imprimindo o cabeçalho
     if(retorno_fprintf < 0){ //caso dê erro o fprintf retorna um valor negativo
         fclose(*arquivo_exportacao_csv);
         *arquivo_exportacao_csv = NULL;
@@ -299,7 +290,7 @@
     }
 
     for(int i = 0; i<banco_perguntas->quant_perguntas; i++){
-        retorno_fprintf = fprintf(*arquivo_exportacao_csv, "%d,%s,%s,%s,%s,%s,%c,%d,%s\n", banco_perguntas->perguntas[i].identificador, banco_perguntas->perguntas[i].enunciado, banco_perguntas->perguntas[i].alternativa.A, banco_perguntas->perguntas[i].alternativa.B, banco_perguntas->perguntas[i].alternativa.C, banco_perguntas->perguntas[i].alternativa.D, banco_perguntas->perguntas[i].resposta, banco_perguntas->perguntas[i].dificuldade, banco_perguntas->perguntas[i].dica);
+        retorno_fprintf = fprintf(*arquivo_exportacao_csv, "%d,%s,%s,%s,%s,%s,%c,%d\n", banco_perguntas->perguntas[i].identificador, banco_perguntas->perguntas[i].enunciado, banco_perguntas->perguntas[i].alternativa.A, banco_perguntas->perguntas[i].alternativa.B, banco_perguntas->perguntas[i].alternativa.C, banco_perguntas->perguntas[i].alternativa.D, banco_perguntas->perguntas[i].resposta, banco_perguntas->perguntas[i].dificuldade);
         if(retorno_fprintf < 0){ //caso dê erro o fprintf retorna um valor negativo
             fclose(*arquivo_exportacao_csv);
             *arquivo_exportacao_csv = NULL;

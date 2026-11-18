@@ -21,11 +21,11 @@ Atualmente, o projeto conta com a parte básica de gerenciamento das perguntas, 
 - Listar todas as perguntas;
 - Pesquisar, alterar e excluir perguntas pelo ID;
 - Navegar pelas perguntas de uma dificuldade escolhida;
-- Importar as perguntas iniciais de um CSV;
+- Importar as perguntas iniciais de um CSV;              
 - Salvar e recuperar o banco em arquivo binário;
 - Exportar o banco atual para CSV.
 
-Cada pergunta possui identificador, enunciado, quatro alternativas, resposta correta, dificuldade e dica. Os IDs são preservados durante alterações e deslocamentos no vetor.
+Cada pergunta possui identificador, enunciado, quatro alternativas, resposta correta e dificuldade. Os IDs são preservados durante alterações e deslocamentos no vetor.
 
 ## Compilação e execução
 
@@ -60,7 +60,7 @@ A exportação gera uma cópia do banco atual em texto e substitui uma exportaç
 O CSV utiliza uma pergunta por linha, seguindo este cabeçalho:
 
 ```csv
-id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,dificuldade,dica
+id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,dificuldade
 ```
 
 As respostas devem ser letras maiúsculas de `A` a `D`. Os níveis de dificuldade são:
@@ -73,7 +73,7 @@ As respostas devem ser letras maiúsculas de `A` a `D`. Os níveis de dificuldad
 | 4     | Difícil       |
 | 5     | Muito difícil |
 
-A implementação atual utiliza CSV simples, com textos sem vírgulas ou quebras de linha dentro dos campos. A importação comporta até 100 perguntas. Os limites de texto são 500 bytes para o enunciado, 100 para cada alternativa e 200 para a dica.
+A implementação atual utiliza CSV simples, com textos sem vírgulas ou quebras de linha dentro dos campos. A importação comporta até 100 perguntas. Os limites de texto são 500 bytes para o enunciado e 100 para cada alternativa
 
 Os campos numéricos da interface pressupõem a digitação de números. Valores fora dos intervalos permitidos são tratados pelo programa.
 
