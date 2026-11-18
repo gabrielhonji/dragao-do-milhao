@@ -8,11 +8,18 @@
  * @copyright Copyright (c) 2026
  * 
  */
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "perguntas/banco_perguntas.h"
+#include "interface/telas.h"
 
-int main(){
+int main(int argc, char *argv[]){
+    if (argc > 1 && strcmp(argv[1], "--visual") == 0) {
+        executar_tela_teste();
+        return 0;
+    }
 
     Banco_perguntas banco_perguntas;
     int opcao;
