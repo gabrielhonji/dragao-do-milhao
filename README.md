@@ -1,10 +1,13 @@
-# Dragão do Milhão 
+# Dragão do Milhão
 
 Projeto desenvolvido em linguagem C pela equipe **Sete Copas**, para a disciplina de Fundamentos de Programação 2 da UTFPR — Campus Apucarana.
 
-A proposta é um Jogo do Milhão com temática de games e narrativa de fantasia medieval. Um dragão parte para libertar uma princesa aprisionada por um príncipe tirano. A partida planejada terá 15 perguntas, progressão por dificuldade e ajudas associadas a minigames.
+A proposta é um Jogo do Milhão com temática de games e narrativa de fantasia medieval em pixel art. Um dragão parte para libertar uma princesa aprisionada por um príncipe tirano. A partida planejada terá 15 perguntas, progressão por dificuldade e ajudas associadas a minigames.
 
 Atualmente, o projeto conta com a parte básica de gerenciamento das perguntas, executada pelo terminal. A partida e os recursos gráficos serão desenvolvidos na etapa criativa.
+
+- [Código do jogo](src/)
+- [Perguntas iniciais](dados/perguntas_iniciais.csv)
 
 ## Equipe
 
@@ -28,9 +31,12 @@ Cada pergunta possui identificador, enunciado, quatro alternativas, resposta cor
 
 Para compilar no Linux, são necessários GCC, GNU Make e as bibliotecas de sistema usadas pelo Makefile, incluindo OpenGL e X11. Os cabeçalhos e a biblioteca da raylib fornecidos pelo professor estão nas pastas `include/` e `lib/`.
 
+No Windows, o Makefile espera uma biblioteca raylib compatível na pasta `libwin/`, que precisa ser fornecida separadamente.
+
 Execute os comandos **na raiz do repositório**, onde está o Makefile:
 
 | Comando       | Operação                   |
+| ---           | ---                        |
 | `make`        | Compila o projeto          |
 | `make run`    | Compila e executa          |
 | `make clean`  | Remove o executável gerado |
@@ -40,6 +46,7 @@ Durante a execução, escolha uma opção do menu pelo número correspondente. A
 ## Arquivos de dados
 
 | Arquivo                           | Finalidade                          |
+| ---                               | ---                                 |
 | `dados/perguntas_iniciais.csv`    | Base inicial preparada pela equipe  |
 | `dados/perguntas.bin`             | Banco atualizado, salvo ao encerrar |
 | `dados/perguntas_exportadas.csv`  | Exportação solicitada pela opção 7  |
@@ -59,6 +66,7 @@ id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,di
 As respostas devem ser letras maiúsculas de `A` a `D`. Os níveis de dificuldade são:
 
 | Valor | Dificuldade   |
+| ---   | ---           |
 | 1     | Muito fácil   |
 | 2     | Fácil         |
 | 3     | Médio         |
@@ -91,6 +99,7 @@ A `main` coordena o menu e a inicialização. O módulo `banco_perguntas` gerenc
 O arquivo `dados/perguntas_iniciais.csv` contém as 80 perguntas iniciais do projeto, distribuídas entre os cinco níveis de dificuldade:
 
 | Dificuldade   | Quantidade |
+| ---           | ---:       |
 | Muito fácil   | 20         |
 | Fácil         | 20         |
 | Médio         | 15         |
