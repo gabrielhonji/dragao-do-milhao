@@ -19,14 +19,14 @@ int main(){
     FILE *arquivos_csv = NULL;
     int retorno_carregar_csv;
     int opcao;
-    FILE *arquivo_bin = NULL;
+    FILE *arquivo_dat = NULL;
     int retorno_binario;
     FILE *arquivo_exportacao_csv = NULL;
     int retorno_exportar_csv;
     
     inicializa_banco(&banco_perguntas);
     
-    retorno_binario = carregar_binario(&banco_perguntas, &arquivo_bin);
+    retorno_binario = carregar_binario(&banco_perguntas, &arquivo_dat);
     if(retorno_binario == -2){//o arquivo binário não existir significa que estou na primeira execução, nesse caso leio as perguntas do CSV.
         printf("Não foi possível abrir o binário.Tentando carregar o CSV\n"); //falha na abertura do arquivo binário
         retorno_carregar_csv = carregar_csv(&banco_perguntas, &arquivos_csv);
@@ -157,7 +157,7 @@ int main(){
         }//switch
     }while(opcao != 0);
 
-    retorno_binario = salvar_binario(&banco_perguntas, &arquivo_bin);
+    retorno_binario = salvar_binario(&banco_perguntas, &arquivo_dat);
     if(retorno_binario == -1){
         printf("Erro ao salvar arquivo binário\n");
     }else{

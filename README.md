@@ -48,7 +48,7 @@ Durante a execução, escolha uma opção do menu pelo número correspondente. A
 | Arquivo                           | Finalidade                          |
 | ---                               | ---                                 |
 | `dados/perguntas_iniciais.csv`    | Base inicial preparada pela equipe  |
-| `dados/perguntas.bin`             | Banco atualizado, salvo ao encerrar |
+| `dados/perguntas.dat`             | Banco atualizado, salvo ao encerrar |
 | `dados/perguntas_exportadas.csv`  | Exportação solicitada pela opção 7  |
 
 Na primeira execução, quando o binário ainda não existe, o programa importa o CSV inicial. Nas execuções seguintes, recupera o banco pelo binário. Alterar o CSV inicial depois disso não atualiza automaticamente o banco salvo.
