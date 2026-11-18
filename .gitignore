@@ -2,3 +2,5 @@
 /build/
 *.o
 dragao-do-milhao.exe
+/dados/perguntas.bin
+/dados/perguntas_exportadas.csv

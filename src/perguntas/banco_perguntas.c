@@ -16,7 +16,7 @@
  /**
   * @brief Função que inicializa o banco de perguntas como zerado
   * 
-  * @param banco_perguntas 
+  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
   */
  void inicializa_banco (Banco_perguntas *banco_perguntas){
     banco_perguntas->perguntas = NULL; //inicializando as perguntas em NULL
@@ -29,7 +29,7 @@
  /**
   * @brief Função que verifica a quantidade de armazenamento disponível para as perguntas, caso não haja, realoca e pede para o usuário cadastrar uma pergunta, chamando a função cadastro_pergunta para isso
   * 
-  * @param banco_perguntas 
+  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro, atribui um ID e atualiza a quantidade de perguntas
   */
  void inserir_pergunta(Banco_perguntas *banco_perguntas){
 
@@ -48,7 +48,7 @@
         }
     }//conferindo a capacidade de perguntas
 
-    cadastro_pergunta(banco_perguntas, banco_perguntas->quant_perguntas); //passo como indice a ultima posição do meu vetor de perguntas, que é a quantidade de perguntas totais novas
+    cadastro_pergunta(banco_perguntas, banco_perguntas->quant_perguntas); //passo como índice a ultima posição do meu vetor de perguntas, que é a quantidade de perguntas totais novas
 
     banco_perguntas->perguntas[banco_perguntas->quant_perguntas].identificador = banco_perguntas->proximo_id; //atribuo o ID da pergunta à última posição disponível no vetor
 
@@ -60,7 +60,7 @@
  /**
   * @brief Função que percorre de 0 até a quantidade de perguntas e lista uma por uma
   * 
-  * @param banco_perguntas 
+  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
   */
  void listar_perguntas(Banco_perguntas *banco_perguntas){
 
@@ -76,9 +76,11 @@
 
 
  /**
-  * @brief Função que recebe o ID da pergunta e procura ela
+  * @brief Função que recebe o ID da pergunta procurada e procura ela através de um for dentro das perguntas cadastradas
   * 
-  * @param banco_pergunta 
+  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
+  * @param id_pergunta_procurada recebe o ID da pergunta que está procurando
+  * @return int indice encontrado ou -1
   */
  int pesquisar_pergunta(Banco_perguntas *banco_perguntas, int id_pergunta_procurada){
 
@@ -93,10 +95,10 @@
 
 
  /**
-  * @brief Função que recebe um indice e exibi a pergunta cadastrada naquele indice 
+  * @brief Função que recebe um indice e exibe a pergunta cadastrada naquele indice 
   * 
-  * @param banco_perguntas 
-  * @param indice
+  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
+  * @param indice recebe o indice da pergunta que vai exibir - posição válida da pergunta no vetor
   */
  void exibir_pergunta(Banco_perguntas *banco_perguntas, int indice){
     printf("\nPERGUNTA %d:\n", banco_perguntas->perguntas[indice].identificador);
@@ -139,8 +141,8 @@
  /**
   * @brief Função que recebe o ID da pergunta a ser alterada e pede para o usuário digitar os dados dessa novamente
   * 
-  * @param banco_perguntas 
-  * @param id_pergunta_alteracao 
+  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
+  * @param id_pergunta_alteracao recebe o ID da pergunta que vai alterar, preserva o ID e informa quando ele não existe
   */
  void alterar_pergunta(Banco_perguntas *banco_perguntas, int id_pergunta_alteracao){
     int retorno_pesquisa; //indice de onde a pergunta está localizada no vetor
@@ -153,16 +155,17 @@
     exibir_pergunta(banco_perguntas, retorno_pesquisa); //exibo a pergunta alterada
     return;
  }//ALTERAR PERGUNTA
-
-
+ 
+ 
  /**
-  * @brief Função que solicita ao usuário os dados da pergunta
+  * @brief Função que solicita ao usuário os dados da pergunta - A inserção controla o ID e a quantidade
   * 
-  * @param banco_perguntas 
-  * @param indice 
+  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
+  * @param indice recebe o indice - posição no vetor - de onde a pergunta será armazenada
   */
  void cadastro_pergunta(Banco_perguntas *banco_perguntas, int indice){
     int opcao; //variável auxiliar para atribuir as dificuldades usando enum
+    int caracter;
 
     setbuf(stdin, NULL);
     printf("Digite o enunciado: ");
@@ -189,9 +192,11 @@
     setbuf(stdin, NULL);
 
     do{//verificação da alternativa de resposta
-        setbuf(stdin, NULL);//limpa o buffer
         printf("Alternativa Correta: ");
-        scanf(" %c", &banco_perguntas->perguntas[indice].resposta); //esse espaço antes do %c garanta com que os enters não sejam armazenados
+        scanf(" %c", &banco_perguntas->perguntas[indice].resposta); //esse espaço antes do %c garante que os enters não sejam armazenados
+        do{
+            caracter = getchar(); //guardo na variável caracter o valor de um getchar - isso evita pegar os enters e letras digitadas a mais
+        }while(caracter != '\n' && caracter != EOF); //esse do-while fica pegando as letras e enters a mais digitados
         if(banco_perguntas->perguntas[indice].resposta != 'A' && banco_perguntas->perguntas[indice].resposta != 'B' && banco_perguntas->perguntas[indice].resposta != 'C' && banco_perguntas->perguntas[indice].resposta != 'D'){
             printf("Opção Inválida\n");
         }
@@ -206,6 +211,7 @@
     do{//verificador
         printf("Número - ");
         scanf("%d", &opcao);
+        setbuf(stdin, NULL); //limpeza de buffer
         if(opcao < 1 || opcao > 5){
             printf("Opção Inválida\n");
         }
@@ -219,12 +225,13 @@
     setbuf(stdin, NULL); //limpeza de buffer
  }//CADASTRO PERGUNTA
 
+
  
  /**
   * @brief Função que recebe o id da pergunta a ser excluída, verfica se o ID existe, caso exista, exclui a pergunta e desloca as restantes uma posição para a esquerda no vetor de perguntas
   * 
-  * @param banco_perguntas 
-  * @param id_pergunta_excluida 
+  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
+  * @param id_pergunta_excluida recebe o ID da pergunta que vai ser excluída
   */
  void excluir_pergunta(Banco_perguntas *banco_perguntas, int id_pergunta_excluida){
     int retorno_pesquisa;
@@ -240,21 +247,81 @@
         banco_perguntas->perguntas[i] = banco_perguntas->perguntas[i+1];
     }
 
-    banco_perguntas->quant_perguntas --; //como eu exluo uma pergunta, eu estou reduzindo a quantidade de perguntas totais, a capacidade para reservar se mantem a mesma, assim como o id
+    banco_perguntas->quant_perguntas --; //como eu excluo uma pergunta, eu estou reduzindo a quantidade de perguntas totais, a capacidade para reservar se mantem a mesma, assim como o id
 
     printf("A pergunta de ID %d foi excluída\n", id_pergunta_excluida);
  }//EXCLUIR PERGUNTAS
 
 
+
+ /**
+  * @brief Função que recebe a dificuldade procurada e exibe um menu que permite a navegação entre as perguntas dessa dificuldade
+  * 
+  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
+  * @param dificuldade_procurada recebe a dificuldade das perguntas que está sendo levada em conta
+  */
  void listar_por_dificuldade(Banco_perguntas *banco_perguntas, Dificuldade dificuldade_procurada){
-    int verificador = 0; //variável usada para ver se realmente possui perguntas naquela dificuldade ou não
+    int indice_atual = -1; //variável que verifica se alguma pergunta foi encontrada ou não
+    int opcao;
+    int indice_anterior; //variável usada para verificar o vetor nos limites (borda da esquerda ou direita), no seu fim
+
     for(int i = 0; i<banco_perguntas->quant_perguntas; i++){
         if(banco_perguntas->perguntas[i].dificuldade == dificuldade_procurada){
-            exibir_pergunta(banco_perguntas, i);
-            verificador++;
+            indice_atual = i;
+            break; //ao encontrar essa primeira pergunta eu paro a procura
         }
     }//for que percorre todas as perguntas
-    if(verificador == 0){
+    if(indice_atual == -1){
         printf("Nenhuma pergunta possui a dificuldade procurada\n");
+        return;
     }
+
+    do{
+        exibir_pergunta(banco_perguntas, indice_atual); //primeiro eu exibo a pergunta atual e dps mostro o menu de navegação
+
+        printf("\nMENU DE NAVEGAÇÃO\n");
+        printf("    1 - Próxima\n");
+        printf("    2 - Anterior\n");
+        printf("    0 - Voltar ao menu de cadastro\n");
+        printf("Digite sua opção: ");
+        scanf("%d", &opcao);
+        if(opcao != 0 && opcao != 1 && opcao != 2){
+            printf("Opção Inválida\n");
+        }
+
+        indice_anterior = indice_atual;
+        switch (opcao){
+        case 1:
+            for(int i = (indice_atual+1); i<banco_perguntas->quant_perguntas; i++){ //for procura pergunta do indice atual pra frente
+                if(banco_perguntas->perguntas[i].dificuldade == dificuldade_procurada){
+                    indice_atual = i;
+                    break; //ao encontrar essa primeira pergunta eu paro a procura
+                }
+            }//for que percorre todas as perguntas
+            if(indice_atual == indice_anterior){ //fim das perguntas à direita do vetor, o meu indice vai ser o mesmo, logo vai ter acabado as perguntas
+                printf("Fim das perguntas cadastradas nessa dificuldade\n");
+            }
+            break;
+
+        case 2:
+            for(int i = (indice_atual-1); i>=0; i--){ //for procura perguntas do indice atual pra baixo
+                if(banco_perguntas->perguntas[i].dificuldade == dificuldade_procurada){
+                    indice_atual = i;
+                    break; //ao encontrar essa primeira pergunta eu paro a procura
+                }
+            }//for que percorre todas as perguntas
+            if(indice_atual == indice_anterior){ //fim das perguntas à esquerda no vetor, o meu indice vai ser o mesmo, logo vai ter acabado as perguntas
+                printf("Não há perguntas anteriores à esta nessa dificuldade\n");
+            }
+            break;
+
+        case 0:
+            printf("Fim do menu de navegação\n");
+            break;
+        
+        default:
+            break;
+        }
+    }while(opcao != 0);
+
  }//LISTAR POR DIFICULDADE
