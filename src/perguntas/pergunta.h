@@ -27,7 +27,6 @@
     Alternativa alternativa; //chamo a struct Alternativa que contém as strings A, B, C e D
     char resposta; //char que armazena a letra da alternativa correta
     Dificuldade dificuldade; //chamo a enum Dificuldade que associa números a nomes definidos
-    char dica[201]; //string que armazena a dica da pergunta
     int identificador; //auxilia na identificação da pergunta mesmo se ela mudar de posição no vetor
  } Pergunta;
 
