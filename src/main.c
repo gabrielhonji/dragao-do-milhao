@@ -1,7 +1,7 @@
 /**
  * @file main.c
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief 
+ * @brief Inicia o modo visual de teste ou o cadastro de perguntas no terminal.
  * @version 0.1
  * @date 2026-11-10
  * 
@@ -15,8 +15,8 @@
 #include "perguntas/banco_perguntas.h"
 #include "interface/telas.h"
 
-int main(int argc, char *argv[]){
-    if (argc > 1 && strcmp(argv[1], "--visual") == 0) {
+int main(int quantidade_argumentos, char *argumentos[]){
+    if (quantidade_argumentos > 1 && strcmp(argumentos[1], "--visual") == 0) {
         executar_tela_teste();
         return 0;
     }

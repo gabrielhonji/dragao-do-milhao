@@ -1,15 +1,14 @@
 /**
  * @file telas.h
  * @author Gabriel Honji (gabrielhonji@alunos.utfpr.edu.br)
- * @brief 
+ * @brief Declara o ponto de entrada do modo visual de teste.
  * @version 0.1
  * @date 2026-11-15
- * 
+ *
  * @copyright Copyright (c) 2026
- * 
+ *
  */
 
-// Include guard
 #ifndef TELAS_H
 #define TELAS_H
 

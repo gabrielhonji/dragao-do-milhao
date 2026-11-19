@@ -1,7 +1,7 @@
 /**
  * @file pergunta.h
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief Estruturação das perguntas
+ * @brief Define os tipos de pergunta, alternativa e dificuldade.
  * @version 0.1
  * @date 2026-11-10
  * 

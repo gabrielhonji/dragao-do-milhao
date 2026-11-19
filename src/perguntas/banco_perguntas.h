@@ -1,7 +1,7 @@
 /**
  * @file banco_perguntas.h
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief Estruturação do banco de perguntas, usaremos durante os arquivos para manipular as perguntas, pois já me informa a quantidade de perguntas e a capacidade, desse modo, mantivemos uma organização maior do código
+ * @brief Define o banco de perguntas e declara as operações sobre a coleção.
  * @version 0.1
  * @date 2026-11-14
  * 
