@@ -19,7 +19,7 @@ else
 	RM = rm -f
 endif
 
-SRC = $(wildcard src/*.c src/perguntas/*.c src/interface/*.c)
+SRC = $(wildcard src/*.c src/perguntas/*.c src/interface/*.c src/quiz/*.c src/minigames/*.c)
 
 all:
 	gcc $(SRC) -g -lm $(EXTRA_FLAGS) $(INCLUDE) -o $(BIN)
