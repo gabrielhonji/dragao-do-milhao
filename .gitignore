@@ -2,3 +2,6 @@
 /build/
 *.o
 dragao-do-milhao.exe
+/dragao-do-milhao-visual
+/dragao-do-milhao-visual.exe
+/dragao-fullscreen-teste.exe

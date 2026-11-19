@@ -14,7 +14,19 @@
 
 #include <raylib.h>
 
+/**
+ * @brief Detecta o início de um clique com o botão esquerdo dentro da área.
+ * @param area Retângulo do botão, em coordenadas da janela.
+ * @return True se o clique começou dentro da área neste quadro.
+ */
 bool botao_clicado(Rectangle area);
+
+/**
+ * @brief Desenha um botão com rótulo centralizado e destaque ao passar o mouse.
+ * @param fonte Fonte usada no rótulo.
+ * @param area Retângulo do botão, em coordenadas da janela.
+ * @param rotulo Texto exibido no botão.
+ */
 void desenhar_botao(Font fonte, Rectangle area, const char *rotulo);
 
 #endif

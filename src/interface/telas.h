@@ -12,6 +12,7 @@
 #ifndef TELAS_H
 #define TELAS_H
 
+/** @brief Abre o modo visual e retorna quando a janela é fechada. */
 void executar_tela_teste(void);
 
 #endif
