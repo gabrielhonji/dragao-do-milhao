@@ -23,6 +23,8 @@
     banco_perguntas->quant_perguntas = 0;
     banco_perguntas->capacidade_reservada = 0;
     banco_perguntas->proximo_id = 0;
+    banco_perguntas->ids_disponiveis = NULL;
+    banco_perguntas->quant_ids_disponiveis= 0;
  }//INICIALIZA BANCO
 
 
@@ -50,9 +52,18 @@
 
     cadastro_pergunta(banco_perguntas, banco_perguntas->quant_perguntas); //passo como índice a ultima posição do meu vetor de perguntas, que é a quantidade de perguntas totais novas
 
-    banco_perguntas->perguntas[banco_perguntas->quant_perguntas].identificador = banco_perguntas->proximo_id; //atribuo o ID da pergunta à última posição disponível no vetor
+    if(banco_perguntas->quant_ids_disponiveis > 0){ //se há IDs disponíveis no meu vetor, uso o primeiro disponível
+        banco_perguntas->perguntas[banco_perguntas->quant_perguntas].identificador = banco_perguntas->ids_disponiveis[0];
 
-    banco_perguntas->proximo_id++;
+        for(int i = 0; i<(banco_perguntas->quant_ids_disponiveis-1); i++){
+            banco_perguntas->ids_disponiveis[i] = banco_perguntas->ids_disponiveis[i+1];
+        } //movo todos os números uma casa para a esquerda
+        banco_perguntas->quant_ids_disponiveis--;
+    }else{
+        banco_perguntas->perguntas[banco_perguntas->quant_perguntas].identificador = banco_perguntas->proximo_id; //atribuo o ID da pergunta à última posição disponível no vetor
+        banco_perguntas->proximo_id++;
+    }//caso em que não há IDs de perguntas que já foram excluídas
+
     banco_perguntas->quant_perguntas++;
  }//INSERIR PERGUNTA
 
@@ -229,19 +240,33 @@
   * @param id_pergunta_excluida recebe o ID da pergunta que vai ser excluída
   */
  void excluir_pergunta(Banco_perguntas *banco_perguntas, int id_pergunta_excluida){
+
     int retorno_pesquisa;
+    int *ids_disponiveis_temp;
 
     retorno_pesquisa = pesquisar_pergunta(banco_perguntas, id_pergunta_excluida);
     if(retorno_pesquisa == -1){
         printf("O ID da pergunta a ser excluída não foi encontrado\n");
         return;
     }
+    
+    ids_disponiveis_temp = realloc(banco_perguntas->ids_disponiveis, (banco_perguntas->quant_ids_disponiveis+1)*sizeof(int)); //resolvendo a questão de IDs fantasmas
+    if(ids_disponiveis_temp == NULL){
+        printf("Falha na realocação de memória");
+        return;
+    }else{
+        banco_perguntas->ids_disponiveis = ids_disponiveis_temp;
+    }
+    banco_perguntas->ids_disponiveis[banco_perguntas->quant_ids_disponiveis] = id_pergunta_excluida; //ID excluído sendo armazenado no meu vetor de IDs excluídos
+    banco_perguntas->quant_ids_disponiveis ++; //aumento a quantidade de ids excluidos no meu vetor para
+
 
     //for responsável por pegar todas as perguntas na frente da pergunta a ser excluída e deslocarem essas uma casa para a esquerda
     for(int i = retorno_pesquisa; i<banco_perguntas->quant_perguntas-1; i++){ //não percorro até a última posição, pois essa será excluida a partir do momento em que desloco todas as perguntas uma unidade para a esquerda
         banco_perguntas->perguntas[i] = banco_perguntas->perguntas[i+1];
     }
-
+    
+    
     banco_perguntas->quant_perguntas --; //como eu excluo uma pergunta, eu estou reduzindo a quantidade de perguntas totais, a capacidade para reservar se mantem a mesma, assim como o id
 
     printf("A pergunta de ID %d foi excluída\n", id_pergunta_excluida);

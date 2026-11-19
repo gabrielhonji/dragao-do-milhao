@@ -19,6 +19,8 @@
         int quant_perguntas; //inteiro que armazena a quantidade de perguntas atuais
         int capacidade_reservada; //inteiro que armazena quantos espaços estão alocados para o vetor
         int proximo_id; //identificador reservado para o próximo cadastro
+        int *ids_disponiveis; //essa variável a de baixo são usadas para lidar com a questão de IDs fantasmas ao excluir perguntas
+        int quant_ids_disponiveis;
     } Banco_perguntas; //estrutura criada para a organização do código
 
     void inicializa_banco(Banco_perguntas *banco_perguntas); //inicializacão da estrutura zerando ela

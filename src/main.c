@@ -165,6 +165,7 @@ int main(){
     }
 
     free(banco_perguntas.perguntas);
+    free(banco_perguntas.ids_disponiveis);
 
     return  0;
 }
