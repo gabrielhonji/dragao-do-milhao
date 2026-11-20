@@ -27,12 +27,12 @@ typedef struct
 {
     char *rotulo;
     bool correto;
-} Alternativa;
+} AlternativaVisual;
 typedef struct
 {
     char *enunciado;
-    Alternativa alternativas[4];
-} Quiz;
+    AlternativaVisual alternativas[4];
+} QuizVisual;
 
 /**
  * @brief Calcula onde exibir a tela na janela.
@@ -47,8 +47,7 @@ static Rectangle calcular_area_exibicao(void)
     float escala = escala_x < escala_y ? escala_x : escala_y;
 
     // Uma escala inteira mantém todos os pixels do mesmo tamanho.
-    if (escala >= 1.0f)
-    {
+    if (escala >= 1.0f) {
         escala = (int)escala;
     }
 
@@ -70,19 +69,16 @@ static Font carregar_fonte_interface(int tamanho)
     int total = 0;
 
     // Carregamento dos caracteres em ASCII (ex: ' ', '1', '.').
-    for (int codigo = 32; codigo <= 126; codigo++)
-    {
+    for (int codigo = 32; codigo <= 126; codigo++) {
         caracteres[total++] = codigo;
     }
     // Carregamento de caracteres da extensão Latin-1 (ex: 'á', 'õ', 'ç').
-    for (int codigo = 160; codigo <= 255; codigo++)
-    {
+    for (int codigo = 160; codigo <= 255; codigo++) {
         caracteres[total++] = codigo;
     }
 
     Font fonte = LoadFontEx("assets/fontes/PixelifySans.ttf", tamanho, caracteres, total);
-    if (fonte.texture.id != 0 && fonte.texture.id != GetFontDefault().texture.id)
-    {
+    if (fonte.texture.id != 0 && fonte.texture.id != GetFontDefault().texture.id) {
         SetTextureFilter(fonte.texture, TEXTURE_FILTER_POINT);
     }
     return fonte;
@@ -96,8 +92,7 @@ static Font carregar_fonte_interface(int tamanho)
  */
 static bool alternar_tela_cheia(bool tela_cheia, Vector2 *posicao_janela)
 {
-    if (tela_cheia)
-    {
+    if (tela_cheia) {
         ClearWindowState(FLAG_WINDOW_UNDECORATED);
         SetWindowSize(LARGURA_BASE, ALTURA_BASE);
         SetWindowPosition((int)posicao_janela->x, (int)posicao_janela->y);
@@ -147,14 +142,13 @@ void executar_tela_teste(void)
     float y_alternativa = enunciado_quiz.y + enunciado_quiz.height + espaco_apos_enunciado;
 
     // A mesma área serve para desenhar a alternativa e detectar o clique.
-    for (int i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
         alternativa_rec[i] =
             (Rectangle){enunciado_quiz.x, y_alternativa, enunciado_quiz.width, altura_alternativa};
         y_alternativa += altura_alternativa + espaco_entre_alternativas;
     }
 
-    Quiz quiz_dados = {
+    QuizVisual quiz_dados = {
         .enunciado = "Qual estúdio desenvolveu\nMinecraft originalmente?",
         .alternativas =
             {
@@ -171,16 +165,14 @@ void executar_tela_teste(void)
     // Rasterização das fontes separadamente, tanto a do corpo quanto a do título.
     const int tamanho_corpo = 24;
     Font fonte = carregar_fonte_interface(tamanho_corpo);
-    if (!fonte_carregada(fonte))
-    {
+    if (!fonte_carregada(fonte)) {
         TraceLog(LOG_ERROR, "Falha ao carregar assets/fontes/PixelifySans.ttf");
         CloseWindow();
         return;
     }
     const int tamanho_titulo = 48;
     Font fonte_titulo = carregar_fonte_interface(tamanho_titulo);
-    if (!fonte_carregada(fonte_titulo))
-    {
+    if (!fonte_carregada(fonte_titulo)) {
         TraceLog(LOG_ERROR, "Falha ao carregar a fonte do título");
         UnloadFont(fonte);
         CloseWindow();
@@ -192,18 +184,15 @@ void executar_tela_teste(void)
     int escala_da_fonte = 1;
     int ultima_escala_solicitada = 1;
 
-    while (!WindowShouldClose())
-    {
+    while (!WindowShouldClose()) {
         // Modo fullscreen sendo uma Janela maximizada sem bordas.
-        if (IsKeyPressed(KEY_F11))
-        {
+        if (IsKeyPressed(KEY_F11)) {
             tela_cheia = alternar_tela_cheia(tela_cheia, &posicao_janela);
         }
 
         // Sem uma área útil, avança o quadro sem desenhar a interface.
         Rectangle area_exibida = calcular_area_exibicao();
-        if (area_exibida.width <= 0 || area_exibida.height <= 0)
-        {
+        if (area_exibida.width <= 0 || area_exibida.height <= 0) {
             BeginDrawing();
             EndDrawing();
             continue;
@@ -215,23 +204,19 @@ void executar_tela_teste(void)
 
         float escala = area_exibida.width / LARGURA_BASE;
         int escala_dos_pixels = (int)(escala * GetRenderWidth() / GetScreenWidth() + 0.5f);
-        if (escala_dos_pixels < 1)
-        {
+        if (escala_dos_pixels < 1) {
             escala_dos_pixels = 1;
         }
 
         // Rasteriza novas letras só quando muda o tamanho em pixels na tela.
-        if (escala_dos_pixels != ultima_escala_solicitada)
-        {
+        if (escala_dos_pixels != ultima_escala_solicitada) {
             ultima_escala_solicitada = escala_dos_pixels;
 
-            if (escala_dos_pixels != escala_da_fonte)
-            {
+            if (escala_dos_pixels != escala_da_fonte) {
                 Font novo_texto = carregar_fonte_interface(tamanho_corpo * escala_dos_pixels);
                 Font novo_titulo = carregar_fonte_interface(tamanho_titulo * escala_dos_pixels);
 
-                if (fonte_carregada(novo_texto) && fonte_carregada(novo_titulo))
-                {
+                if (fonte_carregada(novo_texto) && fonte_carregada(novo_titulo)) {
                     UnloadFont(fonte);
                     UnloadFont(fonte_titulo);
                     fonte = novo_texto;
@@ -240,14 +225,11 @@ void executar_tela_teste(void)
                     TraceLog(LOG_INFO, "Fontes atualizadas: texto %d px, titulo %d px",
                              fonte.baseSize, fonte_titulo.baseSize);
                 }
-                else
-                {
-                    if (fonte_carregada(novo_texto))
-                    {
+                else {
+                    if (fonte_carregada(novo_texto)) {
                         UnloadFont(novo_texto);
                     }
-                    if (fonte_carregada(novo_titulo))
-                    {
+                    if (fonte_carregada(novo_titulo)) {
                         UnloadFont(novo_titulo);
                     }
                     TraceLog(LOG_WARNING, "Mantendo as fontes da escala anterior");
@@ -257,24 +239,18 @@ void executar_tela_teste(void)
 
         bool confirmou = IsKeyPressed(KEY_ENTER);
 
-        if (tela_atual == TELA_MENU)
-        {
-            if (confirmou || botao_clicado(jogar))
-            {
+        if (tela_atual == TELA_MENU) {
+            if (confirmou || botao_clicado(jogar)) {
                 alternativa_selecionada = -1;
                 tela_atual = TELA_JORNADA;
             }
         }
-        else if (botao_clicado(voltar))
-        {
+        else if (botao_clicado(voltar)) {
             tela_atual = TELA_MENU;
         }
-        else
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                if (botao_clicado(alternativa_rec[i]))
-                {
+        else {
+            for (int i = 0; i < 4; i++) {
+                if (botao_clicado(alternativa_rec[i])) {
                     alternativa_selecionada = i;
                     break;
                 }
@@ -291,14 +267,12 @@ void executar_tela_teste(void)
         BeginMode2D(camera);
         DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, RAYWHITE);
 
-        if (tela_atual == TELA_MENU)
-        {
+        if (tela_atual == TELA_MENU) {
             DrawTextEx(fonte_titulo, "Dragão do Milhão", (Vector2){48, 96}, tamanho_titulo, 1,
                        BLACK);
             desenhar_botao(fonte, jogar, "Jogar");
         }
-        else if (tela_atual == TELA_JORNADA)
-        {
+        else if (tela_atual == TELA_JORNADA) {
             DrawTextEx(fonte, "Jornada - Questão 1 de 15", (Vector2){24, 24}, tamanho_corpo, 1,
                        BLACK);
 
@@ -309,13 +283,11 @@ void executar_tela_teste(void)
             DrawTextEx(fonte, quiz_dados.enunciado, (Vector2){enunciado_quiz.x, enunciado_quiz.y},
                        tamanho_corpo, 1, BLACK);
 
-            for (int i = 0; i < 4; i++)
-            {
+            for (int i = 0; i < 4; i++) {
                 desenhar_botao(fonte, alternativa_rec[i], quiz_dados.alternativas[i].rotulo);
             }
 
-            if (alternativa_selecionada >= 0)
-            {
+            if (alternativa_selecionada >= 0) {
                 const char *texto = TextFormat("Selecionada: %c", 'A' + alternativa_selecionada);
                 Vector2 posicao = {mapa.x + 16.0f, mapa.y + 64.0f};
                 DrawTextEx(fonte, texto, posicao, tamanho_corpo, 1.0f, BLACK);
