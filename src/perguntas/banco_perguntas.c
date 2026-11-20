@@ -1,7 +1,7 @@
 /**
  * @file banco_perguntas.c
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief Banco de perguntas
+ * @brief Implementa o cadastro, a consulta, a alteração e a exclusão de perguntas.
  * @version 0.1
  * @date 2026-11-14
  * 

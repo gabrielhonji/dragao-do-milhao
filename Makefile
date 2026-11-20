@@ -11,11 +11,13 @@ ifeq ($(OS),Windows_NT)
 	INCLUDE = -I./include/ -L./libwin
 	EXTRA_FLAGS = -Wall -Werror -Wextra -std=c99 -Wno-missing-braces -lraylib -lm -lopengl32 -lgdi32 -lwinmm
 	BIN = $(BINNAME).exe
+	BIN_VISUAL = $(BINNAME)-visual.exe
 	RM = del /Q /F
 else
 	INCLUDE=-I./include/ -L./lib
 	EXTRA_FLAGS = -Wall -Werror -Wextra -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 	BIN =./$(BINNAME)
+	BIN_VISUAL = ./$(BINNAME)-visual
 	RM = rm -f
 endif
 
@@ -27,6 +29,10 @@ all:
 run: all
 	$(BIN)
 
+visual:
+	$(MAKE) all BIN=$(BIN_VISUAL)
+	$(BIN_VISUAL) --visual
+
 debug:
 	gdb $(BIN)
 
@@ -37,4 +43,4 @@ clean:
 valgrind:
 	valgrind --tool=memcheck --leak-check=full --track-origins=yes --show-leak-kinds=all --show-reachable=yes ./$(BIN)
 
-.PHONY: all run debug clean valgrind
+.PHONY: all run visual debug clean valgrind

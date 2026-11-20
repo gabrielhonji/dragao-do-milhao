@@ -1,19 +1,26 @@
 /**
  * @file main.c
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief Main do projeto Dragão do Milhão - chama o menu de cadastro inicial e as funções correspondentes a este, a main também é responsável pela carga e salvamento dos dados nos respectivos arquivos
+ * @brief Inicia o modo visual de teste ou chama o menu de cadastro inicial e as funções correspondentes a este, a main também é responsável pela carga e salvamento dos dados nos respectivos arquivos.
  * @version 0.1
  * @date 2026-11-10
  * 
  * @copyright Copyright (c) 2026
  * 
  */
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "perguntas/banco_perguntas.h"
 #include "perguntas/arquivos_perguntas.h"
+#include "interface/telas.h"
 
-int main(){
+int main(int quantidade_argumentos, char *argumentos[]){
+    if (quantidade_argumentos > 1 && strcmp(argumentos[1], "--visual") == 0) {
+        executar_tela_teste();
+        return 0;
+    }
 
     Banco_perguntas banco_perguntas;
     FILE *arquivos_csv = NULL;
