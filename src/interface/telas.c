@@ -124,9 +124,10 @@ static void desenhar_enunciado(Font fonte, Rectangle area, const Pergunta *pergu
     char texto[sizeof pergunta->enunciado];
     strcpy(texto, pergunta->enunciado);
 
+    // Vai gerando palavra por palavra até que bata com o limite de width, qnd acontece ele substitiu o ' ' por '\n'.
     char *inicio_linha = texto;
     char *ultimo_espaco = NULL;
-    for (char *fim_palavra = texto; ; fim_palavra++) {
+    for (char *fim_palavra = texto;; fim_palavra++) {
         char separador = *fim_palavra;
         if (separador != ' ' && separador != '\0') {
             continue;
@@ -163,7 +164,11 @@ void executar_tela_teste(const Banco_perguntas *banco)
     const Rectangle mapa = {24, 88, 492, 325};
     const Rectangle quiz = {544, 88, 392, 325};
 
+    const Rectangle acao_quiz = {quiz.x, voltar.y, 200, voltar.height};
     int alternativa_selecionada = -1;
+    bool resposta_confirmada = false;
+    bool resposta_correta = false;
+
     const float margem = 16.0f;
     const float altura_enunciado = 76.0f;
     const float espaco_apos_enunciado = 12.0f;
@@ -263,6 +268,8 @@ void executar_tela_teste(const Banco_perguntas *banco)
 
         bool confirmou = IsKeyPressed(KEY_ENTER);
 
+        /* Bloco de validação de ações por telas */
+        // Verifica ações na tela do MENU.
         if (tela_atual == TELA_MENU) {
             if (confirmou || botao_clicado(jogar)) {
                 inicializa_partida(&partida);
@@ -271,14 +278,41 @@ void executar_tela_teste(const Banco_perguntas *banco)
 
                 if (!faltam_perguntas) {
                     alternativa_selecionada = -1;
+                    resposta_confirmada = false;
                     tela_atual = TELA_JORNADA;
                 }
             }
         }
+        // Se clicou no botão de voltar vai voltar para o MENU.
         else if (botao_clicado(voltar)) {
             tela_atual = TELA_MENU;
         }
-        else {
+        // Verifica se alguma alternativa foi selecionada e foi confirmada ou clicado o botão de ação.
+        else if (alternativa_selecionada >= 0 && (confirmou || botao_clicado(acao_quiz))) {
+            // Confirma a resposta.
+            if (!resposta_confirmada) {
+                char resposta = 'A' + alternativa_selecionada;           // Transforma o índice das alternativas em letras.
+                resposta_correta = resposta == pergunta_atual->resposta; // Valida se a resposta ta certa.
+                resposta_confirmada = true;
+
+                if (resposta_correta)
+                    partida.acertos++;
+            }
+            // No quadro após a confirmação da reposta ele entra nesse laço, por isso um else if.
+            else if (resposta_correta && partida.questao_atual < 15 && !faltam_perguntas) {
+                const Pergunta *proxima = sorteia_pergunta(banco, &partida);
+                if (proxima == NULL)
+                    faltam_perguntas = true;
+                else {
+                    // Troca a pergunta só depois de um sorteio bem sucedido.
+                    pergunta_atual = proxima;
+                    alternativa_selecionada = -1;
+                    resposta_confirmada = false;
+                }
+            }
+        }
+        // Desenha as alternativas no caso de ainda não haver uma resposta confirmada.
+        else if (!resposta_confirmada) {
             for (int i = 0; i < 4; i++) {
                 if (botao_clicado(alternativa_rec[i])) {
                     alternativa_selecionada = i;
@@ -303,7 +337,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
             desenhar_botao(fonte, jogar, "Jogar");
             if (faltam_perguntas) {
                 DrawTextEx(fonte, "Sem perguntas para iniciar.", (Vector2){48, 260},
-                        tamanho_corpo, 1, MAROON);
+                           tamanho_corpo, 1, MAROON);
             }
         }
         else if (tela_atual == TELA_JORNADA) {
@@ -317,15 +351,35 @@ void executar_tela_teste(const Banco_perguntas *banco)
             desenhar_enunciado(fonte, enunciado_quiz, pergunta_atual);
 
             const char *rotulos[] = {pergunta_atual->alternativa.A, pergunta_atual->alternativa.B,
-                                    pergunta_atual->alternativa.C, pergunta_atual->alternativa.D};
+                                     pergunta_atual->alternativa.C, pergunta_atual->alternativa.D};
             for (int i = 0; i < 4; i++) {
                 desenhar_botao(fonte, alternativa_rec[i], rotulos[i]);
             }
 
-            if (alternativa_selecionada >= 0) {
-                const char *texto = TextFormat("Selecionada: %c", 'A' + alternativa_selecionada);
+            const char *mensagem = NULL; // Porque antes de selecionar não há mensagem para exibir.
+            if (faltam_perguntas)
+                mensagem = "Sem perguntas para avançar.";
+            // Define a mensagem dependendo se errou, acertou ou ganhou;
+            else if (resposta_confirmada) {
+                if (!resposta_correta)
+                    mensagem = "Resposta incorreta.";
+                else if (partida.questao_atual == 15)
+                    mensagem = "Quiz concluído, a princesa foi salva.";
+                else
+                    mensagem = "Resposta correta!";
+            }
+            // Alternativa selecionada antes de confirmar
+            else if (alternativa_selecionada >= 0)
+                mensagem = TextFormat("Alternativa '%c' selecionada.", 'A' + alternativa_selecionada);
+            if (mensagem != NULL) {
                 Vector2 posicao = {mapa.x + 16.0f, mapa.y + 64.0f};
-                DrawTextEx(fonte, texto, posicao, tamanho_corpo, 1.0f, BLACK);
+                DrawTextEx(fonte, mensagem, posicao, tamanho_corpo, 1.0f, BLACK);
+            }
+
+            bool pode_continuar = resposta_confirmada && resposta_correta && partida.questao_atual < 15;
+            if (alternativa_selecionada >= 0 && !faltam_perguntas && (!resposta_confirmada || pode_continuar)) {
+                const char *rotulo = resposta_confirmada ? "Continuar" : "Confirmar";
+                desenhar_botao(fonte, acao_quiz, rotulo);
             }
 
             desenhar_botao(fonte, voltar, "Voltar");

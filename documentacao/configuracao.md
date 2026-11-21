@@ -2,6 +2,10 @@
 
 Abra a pasta do projeto no VS Code e instale a extensão **C/C++**, da Microsoft. Depois é só salvar o arquivo C. O VS Code formata o código usando a configuração do projeto.
 
+A extensão **Doxygen Documentation Generator** monta o comentário de uma função quando você digita `/**` na linha acima dela e pressiona **Enter**.
+
+Depois de instalar o compilador, abra **Terminal → Run Task...** e escolha **Abrir jogo no modo visual**.
+
 ## Windows
 
 Instale o [MSYS2](https://www.msys2.org/) e abra o terminal **MSYS2 UCRT64**. Rode:

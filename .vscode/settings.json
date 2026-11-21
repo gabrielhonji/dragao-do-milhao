@@ -1,6 +1,8 @@
 {
   "C_Cpp.formatting": "clangFormat",
   "C_Cpp.clang_format_style": "file",
+  "C_Cpp.default.cStandard": "c99",
+  "C_Cpp.default.includePath": ["${workspaceFolder}/include"],
   "doxdocgen.generic.order": ["brief", "empty", "tparam", "param", "return", "custom"],
   "files.associations": {
     "*.h": "c"
