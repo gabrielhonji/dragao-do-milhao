@@ -29,4 +29,15 @@ bool botao_clicado(Rectangle area);
  */
 void desenhar_botao(Font fonte, Rectangle area, const char *rotulo);
 
+/**
+ * @brief Desenha um botão com destaque de seleção e aparência de bloqueio.
+ *
+ * @param fonte Fonte do rótulo.
+ * @param area Retângulo do botão.
+ * @param rotulo Texto exibido.
+ * @param selecionado Mantém o botão destacado quando o mouse sai.
+ * @param habilitado Controla o tom do botão e o destaque ao passar o mouse.
+ */
+void desenhar_botao_com_estado(Font fonte, Rectangle area, const char *rotulo, bool selecionado, bool habilitado);
+
 #endif

@@ -12,6 +12,7 @@ BraceWrapping:
 AllowShortBlocksOnASingleLine: Never
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
+RemoveBracesLLVM: true
 AllowShortEnumsOnASingleLine: false
 IndentCaseLabels: true
 SortIncludes: Never
