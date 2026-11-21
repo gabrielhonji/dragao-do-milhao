@@ -10,7 +10,7 @@
  */
  #ifndef QUIZ_H
     #define QUIZ_H
-    #include "../perguntas/pergunta.h"
+    #include "../perguntas/banco_perguntas.h"
 
     typedef enum {andamento = 1, vitoria, derrota, retirada} Situacao_partida; //enum para definir qual a situação da partida
 
@@ -25,8 +25,24 @@
 
     void inicializa_partida(Partida *partidas);
 
-    Dificuldade determina_dificuldade(Partida *partidas); //determina o nível de dificuldade das perguntas de acordo com a questão atual
+    Dificuldade determina_dificuldade(const Partida *partidas); //determina o nível de dificuldade das perguntas de acordo com a questão atual
 
-    int pergunta_ja_sorteada(Partida *partida, int id_pergunta); //verifica se aquela pergunta com aquele ID já foi sorteada
+    int pergunta_ja_sorteada(const Partida *partida, int id_pergunta); //verifica se aquela pergunta com aquele ID já foi sorteada
+
+    /**
+     * @brief Conta as perguntas elegíveis para o próximo sorteio.
+     * @param banco Banco consultado.
+     * @param partida Tentativa cujo histórico e progresso serão consultados.
+     * @return Quantidade de candidatas, ou zero quando não há sorteio possível.
+     */
+    int conta_perguntas_disponiveis(const Banco_perguntas *banco, const Partida *partida);
+
+    /**
+     * @brief Sorteia uma pergunta, registra seu ID e avança o número da questão.
+     * @param banco Banco de onde a pergunta será escolhida.
+     * @param partida Tentativa que receberá o ID sorteado.
+     * @return Endereço da pergunta no banco, ou NULL se não houver candidata.
+     */
+    const Pergunta *sorteia_pergunta(const Banco_perguntas *banco, Partida *partida);
 
  #endif /*QUIZ_H*/

@@ -11,6 +11,8 @@
 
 #include "telas.h"
 #include "componentes.h"
+#include <string.h>
+#include "../quiz/quiz.h"
 
 typedef enum
 {
@@ -22,17 +24,6 @@ enum
     LARGURA_BASE = 960,
     ALTURA_BASE = 540
 };
-
-typedef struct
-{
-    char *rotulo;
-    bool correto;
-} AlternativaVisual;
-typedef struct
-{
-    char *enunciado;
-    AlternativaVisual alternativas[4];
-} QuizVisual;
 
 /**
  * @brief Calcula onde exibir a tela na janela.
@@ -120,9 +111,53 @@ static bool fonte_carregada(Font fonte)
     return fonte.texture.id != 0 && fonte.texture.id != GetFontDefault().texture.id;
 }
 
-void executar_tela_teste(void)
+/**
+ * @brief Desenha um enunciado de uma linha, quebrando-o nos espaços.
+ * @param fonte Fonte usada para medir e desenhar.
+ * @param area Área que fornece a origem e a largura do texto.
+ * @param pergunta Pergunta cujo enunciado será exibido.
+ */
+static void desenhar_enunciado(Font fonte, Rectangle area, const Pergunta *pergunta)
+{
+    const float tamanho = 20.0f;
+    const float espacamento = 1.0f;
+    char texto[sizeof pergunta->enunciado];
+    strcpy(texto, pergunta->enunciado);
+
+    char *inicio_linha = texto;
+    char *ultimo_espaco = NULL;
+    for (char *fim_palavra = texto; ; fim_palavra++) {
+        char separador = *fim_palavra;
+        if (separador != ' ' && separador != '\0') {
+            continue;
+        }
+
+        // MeasureTextEx lê até '\0'. Coloca o separador de volta depois da medida.
+        *fim_palavra = '\0';
+        float largura = MeasureTextEx(fonte, inicio_linha, tamanho, espacamento).x;
+        *fim_palavra = separador;
+
+        if (largura > area.width && ultimo_espaco != NULL) {
+            *ultimo_espaco = '\n';
+            inicio_linha = ultimo_espaco + 1;
+        }
+
+        if (separador == '\0') {
+            break;
+        }
+        ultimo_espaco = fim_palavra;
+    }
+
+    DrawTextEx(fonte, texto, (Vector2){area.x, area.y}, tamanho, espacamento, BLACK);
+}
+
+void executar_tela_teste(const Banco_perguntas *banco)
 {
     Tela tela_atual = TELA_MENU;
+    Partida partida;
+    const Pergunta *pergunta_atual = NULL;
+    bool faltam_perguntas = false;
+
     const Rectangle jogar = {48, 188, 280, 52};
     const Rectangle voltar = {24, 464, 200, 52};
     const Rectangle mapa = {24, 88, 492, 325};
@@ -130,7 +165,7 @@ void executar_tela_teste(void)
 
     int alternativa_selecionada = -1;
     const float margem = 16.0f;
-    const float altura_enunciado = 64.0f;
+    const float altura_enunciado = 76.0f;
     const float espaco_apos_enunciado = 12.0f;
     const float altura_alternativa = 44.0f;
     const float espaco_entre_alternativas = 8.0f;
@@ -147,17 +182,6 @@ void executar_tela_teste(void)
             (Rectangle){enunciado_quiz.x, y_alternativa, enunciado_quiz.width, altura_alternativa};
         y_alternativa += altura_alternativa + espaco_entre_alternativas;
     }
-
-    QuizVisual quiz_dados = {
-        .enunciado = "Qual estúdio desenvolveu\nMinecraft originalmente?",
-        .alternativas =
-            {
-                {"Rockstar", false},
-                {"Microsoft", false},
-                {"Mojang", true},
-                {"Ubisoft", false},
-            },
-    };
 
     InitWindow(LARGURA_BASE, ALTURA_BASE, "Dragão do Milhão");
     SetTargetFPS(60);
@@ -241,8 +265,14 @@ void executar_tela_teste(void)
 
         if (tela_atual == TELA_MENU) {
             if (confirmou || botao_clicado(jogar)) {
-                alternativa_selecionada = -1;
-                tela_atual = TELA_JORNADA;
+                inicializa_partida(&partida);
+                pergunta_atual = sorteia_pergunta(banco, &partida);
+                faltam_perguntas = pergunta_atual == NULL;
+
+                if (!faltam_perguntas) {
+                    alternativa_selecionada = -1;
+                    tela_atual = TELA_JORNADA;
+                }
             }
         }
         else if (botao_clicado(voltar)) {
@@ -271,20 +301,25 @@ void executar_tela_teste(void)
             DrawTextEx(fonte_titulo, "Dragão do Milhão", (Vector2){48, 96}, tamanho_titulo, 1,
                        BLACK);
             desenhar_botao(fonte, jogar, "Jogar");
+            if (faltam_perguntas) {
+                DrawTextEx(fonte, "Sem perguntas para iniciar.", (Vector2){48, 260},
+                        tamanho_corpo, 1, MAROON);
+            }
         }
         else if (tela_atual == TELA_JORNADA) {
-            DrawTextEx(fonte, "Jornada - Questão 1 de 15", (Vector2){24, 24}, tamanho_corpo, 1,
-                       BLACK);
+            const char *titulo_jornada = TextFormat("Jornada - Questão %d de 15", partida.questao_atual);
+            DrawTextEx(fonte, titulo_jornada, (Vector2){24, 24}, tamanho_corpo, 1, BLACK);
 
             DrawRectangleRec(mapa, LIGHTGRAY);
             DrawTextEx(fonte, "Mapa aéreo", (Vector2){48, 112}, tamanho_corpo, 1, BLACK);
 
             DrawRectangleRec(quiz, LIGHTGRAY);
-            DrawTextEx(fonte, quiz_dados.enunciado, (Vector2){enunciado_quiz.x, enunciado_quiz.y},
-                       tamanho_corpo, 1, BLACK);
+            desenhar_enunciado(fonte, enunciado_quiz, pergunta_atual);
 
+            const char *rotulos[] = {pergunta_atual->alternativa.A, pergunta_atual->alternativa.B,
+                                    pergunta_atual->alternativa.C, pergunta_atual->alternativa.D};
             for (int i = 0; i < 4; i++) {
-                desenhar_botao(fonte, alternativa_rec[i], quiz_dados.alternativas[i].rotulo);
+                desenhar_botao(fonte, alternativa_rec[i], rotulos[i]);
             }
 
             if (alternativa_selecionada >= 0) {
