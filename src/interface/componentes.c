@@ -13,7 +13,7 @@
 
 bool botao_clicado(Rectangle area)
 {
-    return CheckCollisionPointRec(GetMousePosition(), area) &&
+    return IsWindowFocused() && CheckCollisionPointRec(GetMousePosition(), area) &&
            IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 }
 
@@ -21,7 +21,7 @@ void desenhar_botao_com_estado(Font fonte, Rectangle area, const char *rotulo, b
 {
     const float tamanho = 24.0f;
     const float espacamento = 1.0f;
-    bool mouse_sobre_botao = habilitado && CheckCollisionPointRec(GetMousePosition(), area);
+    bool mouse_sobre_botao = habilitado && IsWindowFocused() && CheckCollisionPointRec(GetMousePosition(), area);
 
     Color fundo = habilitado ? LIGHTGRAY : RAYWHITE;
     Color cor_rotulo = habilitado ? BLACK : GRAY;

@@ -1,7 +1,7 @@
 /**
  * @file telas.c
  * @author Gabriel Honji (gabrielhonji@alunos.utfpr.edu.br)
- * @brief Abre a janela de teste e alterna entre o menu e a jornada.
+ * @brief Abre a janela de teste e alterna entre menu, quiz e gruta.
  * @version 0.1
  * @date 2026-11-15
  *
@@ -17,8 +17,16 @@
 typedef enum
 {
     TELA_MENU,
-    TELA_JORNADA
+    TELA_JORNADA,
+    TELA_GRUTA
 } Tela;
+typedef enum
+{
+    GRUTA_VAZIA,
+    GRUTA_OURO_BAIXO,
+    GRUTA_OURO_MEDIO,
+    GRUTA_OURO_ALTO,
+} EstadoGruta;
 enum
 {
     LARGURA_BASE = 960,
@@ -69,32 +77,6 @@ static Font carregar_fonte_interface(int tamanho)
     if (fonte.texture.id != 0 && fonte.texture.id != GetFontDefault().texture.id)
         SetTextureFilter(fonte.texture, TEXTURE_FILTER_POINT);
     return fonte;
-}
-
-/**
- * @brief Alterna entre a janela normal e uma janela sem bordas do tamanho do monitor.
- * @param tela_cheia Indica se a janela já ocupa o monitor.
- * @param posicao_janela Guarda a posição para restaurar a janela normal.
- * @return Novo estado da tela cheia.
- */
-static bool alternar_tela_cheia(bool tela_cheia, Vector2 *posicao_janela)
-{
-    if (tela_cheia) {
-        ClearWindowState(FLAG_WINDOW_UNDECORATED);
-        SetWindowSize(LARGURA_BASE, ALTURA_BASE);
-        SetWindowPosition((int)posicao_janela->x, (int)posicao_janela->y);
-        return false;
-    }
-
-    *posicao_janela = GetWindowPosition();
-    int monitor = GetCurrentMonitor();
-    Vector2 posicao_monitor = GetMonitorPosition(monitor);
-
-    // Modifica a janela existente sem pedir uma troca de modo de vídeo ao monitor.
-    SetWindowState(FLAG_WINDOW_UNDECORATED);
-    SetWindowPosition((int)posicao_monitor.x, (int)posicao_monitor.y);
-    SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
-    return true;
 }
 
 /**
@@ -158,8 +140,23 @@ typedef struct
 {
     bool eliminadas[4];
     char palpite_burro;
+    bool burro_usado; // O uso continua gasto se o Dragão apagar o palpite.
     bool resposta_revelada;
 } DicasPergunta;
+
+/**
+ * @brief Verifica se uma ajuda ainda pode ser usada nesta pergunta.
+ * @param ajuda Índice do botão de ajuda.
+ * @param usos_restantes Usos da ajuda disponíveis na partida.
+ * @param dicas Efeitos e usos registrados na pergunta atual.
+ * @param resposta_confirmada Indica se o jogador já confirmou uma alternativa.
+ * @return Verdadeiro quando o botão deve aceitar cliques.
+ */
+static bool ajuda_disponivel(int ajuda, int usos_restantes, const DicasPergunta *dicas, bool resposta_confirmada)
+{
+    return usos_restantes > 0 && !resposta_confirmada && !dicas->resposta_revelada &&
+           (ajuda != AJUDA_BURRO || !dicas->burro_usado);
+}
 
 /**
  * @brief Aplica o efeito de uma ajuda na pergunta atual.
@@ -212,9 +209,63 @@ static void aplicar_ajuda(int ajuda, const Pergunta *pergunta, DicasPergunta *di
         dicas->palpite_burro = '\0';
 }
 
+/**
+ * @brief Desenha a gruta dependendo do estado atual e quantidade de ovos.
+ *
+ * @param fonte Fonte usada nos rótulos.
+ * @param estado Define o tamanho da pilha e se há dragão.
+ * @param ovos_restantes Quantidade de filhotes que aparecem ao lado da pilha.
+ */
+static void desenhar_gruta(Font fonte, EstadoGruta estado, int ovos_restantes)
+{
+    const float margem = 24.0f;                                                // Margem lateral e recuo da mensagem dentro da gruta.
+    const float altura_chao = 52.0f;                                           // Altura da faixa cinza no fundo do cenário.
+    const Rectangle cenario = {margem, 80, LARGURA_BASE - 2.0f * margem, 360}; // A largura desconta as duas margens.
+    const float centro_x = cenario.x + cenario.width / 2.0f;                   // Centro do cenário na horizontal.
+    const float chao_y = cenario.y + cenario.height - altura_chao;             // Sobe 52 px da borda inferior até o topo do chão.
+    const float tamanho_texto = 24.0f;                                         // Tamanho dos rótulos da prévia.
+
+    DrawTextEx(fonte, "Gruta", (Vector2){24, 24}, tamanho_texto, 1, BLACK);
+    DrawRectangleRec(cenario, DARKGRAY);
+    DrawRectangleRec((Rectangle){cenario.x, chao_y, cenario.width, altura_chao}, GRAY);
+
+    if (estado == GRUTA_VAZIA) {
+        DrawTextEx(fonte, "A gruta está vazia.", (Vector2){cenario.x + margem, cenario.y + margem}, tamanho_texto, 1, RAYWHITE);
+        return;
+    }
+
+    const float altura_ouro = 28.0f * estado;                                                                 // Cada tamanho acrescenta 28 px de altura.
+    const float largura_ouro = 150.0f + 48.0f * estado;                                                       // Base de 150 px mais 48 px por tamanho.
+    const Rectangle ouro = {centro_x - largura_ouro / 2.0f, chao_y - altura_ouro, largura_ouro, altura_ouro}; // Vai do centro à borda esquerda e do chão ao topo.
+
+    const float largura_dragao = 120.0f;                                                                                // Largura do bloco provisório do dragão.
+    const float altura_dragao = 64.0f;                                                                                  // Altura do bloco provisório do dragão.
+    const Rectangle dragao = {centro_x - largura_dragao / 2.0f, ouro.y - altura_dragao, largura_dragao, altura_dragao}; // Centraliza o dragão e apoia sua base sobre o ouro.
+    DrawRectangleRec(ouro, GOLD);
+    DrawRectangleRec(dragao, MAROON);
+    const Vector2 medida_rotulo = MeasureTextEx(fonte, "Dragão", tamanho_texto, 1);
+    const Vector2 posicao_rotulo = {dragao.x + (dragao.width - medida_rotulo.x) / 2.0f, dragao.y + (dragao.height - medida_rotulo.y) / 2.0f}; // Divide o espaço livre para centralizar o rótulo.
+    DrawTextEx(fonte, "Dragão", posicao_rotulo, tamanho_texto, 1, RAYWHITE);
+
+    const float largura_filhote = 44.0f;     // Largura do bloco de cada filhote.
+    const float altura_filhote = 32.0f;      // Altura do bloco de cada filhote.
+    const float espaco_ouro_filhote = 24.0f; // Distância entre a pilha e o filhote.
+    const float posicoes_filhotes[] = {
+        ouro.x - espaco_ouro_filhote - largura_filhote, // Borda esquerda do filhote à esquerda da pilha.
+        ouro.x + ouro.width + espaco_ouro_filhote,      // Borda esquerda do filhote à direita da pilha.
+    };
+    for (int i = 0; i < ovos_restantes && i < 2; i++) {
+        Rectangle filhote = {posicoes_filhotes[i], chao_y - altura_filhote, largura_filhote, altura_filhote}; // Apoia a base do filhote no chão.
+        DrawRectangleRec(filhote, ORANGE);
+    }
+}
+
 void executar_tela_teste(const Banco_perguntas *banco)
 {
     Tela tela_atual = TELA_MENU;
+    EstadoGruta estado_gruta = GRUTA_VAZIA;
+    const int teclas_gruta[] = {KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR}; // Uma tecla por estado para testar sem precisar ficar jogando milhares de vezes.
+    const int ovos_teste[] = {0, 0, 1, 2};                              // Filhotes para cada teste.
     Partida partida;
     const Pergunta *pergunta_atual = NULL;
     bool faltam_perguntas = false;
@@ -234,15 +285,15 @@ void executar_tela_teste(const Banco_perguntas *banco)
 
     // Retângulos, nomes e usos seguem a mesma ordem dos índices das ajudas.
     const Rectangle ajuda_rec[TOTAL_AJUDAS] = {
-        {mapa.x + 16, mapa.y + 220, 148, 44},
-        {mapa.x + 16 + (1 * 156), mapa.y + 220, 148, 44},
-        {mapa.x + 16 + (2 * 156), mapa.y + 220, 148, 44},
+        {mapa.x + 16, mapa.y + 220, 148, 44},           // Recuo lateral de 16 px e linha de ajudas 220 px abaixo do topo.
+        {mapa.x + 16 + 156, mapa.y + 220, 148, 44},     // Um passo horizontal de 156 px: largura de 148 px mais 8 px de espaço.
+        {mapa.x + 16 + 2 * 156, mapa.y + 220, 148, 44}, // Dois passos horizontais a partir do recuo de 16 px, na mesma linha.
     };
     const char *nomes_ajuda[TOTAL_AJUDAS] = {"Burro", "Dragão", "Princesa"};
     int usos_ajuda[TOTAL_AJUDAS] = {0}; // Usos restantes em toda a partida.
     DicasPergunta dicas = {0};          // Efeitos que valem para a pergunta exibida.
 
-    const float margem = 16.0f;
+    const float margem = 16.0f; // Recuo lateral dos painéis e superior do enunciado.
     const float altura_enunciado = 76.0f;
     const float espaco_apos_enunciado = 12.0f;
     const float altura_alternativa = 44.0f;
@@ -260,6 +311,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
         y_alternativa += altura_alternativa + espaco_entre_alternativas;
     }
 
+    SetConfigFlags(FLAG_VSYNC_HINT); // Pede que a apresentação dos quadros acompanhe a atualização do monitor.
     InitWindow(LARGURA_BASE, ALTURA_BASE, "Dragão do Milhão");
     SetTargetFPS(60);
 
@@ -280,15 +332,14 @@ void executar_tela_teste(const Banco_perguntas *banco)
         return;
     }
 
-    bool tela_cheia = false;
-    Vector2 posicao_janela = GetWindowPosition();
     int escala_da_fonte = 1;
     int ultima_escala_solicitada = 1;
 
     while (!WindowShouldClose()) {
-        // Modo fullscreen sendo uma Janela maximizada sem bordas.
-        if (IsKeyPressed(KEY_F11))
-            tela_cheia = alternar_tela_cheia(tela_cheia, &posicao_janela);
+        bool janela_em_foco = IsWindowFocused();
+        // A raylib alterna o modo sem bordas e restaura o tamanho e a posição anteriores.
+        if (janela_em_foco && IsKeyPressed(KEY_F11))
+            ToggleBorderlessWindowed();
 
         // Sem uma área útil, avança o quadro sem desenhar a interface.
         Rectangle area_exibida = calcular_area_exibicao();
@@ -334,9 +385,9 @@ void executar_tela_teste(const Banco_perguntas *banco)
             }
         }
 
-        bool confirmou = IsKeyPressed(KEY_ENTER); // Registra se o Enter foi pressionado neste quadro.
-        int alternativa_clicada = -1;             // Índice clicado neste quadro, ou -1 sem clique válido.
-        int ajuda_clicada = -1;                   // Índice da ajuda clicada neste quadro, ou -1.
+        bool confirmou = janela_em_foco && IsKeyPressed(KEY_ENTER); // Aceita Enter enquanto o jogo está em foco.
+        int alternativa_clicada = -1;                               // Índice clicado neste quadro, ou -1 sem clique válido.
+        int ajuda_clicada = -1;                                     // Índice da ajuda clicada neste quadro, ou -1.
 
         if (tela_atual == TELA_JORNADA && !resposta_confirmada) {
             // Só registra um clique em alternativa que ainda pode ser escolhida.
@@ -348,7 +399,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
             }
             // Só registra um clique em ajuda que ainda tem usos disponíveis.
             for (int i = 0; i < TOTAL_AJUDAS; i++) {
-                if (usos_ajuda[i] > 0 && botao_clicado(ajuda_rec[i])) {
+                if (ajuda_disponivel(i, usos_ajuda[i], &dicas, resposta_confirmada) && botao_clicado(ajuda_rec[i])) {
                     ajuda_clicada = i;
                     break;
                 }
@@ -361,7 +412,11 @@ void executar_tela_teste(const Banco_perguntas *banco)
         /* Bloco de validação de ações por telas */
         // Verifica ações na tela do MENU.
         if (tela_atual == TELA_MENU) {
-            if (confirmou || botao_clicado(jogar)) {
+            if (janela_em_foco && IsKeyPressed(KEY_F2)) {
+                estado_gruta = GRUTA_VAZIA;
+                tela_atual = TELA_GRUTA;
+            }
+            else if (confirmou || botao_clicado(jogar)) {
                 inicializa_partida(&partida);
                 pergunta_atual = sorteia_pergunta(banco, &partida);
                 faltam_perguntas = pergunta_atual == NULL;
@@ -381,9 +436,20 @@ void executar_tela_teste(const Banco_perguntas *banco)
         else if (botao_clicado(voltar)) {
             tela_atual = TELA_MENU;
         }
+        else if (tela_atual == TELA_GRUTA) {
+            // Cada tecla escolhe o estado com o mesmo índice no enum.
+            for (int i = 0; i < 4; i++) {
+                if (janela_em_foco && IsKeyPressed(teclas_gruta[i])) {
+                    estado_gruta = (EstadoGruta)i;
+                    break;
+                }
+            }
+        }
         // Consome o uso e aplica o efeito à pergunta que já está na tela.
         else if (ajuda_clicada >= 0) {
             usos_ajuda[ajuda_clicada]--;
+            if (ajuda_clicada == AJUDA_BURRO)
+                dicas.burro_usado = true;
             // Na versão final aqui o minigame vai validar se realmente a ajuda vai ser aplicada.
             aplicar_ajuda(ajuda_clicada, pergunta_atual, &dicas);
 
@@ -449,17 +515,19 @@ void executar_tela_teste(const Banco_perguntas *banco)
             DrawTextEx(fonte, titulo_quiz, (Vector2){24, 24}, tamanho_corpo, 1, BLACK);
 
             DrawRectangleRec(mapa, LIGHTGRAY);
-            const char *titulo_cenario = em_batalha ? "Castelo do príncipe" : "Mapa áereo";
-            DrawTextEx(fonte, titulo_cenario, (Vector2){mapa.x + 16, mapa.y + 24}, tamanho_corpo, 1, BLACK);
+            const char *titulo_cenario = em_batalha ? "Castelo do príncipe" : "Mapa aéreo";
+            const Vector2 posicao_titulo = {mapa.x + margem, mapa.y + 24}; // Título 24 px abaixo do topo do painel.
+            DrawTextEx(fonte, titulo_cenario, posicao_titulo, tamanho_corpo, 1, BLACK);
 
             // Na batalha, desconta os 8 acertos ja feitos na jornada.
             int acertos_etapa = em_batalha ? partida.acertos - questoes_jornada : partida.acertos;
             int total_etapa = em_batalha ? total_questoes - questoes_jornada : questoes_jornada;
             const char *progresso = TextFormat("%s: %d/%d", em_batalha ? "Golpes" : "Etapas", acertos_etapa, total_etapa);
-            DrawTextEx(fonte, progresso, (Vector2){mapa.x + 16, mapa.y + 108}, tamanho_corpo, 1, BLACK);
+            const Vector2 posicao_progresso = {mapa.x + margem, mapa.y + 108}; // Indicador de progresso 108 px abaixo do topo.
+            DrawTextEx(fonte, progresso, posicao_progresso, tamanho_corpo, 1, BLACK);
 
             // Copia a posição e altura da barra e reduz apenas a largura do preenchimento dela.
-            Rectangle fundo_vida = {mapa.x + 16, mapa.y + 142, mapa.width - 32, 20};
+            Rectangle fundo_vida = {mapa.x + margem, mapa.y + 142, mapa.width - 2.0f * margem, 20}; // Barra a 142 px do topo, entre as duas margens.
             Rectangle preenchimento_vida = fundo_vida;
             preenchimento_vida.width *= (float)acertos_etapa / total_etapa;
 
@@ -471,7 +539,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
             // Mostra os usos restantes e apaga os botões indisponíveis.
             for (int i = 0; i < TOTAL_AJUDAS; i++) {
                 const char *rotulo = TextFormat("%s (%d)", nomes_ajuda[i], usos_ajuda[i]);
-                bool habilitado = usos_ajuda[i] > 0 && !resposta_confirmada;
+                bool habilitado = ajuda_disponivel(i, usos_ajuda[i], &dicas, resposta_confirmada);
                 desenhar_botao_com_estado(fonte, ajuda_rec[i], rotulo, false, habilitado);
             }
 
@@ -482,7 +550,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
             else if (dicas.palpite_burro != '\0')
                 texto_dica = TextFormat("Burro: apostaria na %c.", dicas.palpite_burro);
             if (texto_dica != NULL) {
-                Vector2 posicao_dica = {mapa.x + 16, mapa.y + 276};
+                Vector2 posicao_dica = {mapa.x + margem, mapa.y + 276}; // Reserva a linha a 276 px do topo, abaixo dos botões.
                 DrawTextEx(fonte, texto_dica, posicao_dica, tamanho_corpo, 1, BLACK);
             }
 
@@ -523,7 +591,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
             else if (alternativa_selecionada >= 0)
                 mensagem = TextFormat("Alternativa '%c' selecionada.", 'A' + alternativa_selecionada); // Em C, aspas simples representa um caractere e aspas duplas representa uma string, por isso deve ser 'A', e não "A".
             if (mensagem != NULL) {
-                Vector2 posicao = {mapa.x + 16.0f, mapa.y + 64.0f};
+                Vector2 posicao = {mapa.x + margem, mapa.y + 64.0f}; // Mensagem de seleção ou resultado, abaixo do título.
                 DrawTextEx(fonte, mensagem, posicao, tamanho_corpo, 1.0f, BLACK);
             }
 
@@ -535,6 +603,13 @@ void executar_tela_teste(const Banco_perguntas *banco)
 
             desenhar_botao(fonte, voltar, "Voltar");
         }
+        else if (tela_atual == TELA_GRUTA) {
+            desenhar_gruta(fonte, estado_gruta, ovos_teste[estado_gruta]);
+            desenhar_botao(fonte, voltar, "Voltar");
+            const Vector2 posicao_previa = {quiz.x, voltar.y + (voltar.height - tamanho_corpo) / 2.0f}; // Alinha o texto à altura do rótulo de Voltar.
+            DrawTextEx(fonte, "Prévia: teclas 1 a 4", posicao_previa, tamanho_corpo, 1, BLACK);
+        }
+
         EndMode2D();
         EndScissorMode();
         EndDrawing();

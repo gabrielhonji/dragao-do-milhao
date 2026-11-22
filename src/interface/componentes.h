@@ -15,7 +15,7 @@
 #include <raylib.h>
 
 /**
- * @brief Detecta o início de um clique com o botão esquerdo dentro da área.
+ * @brief Detecta o início de um clique dentro da área enquanto a janela está em foco.
  * @param area Retângulo do botão, em coordenadas da janela.
  * @return True se o clique começou dentro da área neste quadro.
  */
