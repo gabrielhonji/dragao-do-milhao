@@ -9,16 +9,17 @@
  *
  */
 
+#include <string.h>
 #include "telas.h"
 #include "componentes.h"
-#include <string.h>
 #include "../quiz/quiz.h"
 
 typedef enum
 {
     TELA_MENU,
     TELA_JORNADA,
-    TELA_GRUTA
+    TELA_CONFIRMAR_RETIRADA,
+    TELA_GRUTA,
 } Tela;
 typedef enum
 {
@@ -213,10 +214,11 @@ static void aplicar_ajuda(int ajuda, const Pergunta *pergunta, DicasPergunta *di
  * @brief Desenha a gruta dependendo do estado atual e quantidade de ovos.
  *
  * @param fonte Fonte usada nos rótulos.
- * @param estado Define o tamanho da pilha e se há dragão.
+ * @param estado Define se há ouro e qual o tamanho da pilha.
  * @param ovos_restantes Quantidade de filhotes que aparecem ao lado da pilha.
+ * @param mostrar_dragao Mostra o dragão vivo, mesmo que a retirada tenha ocorrido antes do primeiro marco.
  */
-static void desenhar_gruta(Font fonte, EstadoGruta estado, int ovos_restantes)
+static void desenhar_gruta(Font fonte, EstadoGruta estado, int ovos_restantes, bool mostrar_dragao)
 {
     const float margem = 24.0f;                                                // Margem lateral e recuo da mensagem dentro da gruta.
     const float altura_chao = 52.0f;                                           // Altura da faixa cinza no fundo do cenário.
@@ -229,7 +231,7 @@ static void desenhar_gruta(Font fonte, EstadoGruta estado, int ovos_restantes)
     DrawRectangleRec(cenario, DARKGRAY);
     DrawRectangleRec((Rectangle){cenario.x, chao_y, cenario.width, altura_chao}, GRAY);
 
-    if (estado == GRUTA_VAZIA) {
+    if (!mostrar_dragao) {
         DrawTextEx(fonte, "A gruta está vazia.", (Vector2){cenario.x + margem, cenario.y + margem}, tamanho_texto, 1, RAYWHITE);
         return;
     }
@@ -241,7 +243,8 @@ static void desenhar_gruta(Font fonte, EstadoGruta estado, int ovos_restantes)
     const float largura_dragao = 120.0f;                                                                                // Largura do bloco provisório do dragão.
     const float altura_dragao = 64.0f;                                                                                  // Altura do bloco provisório do dragão.
     const Rectangle dragao = {centro_x - largura_dragao / 2.0f, ouro.y - altura_dragao, largura_dragao, altura_dragao}; // Centraliza o dragão e apoia sua base sobre o ouro.
-    DrawRectangleRec(ouro, GOLD);
+    if (estado != GRUTA_VAZIA)
+        DrawRectangleRec(ouro, GOLD);
     DrawRectangleRec(dragao, MAROON);
     const Vector2 medida_rotulo = MeasureTextEx(fonte, "Dragão", tamanho_texto, 1);
     const Vector2 posicao_rotulo = {dragao.x + (dragao.width - medida_rotulo.x) / 2.0f, dragao.y + (dragao.height - medida_rotulo.y) / 2.0f}; // Divide o espaço livre para centralizar o rótulo.
@@ -264,6 +267,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
 {
     Tela tela_atual = TELA_MENU;
     EstadoGruta estado_gruta = GRUTA_VAZIA;
+    bool previa_gruta = false;                                          // Indica se a gruta foi aberta pelo F2 para testar os estados.
     const int teclas_gruta[] = {KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR}; // Uma tecla por estado para testar sem precisar ficar jogando milhares de vezes.
     const int ovos_teste[] = {0, 0, 1, 2};                              // Filhotes para cada teste.
     Partida partida;
@@ -413,6 +417,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
         // Verifica ações na tela do MENU.
         if (tela_atual == TELA_MENU) {
             if (janela_em_foco && IsKeyPressed(KEY_F2)) {
+                previa_gruta = true;
                 estado_gruta = GRUTA_VAZIA;
                 tela_atual = TELA_GRUTA;
             }
@@ -421,6 +426,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 pergunta_atual = sorteia_pergunta(banco, &partida);
                 faltam_perguntas = pergunta_atual == NULL;
 
+                // Define a quantidade de ajudas disponiveis para cada tipo de ajuda.
                 if (!faltam_perguntas) {
                     usos_ajuda[AJUDA_BURRO] = 2;
                     usos_ajuda[AJUDA_DRAGAO] = 1;
@@ -432,14 +438,39 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 }
             }
         }
-        // Se clicou no botão de voltar vai voltar para o MENU.
+        // Cancelar preserva a pergunta aberta. Confirmar leva a recompensa dos marcos à gruta.
+        else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
+            if (botao_clicado(voltar)) // Voltar nessa tela tem ação de cancelar
+                tela_atual = TELA_JORNADA;
+            else if (botao_clicado(acao_quiz)) { // Confirma a retirada
+                partida.situacao = retirada;
+                previa_gruta = false;
+                if (partida.acertos >= 10)
+                    estado_gruta = GRUTA_OURO_MEDIO;
+                else if (partida.acertos >= 5)
+                    estado_gruta = GRUTA_OURO_BAIXO;
+                else
+                    estado_gruta = GRUTA_VAZIA;
+                tela_atual = TELA_GRUTA;
+            }
+        }
+        // Ações do botão de voltar em cada tela.
         else if (botao_clicado(voltar)) {
-            tela_atual = TELA_MENU;
+            if (tela_atual == TELA_GRUTA || faltam_perguntas)
+                tela_atual = TELA_MENU;
+            else if (!resposta_confirmada)
+                tela_atual = TELA_CONFIRMAR_RETIRADA;
+            else if (partida.situacao == derrota || partida.situacao == vitoria) {
+                // O jogador já leu o resultado. Só a vitória leva ouro para a gruta.
+                estado_gruta = partida.situacao == vitoria ? GRUTA_OURO_ALTO : GRUTA_VAZIA;
+                previa_gruta = false;
+                tela_atual = TELA_GRUTA;
+            }
         }
         else if (tela_atual == TELA_GRUTA) {
             // Cada tecla escolhe o estado com o mesmo índice no enum.
             for (int i = 0; i < 4; i++) {
-                if (janela_em_foco && IsKeyPressed(teclas_gruta[i])) {
+                if (previa_gruta && janela_em_foco && IsKeyPressed(teclas_gruta[i])) {
                     estado_gruta = (EstadoGruta)i;
                     break;
                 }
@@ -464,8 +495,17 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 resposta_correta = resposta == pergunta_atual->resposta; // Valida se a resposta ta certa.
                 resposta_confirmada = true;
 
-                if (resposta_correta)
+                if (resposta_correta) {
                     partida.acertos++;
+
+                    // A ultima resposta correta significa que o jogador venceu o jogo.
+                    if (partida.questao_atual == 15)
+                        partida.situacao = vitoria;
+                }
+                else {
+                    // Até integrar o renascimento por ovos, o primeiro erro encerra a tentativa.
+                    partida.situacao = derrota;
+                }
             }
             // Só avança em uma nova ação, depois de mostrar o resultado da resposta.
             else if (resposta_correta && partida.questao_atual < 15 && !faltam_perguntas) {
@@ -601,13 +641,39 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 desenhar_botao(fonte, acao_quiz, rotulo);
             }
 
-            desenhar_botao(fonte, voltar, "Voltar");
+            if (faltam_perguntas)
+                desenhar_botao(fonte, voltar, "Voltar");
+            else if (partida.situacao == derrota || partida.situacao == vitoria)
+                desenhar_botao(fonte, voltar, "Ver gruta");
+            else
+                // O !resposta_confimada significa que o botão desabilita após o usuário confirmar uma alternativa.
+                desenhar_botao_com_estado(fonte, voltar, "Retirada Tática", false, !resposta_confirmada);
+        }
+        else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
+            DrawTextEx(fonte_titulo, "Retirada Tática", (Vector2){48, 96}, tamanho_titulo, 1, BLACK);
+            DrawTextEx(fonte, "Encerrar a tentativa e voltar à gruta?", (Vector2){48, 184}, tamanho_corpo, 1, BLACK);
+            desenhar_botao(fonte, voltar, "Cancelar");
+            desenhar_botao(fonte, acao_quiz, "Retirar");
         }
         else if (tela_atual == TELA_GRUTA) {
-            desenhar_gruta(fonte, estado_gruta, ovos_teste[estado_gruta]);
+            int filhotes = previa_gruta ? ovos_teste[estado_gruta] : 0;
+            // Uma retirada antes do primeiro marco deixa o dragão vivo no chão, sem pilha.
+            bool mostrar_dragao = estado_gruta != GRUTA_VAZIA || (!previa_gruta && partida.situacao == retirada);
+            desenhar_gruta(fonte, estado_gruta, filhotes, mostrar_dragao);
             desenhar_botao(fonte, voltar, "Voltar");
-            const Vector2 posicao_previa = {quiz.x, voltar.y + (voltar.height - tamanho_corpo) / 2.0f}; // Alinha o texto à altura do rótulo de Voltar.
-            DrawTextEx(fonte, "Prévia: teclas 1 a 4", posicao_previa, tamanho_corpo, 1, BLACK);
+
+            const char *texto_gruta = "Prévia: teclas 1 a 4";
+            if (!previa_gruta) {
+                if (partida.situacao == vitoria)
+                    texto_gruta = "Vitória! A princesa foi salva.";
+                else if (partida.situacao == derrota)
+                    texto_gruta = "Derrota! A gruta está vazia.";
+                else
+                    texto_gruta = TextFormat("Retirada: %d acertos", partida.acertos);
+            }
+            // Divide o espaço vertical livre para alinhar o texto ao botão Voltar.
+            const Vector2 posicao_texto = {quiz.x, voltar.y + (voltar.height - tamanho_corpo) / 2.0f};
+            DrawTextEx(fonte, texto_gruta, posicao_texto, tamanho_corpo, 1, BLACK);
         }
 
         EndMode2D();
