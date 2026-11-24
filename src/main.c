@@ -1,7 +1,7 @@
 /**
  * @file main.c
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief Inicia o modo visual de teste ou chama o menu de cadastro inicial e as funções correspondentes a este, a main também é responsável pela carga e salvamento dos dados nos respectivos arquivos.
+ * @brief Coordena o modo visual de teste, o cadastro pelo terminal e a carga e o salvamento do banco de perguntas.
  * @version 0.1
  * @date 2026-11-10
  * 
@@ -16,6 +16,15 @@
 #include "perguntas/arquivos_perguntas.h"
 #include "interface/telas.h"
 
+void cadastro_pergunta(Pergunta *pergunta); //Lê os dados da pergunta pelo terminal.
+
+/**
+ * @brief Seleciona o modo de execução. No modo terminal, carrega o banco, executa o menu e salva os dados ao sair.
+ *
+ * @param quantidade_argumentos Quantidade de argumentos recebidos na execução.
+ * @param argumentos Vetor de argumentos. A opção --visual abre o modo visual de teste.
+ * @return int Retorna 0 no encerramento normal.
+ */
 int main(int quantidade_argumentos, char *argumentos[]){
     if (quantidade_argumentos > 1 && strcmp(argumentos[1], "--visual") == 0) {
         executar_tela_teste();
@@ -78,15 +87,25 @@ int main(int quantidade_argumentos, char *argumentos[]){
                 printf("Cadastro Encerrado\n");
                 break;
         
-            case 1:
-                inserir_pergunta(&banco_perguntas);
-                break;
+            case 1:{
+                Pergunta pergunta;
+                int retorno_insercao;
+                //Preenche a pergunta no terminal antes de enviá-la ao banco.
+                cadastro_pergunta(&pergunta);
+                retorno_insercao = inserir_pergunta(&banco_perguntas, &pergunta);
+                if(retorno_insercao == -1){
+                    printf("Falha na realocação de memória\n");
+                }else if(retorno_insercao == -3){
+                    printf("A pergunta cadastrada não é válida\n");
+                } else{
+                    printf("Pergunta cadastrada com sucesso\n");
+                }
+                break;}
 
             case 2:
                 listar_perguntas(&banco_perguntas);
                 break;
                 
-            //nos cases de 3 a 6 colocamos as instruções entre chaves, pois estamos declarando variáveis dentro dos cases, isso evita erros
             case 3:{
                 int id_pergunta_procurada;
                 int retorno_pesquisa;
@@ -106,7 +125,9 @@ int main(int quantidade_argumentos, char *argumentos[]){
                 break;}
 
             case 4:{
+                Pergunta pergunta_alterada;
                 int id_pergunta_alteracao;
+                int retorno_alteracao;
                 do{
                     printf("\nDigite o ID da pergunta a ser alterada: ");
                     scanf("%d", &id_pergunta_alteracao);
@@ -114,11 +135,21 @@ int main(int quantidade_argumentos, char *argumentos[]){
                         printf("ID inválido\n");
                     }
                 }while(id_pergunta_alteracao < 0);
-                alterar_pergunta(&banco_perguntas, id_pergunta_alteracao);
+                //O ID identifica o registro. A estrutura recebe os novos dados.
+                cadastro_pergunta(&pergunta_alterada);
+                retorno_alteracao = alterar_pergunta(&banco_perguntas, id_pergunta_alteracao, &pergunta_alterada);
+                if(retorno_alteracao == -1){
+                    printf("Pergunta não encontrada\n");
+                }else if(retorno_alteracao == -3){
+                    printf("A alteração feita não é válida\n");
+                } else{
+                    printf("Pergunta alterada com sucesso\n");
+                }
                 break;}
 
             case 5:{
                 int id_pergunta_excluida;
+                int retorno_exclusao;
                 do{
                     printf("\nDigite o ID da pergunta a ser excluída: ");
                     scanf("%d", &id_pergunta_excluida);
@@ -126,7 +157,14 @@ int main(int quantidade_argumentos, char *argumentos[]){
                         printf("ID inválido\n");
                     }
                 }while(id_pergunta_excluida < 0);
-                excluir_pergunta(&banco_perguntas, id_pergunta_excluida);
+                retorno_exclusao = excluir_pergunta(&banco_perguntas, id_pergunta_excluida);
+                if(retorno_exclusao == -1){
+                    printf("Pergunta não encontrada\n");
+                }else if(retorno_exclusao == -2){
+                    printf("Falha na realocação de memória\n");
+                } else{
+                    printf("Pergunta excluída com sucesso\n");
+                }
                 break;}
 
             case 6:{
@@ -176,3 +214,70 @@ int main(int quantidade_argumentos, char *argumentos[]){
 
     return  0;
 }
+
+
+
+/**
+ * @brief Função que lê o enunciado, as alternativas, a resposta e a dificuldade pelo terminal.
+ *        Repete a leitura da resposta quando a letra estiver fora de A a D e a da dificuldade
+ *        quando o número estiver fora do intervalo de 1 a 5.
+ *
+ * @param pergunta Ponteiro para a estrutura que receberá os dados lidos. O banco controla o identificador.
+ */
+ void cadastro_pergunta(Pergunta *pergunta){
+    int opcao; //Armazena o número lido antes de atribuí-lo à dificuldade.
+    int caracter;
+
+    setbuf(stdin, NULL);
+    printf("Digite o enunciado: ");
+    fgets(pergunta->enunciado, 500, stdin);
+    pergunta->enunciado[strcspn(pergunta->enunciado, "\n")] = '\0';
+    setbuf(stdin, NULL);
+
+    printf("ALTERNATIVAS: \n");
+    printf("    Alternativa A: ");
+    fgets(pergunta->alternativa.A, 100, stdin);
+    pergunta->alternativa.A[strcspn(pergunta->alternativa.A, "\n")] = '\0';
+    setbuf(stdin, NULL);
+    printf("    Alternativa B: ");
+    fgets(pergunta->alternativa.B, 100, stdin);
+    pergunta->alternativa.B[strcspn(pergunta->alternativa.B, "\n")] = '\0';
+    setbuf(stdin, NULL);
+    printf("    Alternativa C: ");
+    fgets(pergunta->alternativa.C, 100, stdin);
+    pergunta->alternativa.C[strcspn(pergunta->alternativa.C, "\n")] = '\0';
+    setbuf(stdin, NULL);
+    printf("    Alternativa D: ");
+    fgets(pergunta->alternativa.D, 100, stdin);
+    pergunta->alternativa.D[strcspn(pergunta->alternativa.D, "\n")] = '\0';
+    setbuf(stdin, NULL);
+
+    do{//Verifica a letra da alternativa correta.
+        printf("Alternativa Correta: ");
+        scanf(" %c", &pergunta->resposta); //O espaço antes de %c ignora espaços e quebras de linha anteriores.
+        do{
+            caracter = getchar();
+        }while(caracter != '\n' && caracter != EOF); //Descarta o restante da linha após a resposta.
+        if(pergunta->resposta != 'A' && pergunta->resposta != 'B' && pergunta->resposta != 'C' && pergunta->resposta != 'D'){
+            printf("Opção Inválida\n");
+        }
+    }while(pergunta->resposta != 'A' && pergunta->resposta != 'B' && pergunta->resposta != 'C' && pergunta->resposta != 'D');
+
+    printf("Dificuldade: \n");
+    printf("    Muito Fácil   (1)\n");
+    printf("    Fácil         (2)\n");
+    printf("    Médio         (3)\n");
+    printf("    Difícil       (4)\n");
+    printf("    Muito Difícil (5)\n");
+    do{//Verifica o nível de dificuldade.
+        printf("Número - ");
+        scanf("%d", &opcao);
+        setbuf(stdin, NULL); //Configura a entrada sem buffer.
+        if(opcao < 1 || opcao > 5){
+            printf("Opção Inválida\n");
+        }
+    }while(opcao < 1 || opcao > 5);
+    pergunta->dificuldade = opcao;
+    setbuf(stdin,NULL); //Configura a entrada sem buffer.
+
+ }//CADASTRO PERGUNTA
