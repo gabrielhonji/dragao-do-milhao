@@ -12,6 +12,7 @@
 #include <string.h>
 #include "telas.h"
 #include "componentes.h"
+#include "cores.h"
 #include "../quiz/quiz.h"
 
 typedef enum
@@ -346,6 +347,11 @@ void executar_tela_teste(const Banco_perguntas *banco)
     // Carrega as texturas antes do while para nao carrega-las novamente a cada quadro.
     Texture2D mapa_menu = LoadTexture("assets/visual/fundos/mapa_menu.png");
     Texture2D dragao_menu = LoadTexture("assets/visual/cenas/01/dragao_voo.png");
+    // Ao ampliar o menu, cada pixel do PNG conserva a própria cor, sem mistura com os vizinhos.
+    if (IsTextureValid(mapa_menu))
+        SetTextureFilter(mapa_menu, TEXTURE_FILTER_POINT);
+    if (IsTextureValid(dragao_menu))
+        SetTextureFilter(dragao_menu, TEXTURE_FILTER_POINT);
 
     int escala_da_fonte = 1;
     int ultima_escala_solicitada = 1;
@@ -364,7 +370,8 @@ void executar_tela_teste(const Banco_perguntas *banco)
             continue;
         }
 
-        // Converte as coordenadas do mouse para bater com a nova escala da janela.
+        // Para o mouse, fazemos o caminho janela → jogo: tiramos a margem e dividimos pela escala.
+        // Assim GetMousePosition() pode ser comparado diretamente com os retângulos de 960 × 540.
         SetMouseOffset(-(int)area_exibida.x, -(int)area_exibida.y);
         SetMouseScale(LARGURA_BASE / area_exibida.width, ALTURA_BASE / area_exibida.height);
 
@@ -540,44 +547,44 @@ void executar_tela_teste(const Banco_perguntas *banco)
             alternativa_selecionada = alternativa_clicada;
         }
 
-        // A câmera converte as coordenadas lógicas em coordenadas da janela.
+        // Para desenhar, a câmera faz o caminho jogo → janela: amplia pelo zoom e soma a margem.
         Camera2D camera = {.offset = {area_exibida.x, area_exibida.y}, .zoom = escala};
         BeginDrawing();
 
-        ClearBackground(BLACK);
-        BeginScissorMode((int)area_exibida.x, (int)area_exibida.y, (int)area_exibida.width, (int)area_exibida.height); //
-        BeginMode2D(camera); //
-        DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, RAYWHITE); //
+        ClearBackground(BLACK); // Limpa a janela inteira, inclusive as barras que sobram ao redor do jogo.
+        // O recorte usa coordenadas da janela. Tudo que cair fora dessa área deixa as barras intactas.
+        BeginScissorMode((int)area_exibida.x, (int)area_exibida.y, (int)area_exibida.width, (int)area_exibida.height);
+        BeginMode2D(camera); // Daqui até EndMode2D, podemos desenhar nas coordenadas de 960 × 540.
+        Color fundo = tela_atual == TELA_MENU ? COR_FUNDO_MENU : RAYWHITE;
+        DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, fundo); // Pinta apenas o fundo da tela do jogo.
 
         // Desenha as telas e seus elementos
         if (tela_atual == TELA_MENU) {
-            DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, GetColor(0x151D21FF)); //
-            
             // Duas faixas de borda e duas de face formam a moldura recortada do mapa.
-            DrawRectangle(24, 27, 524, 486, GetColor(0x576D62FF));
-            DrawRectangle(27, 24, 518, 492, GetColor(0x576D62FF));
-            DrawRectangle(26, 29, 520, 482, GetColor(0x10181CFF));
-            DrawRectangle(29, 26, 514, 488, GetColor(0x10181CFF));
+            DrawRectangle(24, 27, 524, 486, COR_MOLDURA_MAPA);
+            DrawRectangle(27, 24, 518, 492, COR_MOLDURA_MAPA);
+            DrawRectangle(26, 29, 520, 482, COR_ESCURO);
+            DrawRectangle(29, 26, 514, 488, COR_ESCURO);
 
             // Desenha o mapa do menu.
             if (IsTextureValid(mapa_menu))
-                DrawTexture(mapa_menu, 28, 28, WHITE); // Origem do mapa já recortado.
-            DrawRectangle(28, 28, 516, 484, GetColor(0x1323244D)); // Véu de 30% sobre o mapa.
+                DrawTexture(mapa_menu, 28, 28, WHITE); // Coloca o canto superior esquerdo do mapa dentro da moldura.
+            DrawRectangle(28, 28, 516, 484, COR_VEU_MAPA); // Escurece só o mapa com 30% de opacidade.
             
             // Desenha o dragão do menu.
             if (IsTextureValid(dragao_menu))
-                DrawTexture(dragao_menu, 126, 178, WHITE); // Origem do PNG inteiro, com sombra.
+                DrawTexture(dragao_menu, 126, 178, WHITE); // (126, 178) recebe o canto superior esquerdo do PNG, incluindo o espaço transparente e a sombra.
 
             const char *linhas[] = {"Dragão do", "Milhão"};
-            const int passo_titulo = 70; // Distância entre as origins das linhas do título.
-            const int sombra = 2; // Deslocamento da sombra em pixels lógicos.
+            const int passo_titulo = 70; // Distância entre o topo da primeira linha e o da segunda.
+            const int sombra = 2; // Desenha a cópia escura 2 pixels à direita e abaixo na base 960 × 540 (4 em escala 2×).
 
             for (int i = 0; i < 2; i++) {
-                Vector2 posicao = {582, 39 + i *passo_titulo};
+                Vector2 posicao = {582, 39 + i * passo_titulo}; // A primeira linha começa em (582, 39) no menu.
                 Vector2 posicao_sombra = {posicao.x + sombra, posicao.y + sombra};
 
                 DrawTextEx(fonte_titulo, linhas[i], posicao_sombra, tamanho_titulo, 1, BLACK);
-                DrawTextEx(fonte_titulo, linhas[i], posicao, tamanho_titulo, 1, GetColor(0xF5EBD8FF));
+                DrawTextEx(fonte_titulo, linhas[i], posicao, tamanho_titulo, 1, COR_TEXTO_CLARO);
             }
 
             desenhar_botao_com_estado(fonte, jogar, "Jogar", BOTAO_PRIMARIO, true);
@@ -587,7 +594,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
             desenhar_botao(fonte, sair, "Sair");
 
             if (faltam_perguntas)
-                DrawTextEx(fonte, "Sem perguntas para iniciar.", (Vector2){586, 436}, 20, 1, GetColor(0xE61367FF));
+                DrawTextEx(fonte, "Sem perguntas para iniciar.", (Vector2){586, 436}, 20, 1, COR_AVISO);
         }
         else if (tela_atual == TELA_JORNADA) {
             const int questoes_jornada = 8;
@@ -650,7 +657,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 char letra = 'A' + i;
                 bool selecionado = i == alternativa_selecionada;
                 bool habilitado = !dicas.eliminadas[i] && !resposta_confirmada;
-                desenhar_botao_com_estado(fonte, alternativa_rec[i], rotulos[i], selecionado ? BOTAO_SELECIONADO : BOTAO_SECUNDARIO, habilitado);
+                desenhar_alternativa(fonte, alternativa_rec[i], rotulos[i], selecionado, habilitado);
 
                 // Desenha a marca da ajuda por cima do cartão e preserva a cor da seleção.
                 if (dicas.resposta_revelada && letra == pergunta_atual->resposta)
@@ -720,7 +727,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
             DrawTextEx(fonte, texto_gruta, posicao_texto, tamanho_corpo, 1, BLACK);
         }
 
-        // Encerra o drawing responsável pelo desenho dos quadros (FPS).
+        // Sai das coordenadas do jogo, libera o recorte e apresenta o quadro pronto.
         EndMode2D();
         EndScissorMode();
         EndDrawing();

@@ -25,28 +25,38 @@ typedef enum {
 
 /**
  * @brief Detecta o início de um clique dentro da área enquanto a janela está em foco.
- * @param area Retângulo do botão, em coordenadas da janela.
+ * @param area Retângulo do botão na tela lógica de 960 × 540.
  * @return True se o clique começou dentro da área neste quadro.
  */
 bool botao_clicado(Rectangle area);
 
 /**
- * @brief Desenha um botão com rótulo alinhado à esquerda e destaque ao passar o mouse.
+ * @brief Desenha um botão de ação com rótulo centralizado e destaque ao passar o mouse.
  * @param fonte Fonte usada no rótulo.
- * @param area Retângulo do botão, em coordenadas da janela.
+ * @param area Retângulo do botão na tela lógica de 960 × 540.
  * @param rotulo Texto exibido no botão.
  */
 void desenhar_botao(Font fonte, Rectangle area, const char *rotulo);
 
 /**
- * @brief Desenha um botão com destaque de seleção e aparência de bloqueio.
+ * @brief Desenha um botão de ação centralizado com o estilo e a disponibilidade indicados.
  *
  * @param fonte Fonte do rótulo.
  * @param area Retângulo do botão.
  * @param rotulo Texto exibido.
- * @param estilo Define a aprência do botão entre secundária, selecionada ou primária.
+ * @param estilo Aparência secundária, selecionada ou primária.
  * @param habilitado Controla o tom do botão e o destaque ao passar o mouse.
  */
 void desenhar_botao_com_estado(Font fonte, Rectangle area, const char *rotulo, EstiloBotao estilo, bool habilitado);
+
+/**
+ * @brief Desenha uma opção de resposta com o texto alinhado à esquerda.
+ * @param fonte Fonte usada para a resposta.
+ * @param area Retângulo da alternativa na tela lógica.
+ * @param rotulo Texto da resposta.
+ * @param selecionada Mantém a opção marcada mesmo depois da confirmação.
+ * @param habilitada Permite o destaque ao passar o mouse.
+ */
+void desenhar_alternativa(Font fonte, Rectangle area, const char *rotulo, bool selecionada, bool habilitada);
 
 #endif
