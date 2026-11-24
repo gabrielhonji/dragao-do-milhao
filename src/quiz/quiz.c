@@ -230,7 +230,6 @@ Resultado_resposta processa_resposta(Partida *partida, const Pergunta *pergunta_
     }
 } //PROCESSA RESPOSTA
 
-
 /**
  * @brief Função que confirma a Retirada Tática quando a partida está em andamento.
  *        Registra a situação como retirada e entrega o último marco à interface.
@@ -239,10 +238,45 @@ Resultado_resposta processa_resposta(Partida *partida, const Pergunta *pergunta_
  * @return int Retorna 0 na retirada antes do primeiro marco, 5 ou 10 conforme o último
  *         marco concluído e -1 quando a partida já está encerrada.
  */
-int confirma_retirada(Partida *partida){
-    if(partida->situacao == andamento){
+int confirma_retirada(Partida *partida)
+{
+    if (partida->situacao == andamento) {
         partida->situacao = retirada;
         return partida->checkpoint;
     }
     return -1;
 } //CONFIRMA RETIRADA
+
+/**
+ * @brief Função que calcula os pontos de vida restantes do príncipe a partir dos acertos.
+ *        Com 8 acertos, a batalha começa com PV_MAX_PRINCIPE. Os acertos das questões 9 a 15
+ *        reduzem os PV até zerar no golpe final. Após um renascimento, a função considera
+ *        os acertos restaurados ao último marco.
+ *
+ * @param partida Ponteiro para a partida cujo progresso será consultado.
+ * @return int Retorna os PV restantes para 8 a 15 acertos, incluindo 0 quando o príncipe é derrotado.
+ *         Retorna -1 se a quantidade de acertos estiver fora desse intervalo.
+ */
+int calcula_pv_principe(const Partida *partida)
+{
+    switch (partida->acertos) {
+        case 8:
+            return PV_MAX_PRINCIPE;
+        case 9:
+            return 900;
+        case 10:
+            return 800;
+        case 11:
+            return 700;
+        case 12:
+            return 600;
+        case 13:
+            return 400;
+        case 14:
+            return 100;
+        case 15:
+            return 0;
+        default:
+            return -1; //Quantidade de acertos fora do intervalo da batalha.
+    }
+} //CALCULA PV PRÍNCIPE
