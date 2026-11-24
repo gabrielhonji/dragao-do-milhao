@@ -1,5 +1,6 @@
 /dragao-do-milhao
 /build/
+/entrega_arte_menu/
 *.o
 dragao-do-milhao.exe
 /dragao-do-milhao-visual
