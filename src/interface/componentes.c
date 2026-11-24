@@ -17,36 +17,60 @@ bool botao_clicado(Rectangle area)
            IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 }
 
-void desenhar_botao_com_estado(Font fonte, Rectangle area, const char *rotulo, bool selecionado, bool habilitado)
+/**
+ * @brief Preenche um retângulo com um pequeno "degrau" em cada canto, uma maneira absoluta de fazer um border_radius.
+ * @param area Limites externos do container.
+ * @param cor Cor de preenchimento.
+ */
+static void preencher_face(Rectangle area, Color cor)
 {
-    const float tamanho = 24.0f;
-    const float espacamento = 1.0f;
-    bool mouse_sobre_botao = habilitado && IsWindowFocused() && CheckCollisionPointRec(GetMousePosition(), area);
+    const float borda_arredondada = 3; // Recorta 3px de border_radius.
 
-    Color fundo = habilitado ? LIGHTGRAY : RAYWHITE;
-    Color cor_rotulo = habilitado ? BLACK : GRAY;
-    Color cor_borda = habilitado || selecionado ? DARKGRAY : GRAY;
+    DrawRectangleRec((Rectangle){area.x + borda_arredondada, area.y, area.width - 2 * borda_arredondada, area.height}, cor);
+    DrawRectangleRec((Rectangle){area.x, area.y + borda_arredondada, area.width, area.height - 2 * borda_arredondada}, cor);
+}
 
-    if (mouse_sobre_botao)
-        fundo = GRAY;
+void desenhar_botao_com_estado(Font fonte, Rectangle area, const char *rotulo, EstiloBotao estilo, bool habilitado)
+{
+    // Importa as cores pelo prefixo "0x" que converte essas entradas para valores hexadecimais
+    Color cor_face = GetColor(0x2936AFF); //
+    Color cor_aresta = GetColor(0x364B46FF); //
+    Color cor_borda = GetColor(0x51675DFF);
+    Color cor_texto = GetColor(0xF5EBD8FF);
 
-    // Mantém o estilo da seleção mesmo quando o mouse sai ou a resposta é confirmada.
-    if (selecionado) {
-        fundo = DARKGRAY;
-        cor_rotulo = RAYWHITE;
+    // Mantem a escolha visível mesmo depois de confirmar a resposta.
+    if (estilo == BOTAO_SELECIONADO) {
+        cor_face = GetColor(0x142C2AFF);
+        cor_borda = GetColor(0x9FCFBFFF);
+    }
+    else if (!habilitado) {
+        cor_face = GetColor(0x252D30FF);
+        cor_texto = GetColor(0x96A39AFF);
+    }
+    else if (estilo == BOTAO_PRIMARIO) {
+        cor_face = GetColor(0xACD1ABFF);
+        cor_borda = GetColor(0xC7DEC0FF);
+        cor_texto = GetColor(0x10181CFF);
+        cor_aresta = GetColor(0x74998AFF);
     }
 
-    Vector2 medida_rotulo = MeasureTextEx(fonte, rotulo, tamanho, espacamento);
-    // Divide o espaço livre entre os dois lados de cada eixo.
-    Vector2 posicao_rotulo = {area.x + (area.width - medida_rotulo.x) / 2.0f,
-                              area.y + (area.height - medida_rotulo.y) / 2.0f};
+   const float espessura = 2; // Para as bordas e arestas, com 2px de espessura.
+   Rectangle interior = {area.x + espessura, area.y + espessura, area.width - 2 * espessura, area.height - 2 * espessura}; //
 
-    DrawRectangleRec(area, fundo);
-    DrawRectangleLinesEx(area, 2.0f, cor_borda);
-    DrawTextEx(fonte, rotulo, posicao_rotulo, tamanho, espacamento, cor_rotulo);
+   preencher_face(area, cor_borda);
+   preencher_face(interior, cor_face);
+
+   const float recuo_aresta = 4; // A linha termina antes de chegar no border_radius.
+   DrawRectangleRec((Rectangle){area.x + recuo_aresta, interior.y + interior.height - espessura, area.width - 2 * recuo_aresta, espessura}, cor_aresta); //
+
+   const float tamanho = 20; //
+   const float recuo_cor_texto = 12; // Distância do rótulo à borda esquerda.
+   Vector2 medida = MeasureTextEx(fonte, rotulo, tamanho, 1);
+   Vector2 posicao = {area.x + recuo_cor_texto, area.y + (area.height - medida.y) / 2};
+   DrawTextEx(fonte, rotulo, posicao, tamanho, 1, cor_texto);
 }
 
 void desenhar_botao(Font fonte, Rectangle area, const char *rotulo)
 {
-    desenhar_botao_com_estado(fonte, area, rotulo, false, true);
+    desenhar_botao_com_estado(fonte, area, rotulo, BOTAO_SECUNDARIO, true);
 }

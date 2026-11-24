@@ -275,7 +275,14 @@ void executar_tela_teste(const Banco_perguntas *banco)
     bool faltam_perguntas = false;
 
     // Botões.
-    const Rectangle jogar = {48, 188, 280, 52};
+    const Rectangle jogar = {586, 205, 318, 44}; // Primeira linha da coluna.
+    const float passo = jogar.height + 12;       // 12px livres entre as linhas, agindo como um gap.
+
+    // Todas as posições verticais são a chamada do Y do componente anterior + passo (gap).
+    const Rectangle ranking = {jogar.x, jogar.y + passo, jogar.width, jogar.height};
+    const Rectangle gerenciar = {jogar.x, ranking.y + passo, jogar.width, jogar.height};
+    const Rectangle creditos = {jogar.x, gerenciar.y + passo, 151, jogar.height};
+    const Rectangle sair = {creditos.x + creditos.width + 9, creditos.y, 158, jogar.height};
     const Rectangle voltar = {24, 464, 200, 52};
     // Containers.
     const Rectangle mapa = {24, 88, 492, 325};
@@ -327,7 +334,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
         CloseWindow();
         return;
     }
-    const int tamanho_titulo = 48;
+    const int tamanho_titulo = 58;
     Font fonte_titulo = carregar_fonte_interface(tamanho_titulo);
     if (!fonte_carregada(fonte_titulo)) {
         TraceLog(LOG_ERROR, "Falha ao carregar a fonte do título");
@@ -335,6 +342,10 @@ void executar_tela_teste(const Banco_perguntas *banco)
         CloseWindow();
         return;
     }
+
+    // Carrega as texturas antes do while para nao carrega-las novamente a cada quadro.
+    Texture2D mapa_menu = LoadTexture("assets/visual/fundos/mapa_menu.png");
+    Texture2D dragao_menu = LoadTexture("assets/visual/cenas/01/dragao_voo.png");
 
     int escala_da_fonte = 1;
     int ultima_escala_solicitada = 1;
@@ -416,12 +427,14 @@ void executar_tela_teste(const Banco_perguntas *banco)
         /* Bloco de validação de ações por telas */
         // Verifica ações na tela do MENU.
         if (tela_atual == TELA_MENU) {
-            if (janela_em_foco && IsKeyPressed(KEY_F2)) {
+            if (janela_em_foco && IsKeyPressed(KEY_F2)) { // Abre a prévia da gruta.
                 previa_gruta = true;
                 estado_gruta = GRUTA_VAZIA;
                 tela_atual = TELA_GRUTA;
             }
-            else if (confirmou || botao_clicado(jogar)) {
+            else if (botao_clicado(sair)) // Encerra o while principal.
+                break;
+            else if (confirmou || botao_clicado(jogar)) { // Inicia um novo jogo.
                 inicializa_partida(&partida);
                 pergunta_atual = sorteia_pergunta(banco, &partida);
                 faltam_perguntas = pergunta_atual == NULL;
@@ -532,18 +545,49 @@ void executar_tela_teste(const Banco_perguntas *banco)
         BeginDrawing();
 
         ClearBackground(BLACK);
-        BeginScissorMode((int)area_exibida.x, (int)area_exibida.y, (int)area_exibida.width,
-                         (int)area_exibida.height);
-        BeginMode2D(camera);
-        DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, RAYWHITE);
+        BeginScissorMode((int)area_exibida.x, (int)area_exibida.y, (int)area_exibida.width, (int)area_exibida.height); //
+        BeginMode2D(camera); //
+        DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, RAYWHITE); //
 
+        // Desenha as telas e seus elementos
         if (tela_atual == TELA_MENU) {
-            DrawTextEx(fonte_titulo, "Dragão do Milhão", (Vector2){48, 96}, tamanho_titulo, 1,
-                       BLACK);
-            desenhar_botao(fonte, jogar, "Jogar");
+            DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, GetColor(0x151D21FF)); //
+            
+            // Duas faixas de borda e duas de face formam a moldura recortada do mapa.
+            DrawRectangle(24, 27, 524, 486, GetColor(0x576D62FF));
+            DrawRectangle(27, 24, 518, 492, GetColor(0x576D62FF));
+            DrawRectangle(26, 29, 520, 482, GetColor(0x10181CFF));
+            DrawRectangle(29, 26, 514, 488, GetColor(0x10181CFF));
+
+            // Desenha o mapa do menu.
+            if (IsTextureValid(mapa_menu))
+                DrawTexture(mapa_menu, 28, 28, WHITE); // Origem do mapa já recortado.
+            DrawRectangle(28, 28, 516, 484, GetColor(0x1323244D)); // Véu de 30% sobre o mapa.
+            
+            // Desenha o dragão do menu.
+            if (IsTextureValid(dragao_menu))
+                DrawTexture(dragao_menu, 126, 178, WHITE); // Origem do PNG inteiro, com sombra.
+
+            const char *linhas[] = {"Dragão do", "Milhão"};
+            const int passo_titulo = 70; // Distância entre as origins das linhas do título.
+            const int sombra = 2; // Deslocamento da sombra em pixels lógicos.
+
+            for (int i = 0; i < 2; i++) {
+                Vector2 posicao = {582, 39 + i *passo_titulo};
+                Vector2 posicao_sombra = {posicao.x + sombra, posicao.y + sombra};
+
+                DrawTextEx(fonte_titulo, linhas[i], posicao_sombra, tamanho_titulo, 1, BLACK);
+                DrawTextEx(fonte_titulo, linhas[i], posicao, tamanho_titulo, 1, GetColor(0xF5EBD8FF));
+            }
+
+            desenhar_botao_com_estado(fonte, jogar, "Jogar", BOTAO_PRIMARIO, true);
+            desenhar_botao_com_estado(fonte, ranking, "Ranking", BOTAO_SECUNDARIO, false);
+            desenhar_botao_com_estado(fonte, gerenciar, "Gerenciar perguntas", BOTAO_SECUNDARIO, false);
+            desenhar_botao_com_estado(fonte, creditos, "Créditos", BOTAO_SECUNDARIO, false);
+            desenhar_botao(fonte, sair, "Sair");
+
             if (faltam_perguntas)
-                DrawTextEx(fonte, "Sem perguntas para iniciar.", (Vector2){48, 260},
-                           tamanho_corpo, 1, MAROON);
+                DrawTextEx(fonte, "Sem perguntas para iniciar.", (Vector2){586, 436}, 20, 1, GetColor(0xE61367FF));
         }
         else if (tela_atual == TELA_JORNADA) {
             const int questoes_jornada = 8;
@@ -580,7 +624,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
             for (int i = 0; i < TOTAL_AJUDAS; i++) {
                 const char *rotulo = TextFormat("%s (%d)", nomes_ajuda[i], usos_ajuda[i]);
                 bool habilitado = ajuda_disponivel(i, usos_ajuda[i], &dicas, resposta_confirmada);
-                desenhar_botao_com_estado(fonte, ajuda_rec[i], rotulo, false, habilitado);
+                desenhar_botao_com_estado(fonte, ajuda_rec[i], rotulo, BOTAO_SECUNDARIO, habilitado);
             }
 
             // Mostra a revelação da Princesa quando ativa. Caso contrário, mostra o palpite do Burro.
@@ -606,7 +650,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 char letra = 'A' + i;
                 bool selecionado = i == alternativa_selecionada;
                 bool habilitado = !dicas.eliminadas[i] && !resposta_confirmada;
-                desenhar_botao_com_estado(fonte, alternativa_rec[i], rotulos[i], selecionado, habilitado);
+                desenhar_botao_com_estado(fonte, alternativa_rec[i], rotulos[i], selecionado ? BOTAO_SELECIONADO : BOTAO_SECUNDARIO, habilitado);
 
                 // Desenha a marca da ajuda por cima do cartão e preserva a cor da seleção.
                 if (dicas.resposta_revelada && letra == pergunta_atual->resposta)
@@ -647,7 +691,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 desenhar_botao(fonte, voltar, "Ver gruta");
             else
                 // O !resposta_confimada significa que o botão desabilita após o usuário confirmar uma alternativa.
-                desenhar_botao_com_estado(fonte, voltar, "Retirada Tática", false, !resposta_confirmada);
+                desenhar_botao_com_estado(fonte, voltar, "Retirada Tática", BOTAO_SECUNDARIO, !resposta_confirmada);
         }
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
             DrawTextEx(fonte_titulo, "Retirada Tática", (Vector2){48, 96}, tamanho_titulo, 1, BLACK);
@@ -676,11 +720,19 @@ void executar_tela_teste(const Banco_perguntas *banco)
             DrawTextEx(fonte, texto_gruta, posicao_texto, tamanho_corpo, 1, BLACK);
         }
 
+        // Encerra o drawing responsável pelo desenho dos quadros (FPS).
         EndMode2D();
         EndScissorMode();
         EndDrawing();
     }
 
+    // Descarrega as texturas armazenadas na GPU.
+    if (IsTextureValid(dragao_menu))
+        UnloadTexture(dragao_menu);
+    if (IsTextureValid(mapa_menu))
+        UnloadTexture(mapa_menu);
+
+    // Descarrega as fontes.
     UnloadFont(fonte_titulo);
     UnloadFont(fonte);
     CloseWindow();
