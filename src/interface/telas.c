@@ -21,6 +21,8 @@ typedef enum
     TELA_JORNADA,
     TELA_CONFIRMAR_RETIRADA,
     TELA_GRUTA,
+    TELA_CREDITOS,
+    TELA_GERENCIAMENTO,
 } Tela;
 typedef enum
 {
@@ -344,14 +346,21 @@ void executar_tela_teste(const Banco_perguntas *banco)
         return;
     }
 
-    // Carrega as texturas antes do while para nao carrega-las novamente a cada quadro.
+    // Cada tela tem um recorte do mapa e um dragão no tamanho do seu painel.
     Texture2D mapa_menu = LoadTexture("assets/visual/fundos/mapa_menu.png");
     Texture2D dragao_menu = LoadTexture("assets/visual/cenas/01/dragao_voo.png");
-    // Ao ampliar o menu, cada pixel do PNG conserva a própria cor, sem mistura com os vizinhos.
+    Texture2D mapa_creditos = LoadTexture("assets/visual/fundos/mapa.png");
+    Texture2D dragao_creditos = LoadTexture("assets/visual/cenas/24/dragao_voo.png");
+
+    // O filtro mantém as bordas dos pixels quando a janela é ampliada.
     if (IsTextureValid(mapa_menu))
         SetTextureFilter(mapa_menu, TEXTURE_FILTER_POINT);
     if (IsTextureValid(dragao_menu))
         SetTextureFilter(dragao_menu, TEXTURE_FILTER_POINT);
+    if (IsTextureValid(mapa_creditos))
+        SetTextureFilter(mapa_creditos, TEXTURE_FILTER_POINT);
+    if (IsTextureValid(dragao_creditos))
+        SetTextureFilter(dragao_creditos, TEXTURE_FILTER_POINT);
 
     int escala_da_fonte = 1;
     int ultima_escala_solicitada = 1;
@@ -439,6 +448,8 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 estado_gruta = GRUTA_VAZIA;
                 tela_atual = TELA_GRUTA;
             }
+            else if (botao_clicado(creditos))
+                tela_atual = TELA_CREDITOS;
             else if (botao_clicado(sair)) // Encerra o while principal.
                 break;
             else if (confirmou || botao_clicado(jogar)) { // Inicia um novo jogo.
@@ -473,6 +484,10 @@ void executar_tela_teste(const Banco_perguntas *banco)
                     estado_gruta = GRUTA_VAZIA;
                 tela_atual = TELA_GRUTA;
             }
+        }
+        else if (tela_atual == TELA_CREDITOS) {
+            if (botao_clicado(voltar))
+                tela_atual = TELA_MENU;
         }
         // Ações do botão de voltar em cada tela.
         else if (botao_clicado(voltar)) {
@@ -555,29 +570,27 @@ void executar_tela_teste(const Banco_perguntas *banco)
         // O recorte usa coordenadas da janela. Tudo que cair fora dessa área deixa as barras intactas.
         BeginScissorMode((int)area_exibida.x, (int)area_exibida.y, (int)area_exibida.width, (int)area_exibida.height);
         BeginMode2D(camera); // Daqui até EndMode2D, podemos desenhar nas coordenadas de 960 × 540.
-        Color fundo = tela_atual == TELA_MENU ? COR_FUNDO_MENU : RAYWHITE;
-        DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, fundo); // Pinta apenas o fundo da tela do jogo.
+        // Esse usa fundo escuro é o grupo que contem o tema escuro.
+        bool usa_fundo_escuro = tela_atual == TELA_MENU || tela_atual == TELA_CREDITOS;
+        Color fundo = usa_fundo_escuro ? COR_FUNDO_MENU : RAYWHITE;
+        DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, fundo);
 
         // Desenha as telas e seus elementos
         if (tela_atual == TELA_MENU) {
-            // Duas faixas de borda e duas de face formam a moldura recortada do mapa.
-            DrawRectangle(24, 27, 524, 486, COR_MOLDURA_MAPA);
-            DrawRectangle(27, 24, 518, 492, COR_MOLDURA_MAPA);
-            DrawRectangle(26, 29, 520, 482, COR_ESCURO);
-            DrawRectangle(29, 26, 514, 488, COR_ESCURO);
+            desenhar_painel((Rectangle){24, 24, 524, 492}, COR_ESCURO);
 
             // Desenha o mapa do menu.
             if (IsTextureValid(mapa_menu))
                 DrawTexture(mapa_menu, 28, 28, WHITE); // Coloca o canto superior esquerdo do mapa dentro da moldura.
             DrawRectangle(28, 28, 516, 484, COR_VEU_MAPA); // Escurece só o mapa com 30% de opacidade.
-            
+
             // Desenha o dragão do menu.
             if (IsTextureValid(dragao_menu))
                 DrawTexture(dragao_menu, 126, 178, WHITE); // (126, 178) recebe o canto superior esquerdo do PNG, incluindo o espaço transparente e a sombra.
 
             const char *linhas[] = {"Dragão do", "Milhão"};
             const int passo_titulo = 70; // Distância entre o topo da primeira linha e o da segunda.
-            const int sombra = 2; // Desenha a cópia escura 2 pixels à direita e abaixo na base 960 × 540 (4 em escala 2×).
+            const int sombra = 2;        // Desenha a cópia escura 2 pixels à direita e abaixo na base 960 × 540 (4 em escala 2×).
 
             for (int i = 0; i < 2; i++) {
                 Vector2 posicao = {582, 39 + i * passo_titulo}; // A primeira linha começa em (582, 39) no menu.
@@ -589,12 +602,68 @@ void executar_tela_teste(const Banco_perguntas *banco)
 
             desenhar_botao_com_estado(fonte, jogar, "Jogar", BOTAO_PRIMARIO, true);
             desenhar_botao_com_estado(fonte, ranking, "Ranking", BOTAO_SECUNDARIO, false);
-            desenhar_botao_com_estado(fonte, gerenciar, "Gerenciar perguntas", BOTAO_SECUNDARIO, false);
-            desenhar_botao_com_estado(fonte, creditos, "Créditos", BOTAO_SECUNDARIO, false);
+            desenhar_botao(fonte, gerenciar, "Gerenciar perguntas");
+            desenhar_botao(fonte, creditos, "Créditos");
             desenhar_botao(fonte, sair, "Sair");
 
             if (faltam_perguntas)
                 DrawTextEx(fonte, "Sem perguntas para iniciar.", (Vector2){586, 436}, 20, 1, COR_AVISO);
+        }
+        else if (tela_atual == TELA_CREDITOS) {
+            const Rectangle painel_equipe = quiz;
+            const float recuo = 18;      // Margem do texto dentro do painel da equipe.
+            const float passo_nome = 30; // Distância entre o topo de dois nomes consecutivos.
+            const float x_texto = painel_equipe.x + recuo;
+
+            DrawTextEx(fonte_titulo, "Créditos", (Vector2){mapa.x, 13}, 34, 1, COR_TEXTO_CLARO);
+
+            // O PNG exportado começa 4 px para dentro da moldura do mapa.
+            const int x_mapa = (int) mapa.x + 4;
+            const int y_mapa = (int) mapa.y + 4;
+
+            // Pinta o fundo e a borda antes do mapa. O véu escurece o mapa, e o dragão desenhado depois mantém suas cores.
+            desenhar_painel(mapa, COR_ESCURO);
+            if (IsTextureValid(mapa_creditos)) {
+                DrawTexture(mapa_creditos, x_mapa, y_mapa, WHITE);
+                DrawRectangle(x_mapa, y_mapa, mapa_creditos.width, mapa_creditos.height, COR_VEU_MAPA);
+            }
+
+            // (171, 162) posiciona o PNG inteiro do dragão conforme a cena do Figma.
+            if (IsTextureValid(dragao_creditos))
+                DrawTexture(dragao_creditos, 171, 162, WHITE);
+
+            // Painel da equipe.
+            desenhar_painel(painel_equipe, COR_FACE_BOTAO);
+
+            Vector2 posicao_equipe = {x_texto, painel_equipe.y + recuo};
+            DrawTextEx(fonte_titulo, "Sete Copas", posicao_equipe, 32, 1, COR_TEXTO_CLARO);
+
+            // A divisória fica 61 px abaixo do topo e respeita o recuo dos dois lados.
+            Rectangle divisoria = {x_texto, painel_equipe.y + 61,
+                                   painel_equipe.width - 2 * recuo, 2};
+            DrawRectangleRec(divisoria, COR_MOLDURA_MAPA);
+
+            const char *membros[] = {
+                "Enzo Andreassa Pizza",
+                "Gabriel Yudi Honji",
+                "Murilo Henrique Alves Martins",
+            };
+
+            // O primeiro nome começa 80 px abaixo do topo, depois da divisória.
+            float y_nome = painel_equipe.y + 80;
+            for (int i = 0; i < 3; i++) {
+                DrawTextEx(fonte, membros[i], (Vector2){x_texto, y_nome}, 21, 1, COR_TEXTO_CLARO);
+                y_nome += passo_nome;
+            }
+
+            const float tamanho_rodape = 19; // Altura da fonte usada nas duas linhas.
+            const float passo_rodape = 24;   // Distância entre os topos das linhas, com 5 px de folga.
+            // DrawTextEx recebe o topo do texto. Subir uma altura de fonte deixa a margem livre abaixo da disciplina.
+            const float y_disciplina = painel_equipe.y + painel_equipe.height - recuo - tamanho_rodape;
+            DrawTextEx(fonte, "UTFPR Apucarana", (Vector2){x_texto, y_disciplina - passo_rodape}, tamanho_rodape, 1, COR_TEXTO_CLARO);
+            DrawTextEx(fonte, "Fundamentos de Programação 2", (Vector2){x_texto, y_disciplina}, tamanho_rodape, 1, COR_TEXTO_CLARO);
+
+            desenhar_botao(fonte, voltar, "Voltar");
         }
         else if (tela_atual == TELA_JORNADA) {
             const int questoes_jornada = 8;
@@ -738,6 +807,10 @@ void executar_tela_teste(const Banco_perguntas *banco)
         UnloadTexture(dragao_menu);
     if (IsTextureValid(mapa_menu))
         UnloadTexture(mapa_menu);
+    if (IsTextureValid(dragao_creditos))
+        UnloadTexture(dragao_creditos);
+    if (IsTextureValid(mapa_creditos))
+        UnloadTexture(mapa_creditos);
 
     // Descarrega as fontes.
     UnloadFont(fonte_titulo);

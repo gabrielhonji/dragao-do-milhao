@@ -36,6 +36,15 @@ static void preencher_face(Rectangle area, Color cor)
     DrawRectangleRec((Rectangle){area.x, area.y + borda_arredondada, area.width, area.height - 2 * borda_arredondada}, cor);
 }
 
+void desenhar_painel(Rectangle area, Color fundo)
+{
+    const float espessura = 2; // Largura da moldura em pixels da tela lógica.
+    // O interior começa uma espessura para dentro e perde essa margem em cada lado.
+    Rectangle interior = {area.x + espessura, area.y + espessura, area.width - 2 * espessura, area.height - 2 * espessura};
+    preencher_face(area, COR_MOLDURA_MAPA);
+    preencher_face(interior, fundo);
+}
+
 /** @brief Desenha as camadas comuns aos botões de ação e às alternativas do quiz. */
 static void desenhar_corpo_botao(Font fonte, Rectangle area, const char *rotulo, EstiloBotao estilo, bool habilitado, bool alinhar_esquerda)
 {

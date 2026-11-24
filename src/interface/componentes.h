@@ -31,6 +31,13 @@ typedef enum {
 bool botao_clicado(Rectangle area);
 
 /**
+ * @brief Desenha um painel com o contorno em degraus usado no mapa do menu.
+ * @param area Limites externos do painel na tela.
+ * @param fundo Cor que preenche o interior da moldura.
+ */
+void desenhar_painel(Rectangle area, Color fundo);
+
+/**
  * @brief Desenha um botão de ação com rótulo centralizado e destaque ao passar o mouse.
  * @param fonte Fonte usada no rótulo.
  * @param area Retângulo do botão na tela lógica de 960 × 540.
