@@ -19,7 +19,8 @@
         int questao_atual; //indica qual a questão atual
         int acertos; //contabiliza os acertos
         Situacao_partida situacao;
-        int ids_sorteados[15];
+        int ids_sorteados[25]; //Histórico dos IDs exibidos durante a tentativa.
+        int contador_ids_sorteados; //Quantidade de IDs registrados no histórico.
         int minigames_usados[3]; //indicará quais minigames já foram utilizados - valor 0 se ainda não foi usado e valor 1 se já foi usado
     } Partida;
 
@@ -33,16 +34,20 @@
      * @brief Conta as perguntas elegíveis para o próximo sorteio.
      * @param banco Banco consultado.
      * @param partida Tentativa cujo histórico e progresso serão consultados.
-     * @return Quantidade de candidatas, ou zero quando não há sorteio possível.
+     * @return Quantidade de candidatas do próximo nível. Retorna 0 se o nível for inválido
+     *         ou se a partida estiver fora do estado de andamento.
      */
     int conta_perguntas_disponiveis(const Banco_perguntas *banco, const Partida *partida);
 
     /**
-     * @brief Sorteia uma pergunta, registra seu ID e avança o número da questão.
+     * @brief Sorteia uma pergunta, registra seu ID no histórico e avança o número da questão.
      * @param banco Banco de onde a pergunta será escolhida.
      * @param partida Tentativa que receberá o ID sorteado.
-     * @return Endereço da pergunta no banco, ou NULL se não houver candidata.
+     * @return Endereço da pergunta no banco. Retorna NULL se não houver candidata
+     *         ou se o histórico já tiver 25 IDs.
      */
     const Pergunta *sorteia_pergunta(const Banco_perguntas *banco, Partida *partida);
+
+    Dificuldade verifica_banco_para_partida(const Banco_perguntas *banco);
 
  #endif /*QUIZ_H*/

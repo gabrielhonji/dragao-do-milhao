@@ -272,6 +272,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
     const int ovos_teste[] = {0, 0, 1, 2};                              // Filhotes para cada teste.
     Partida partida;
     const Pergunta *pergunta_atual = NULL;
+    Dificuldade dificuldade_em_falta = 0;
     bool faltam_perguntas = false;
 
     // Botões.
@@ -422,19 +423,22 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 tela_atual = TELA_GRUTA;
             }
             else if (confirmou || botao_clicado(jogar)) {
-                inicializa_partida(&partida);
-                pergunta_atual = sorteia_pergunta(banco, &partida);
-                faltam_perguntas = pergunta_atual == NULL;
+                dificuldade_em_falta = verifica_banco_para_partida(banco);
+                if(dificuldade_em_falta == 0){ //verificando se não falta perguntas nas dificuldades
+                    inicializa_partida(&partida);
+                    pergunta_atual = sorteia_pergunta(banco, &partida);
+                    faltam_perguntas = pergunta_atual == NULL;
 
-                // Define a quantidade de ajudas disponiveis para cada tipo de ajuda.
-                if (!faltam_perguntas) {
-                    usos_ajuda[AJUDA_BURRO] = 2;
-                    usos_ajuda[AJUDA_DRAGAO] = 1;
-                    usos_ajuda[AJUDA_PRINCESA] = 1;
-                    dicas = (DicasPergunta){0};
-                    alternativa_selecionada = -1;
-                    resposta_confirmada = false;
-                    tela_atual = TELA_JORNADA;
+                    // Define a quantidade de ajudas disponiveis para cada tipo de ajuda.
+                    if (!faltam_perguntas) {
+                        usos_ajuda[AJUDA_BURRO] = 2;
+                        usos_ajuda[AJUDA_DRAGAO] = 1;
+                        usos_ajuda[AJUDA_PRINCESA] = 1;
+                        dicas = (DicasPergunta){0};
+                        alternativa_selecionada = -1;
+                        resposta_confirmada = false;
+                        tela_atual = TELA_JORNADA;
+                    }
                 }
             }
         }
@@ -541,7 +545,39 @@ void executar_tela_teste(const Banco_perguntas *banco)
             DrawTextEx(fonte_titulo, "Dragão do Milhão", (Vector2){48, 96}, tamanho_titulo, 1,
                        BLACK);
             desenhar_botao(fonte, jogar, "Jogar");
-            if (faltam_perguntas)
+
+            if (dificuldade_em_falta != 0){
+                switch (dificuldade_em_falta)
+                {
+                case muito_facil:
+                    DrawTextEx(fonte, "O banco precisa de pelo menos 2 perguntas muito fáceis.", (Vector2){48, 260},
+                            tamanho_corpo, 1, MAROON);
+                    break;
+
+                case facil:
+                    DrawTextEx(fonte, "O banco precisa de pelo menos 2 perguntas fáceis.", (Vector2){48, 260},
+                            tamanho_corpo, 1, MAROON);
+                    break;
+
+                case medio:
+                    DrawTextEx(fonte, "O banco precisa de pelo menos 7 perguntas médias.", (Vector2){48, 260},
+                            tamanho_corpo, 1, MAROON);
+                    break;
+
+                case dificil:
+                    DrawTextEx(fonte, "O banco precisa de pelo menos 8 perguntas difíceis.", (Vector2){48, 260},
+                            tamanho_corpo, 1, MAROON);
+                    break;
+
+                case muito_dificil:
+                    DrawTextEx(fonte, "O banco precisa de pelo menos 9 perguntas muito difíceis.", (Vector2){48, 260},
+                            tamanho_corpo, 1, MAROON);
+                    break;
+
+                default:
+                    break;
+                }
+            } else if (faltam_perguntas)
                 DrawTextEx(fonte, "Sem perguntas para iniciar.", (Vector2){48, 260},
                            tamanho_corpo, 1, MAROON);
         }

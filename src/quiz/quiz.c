@@ -24,7 +24,8 @@ void inicializa_partida(Partida *partidas)
     partidas->questao_atual = 0;      //ainda não estou em nenhuma questao != de ID
     partidas->acertos = 0;            //zero os acertos
     partidas->situacao = andamento;
-    for (int i = 0; i < 15; i++) {
+    partidas->contador_ids_sorteados = 0;
+    for (int i = 0; i < 25; i++) {
         partidas->ids_sorteados[i] = -1; //um a um coloco os ids em -1
     }
     for (int i = 0; i < 3; i++) {
@@ -69,7 +70,7 @@ Dificuldade determina_dificuldade(const Partida *partidas)
 int pergunta_ja_sorteada(const Partida *partida, int id_pergunta)
 {
 
-    for (int i = 0; i < partida->questao_atual; i++) {
+    for (int i = 0; i < partida->contador_ids_sorteados; i++) {
         if (partida->ids_sorteados[i] == id_pergunta) {
             return 1;
         }
@@ -84,9 +85,8 @@ int pergunta_ja_sorteada(const Partida *partida, int id_pergunta)
  * @param dificuldade Dificuldade exigida no próximo sorteio.
  * @return 1 se a pergunta for elegível, 0 se não for.
  */
-static int pergunta_disponivel(const Pergunta *pergunta, const Partida *partida, Dificuldade dificuldade)
-{
-    return pergunta->dificuldade == dificuldade && !pergunta_ja_sorteada(partida, pergunta->identificador);
+static int pergunta_disponivel(const Pergunta *pergunta, const Partida *partida, Dificuldade dificuldade){
+   return pergunta->dificuldade == dificuldade && !pergunta_ja_sorteada(partida, pergunta->identificador);
 }
 
 int conta_perguntas_disponiveis(const Banco_perguntas *banco, const Partida *partida)
@@ -108,7 +108,7 @@ int conta_perguntas_disponiveis(const Banco_perguntas *banco, const Partida *par
 const Pergunta *sorteia_pergunta(const Banco_perguntas *banco, Partida *partida)
 {
     int total = conta_perguntas_disponiveis(banco, partida);
-    if (total == 0) {
+    if (total == 0 || partida->contador_ids_sorteados == 25) {
         return NULL;
     }
 
@@ -123,11 +123,74 @@ const Pergunta *sorteia_pergunta(const Banco_perguntas *banco, Partida *partida)
 
         if (candidatas_a_pular == 0) {
             // O histórico guarda o ID.
-            partida->ids_sorteados[partida->questao_atual] = pergunta->identificador;
+            partida->ids_sorteados[partida->contador_ids_sorteados] = pergunta->identificador;
+            partida->contador_ids_sorteados++;
             partida->questao_atual++;
             return pergunta;
         }
         candidatas_a_pular--;
     }
     return NULL;
+}
+
+
+/**
+ * @brief Função que confere a quantidade mínima de perguntas por dificuldade antes de iniciar a partida.
+ *        São necessárias 2 muito fáceis, 2 fáceis, 7 médias, 8 difíceis e 9 muito difíceis.
+ *
+ * @param banco Ponteiro para o banco de perguntas carregado.
+ * @return Dificuldade Retorna o primeiro nível abaixo do mínimo, da muito fácil à muito difícil.
+ *         Retorna 0 quando o banco atende aos mínimos de todos os níveis.
+ */
+Dificuldade verifica_banco_para_partida(const Banco_perguntas *banco){
+
+   int contador[6];
+   for(int i = 0; i<6; i++){
+      contador[i] = 0;
+   }//zerando o contador
+
+   for(int i = 0; i<banco->quant_perguntas; i++){
+      if(banco->perguntas[i].dificuldade >= 1 && banco->perguntas[i].dificuldade <= 5){
+         switch (banco->perguntas[i].dificuldade){
+         case 1:
+            contador[1]++;
+            break;
+
+         case 2:
+            contador[2]++;
+            break;
+
+         case 3:
+            contador[3]++;
+            break;
+
+         case 4:
+            contador[4]++;
+            break;
+
+         case 5:
+            contador[5]++;
+            break;
+         }//switch
+      }//if
+   }//for que contabiliza no contador
+
+   //verificando se a quantidade é necessária
+   if(contador[1] < 2){
+      return muito_facil;
+   }
+   if(contador[2] < 2){
+      return facil;
+   }
+   if(contador[3] < 7){
+      return medio;
+   }
+   if(contador[4] < 8){
+      return dificil;
+   }
+   if(contador[5] < 9){
+      return muito_dificil;
+   }
+
+   return 0;
 }
