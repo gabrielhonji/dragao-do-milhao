@@ -13,6 +13,7 @@ typedef enum {
     CENA_BATALHA,
     CENA_VITORIA,
     CENA_DERROTA,
+    CENA_DERROTA_JORNADA,
 } CenaQuiz;
 
 typedef enum {

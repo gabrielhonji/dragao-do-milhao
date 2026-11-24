@@ -12,6 +12,11 @@
  #include <stdio.h>
  #include <stdlib.h>
  #include <string.h>
+ #ifdef _WIN32
+ #include <windows.h>
+ #else
+ #include <unistd.h>
+ #endif
  #include "arquivos_perguntas.h"
 
  /**
@@ -156,56 +161,43 @@
   * @param arquivo_dat recebe o arquivo binário onde serão salvas as informações
   * @return int retorna -1 em erro e se houver sucesso retorna 0
   */
- int salvar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat){
+ int salvar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat)
+ {
+    const char *destino = "dados/perguntas.dat";
+    char temporario[72];
 
-    int retorno_fwrite;
-
-    *arquivo_dat = fopen("dados/perguntas.dat", "wb");
-    if(*arquivo_dat == NULL){ //caso dê erro na abertura do arquivo eu retorno -1 para a main
+    // Grava no mesmo diretório antes de substituir o banco, para preservar o arquivo se a gravação falhar.
+#ifdef _WIN32
+    unsigned long processo = GetCurrentProcessId();
+#else
+    unsigned long processo = (unsigned long)getpid();
+#endif
+    snprintf(temporario, sizeof temporario, "dados/perguntas-%lu.tmp", processo);
+    *arquivo_dat = fopen(temporario, "wb");
+    if (*arquivo_dat == NULL)
         return -1;
-    }
 
-    retorno_fwrite = fwrite(&banco_perguntas->quant_perguntas, sizeof(int), 1, *arquivo_dat); //o primeiro dado salvo no arquivo binário é a quantidade de perguntas
-    if(retorno_fwrite != 1){ //conferindo se as informações foram gravadas no arquivo binário
-        fclose(*arquivo_dat); //fecho antes de retornar o erro
-        *arquivo_dat = NULL;
-        return -1;
-    }
-
-    retorno_fwrite = fwrite(&banco_perguntas->proximo_id, sizeof(int), 1, *arquivo_dat); //o segundo dado salvo no arquivo binário é o próximo id que será utilizado para cadastrar perguntas futuras
-    if(retorno_fwrite != 1){ //conferindo se as informações foram gravadas no arquivo binário
-        fclose(*arquivo_dat); //fecho antes de retornar o erro
-        *arquivo_dat = NULL;
-        return -1;
-    }
-
-    retorno_fwrite = fwrite(&banco_perguntas->quant_ids_disponiveis, sizeof(int), 1, *arquivo_dat); //o terceiro dado salvo no arquivo binário é a quantidade de IDs que foram excluídos
-    if(retorno_fwrite != 1){ //conferindo se as informações foram gravadas no arquivo binário
-        fclose(*arquivo_dat); //fecho antes de retornar o erro
-        *arquivo_dat = NULL;
-        return -1;
-    }
-
-    if(banco_perguntas->quant_ids_disponiveis > 0){ //só armazeno os IDs fantasmas se eles existirem, ou seja, a quant_ids_disponiveis tem que ser maior que 0
-        retorno_fwrite = fwrite(banco_perguntas->ids_disponiveis, sizeof(int), banco_perguntas->quant_ids_disponiveis, *arquivo_dat); //o quarto dado salvo no arquivo binário é o vetor que contém os IDs das perguntas excluídas
-        if(retorno_fwrite != banco_perguntas->quant_ids_disponiveis){ //conferindo se as informações foram gravadas no arquivo binário
-            fclose(*arquivo_dat); //fecho antes de retornar o erro
-            *arquivo_dat = NULL;
-            return -1;
-        }
-    }
-
-    retorno_fwrite = fwrite(banco_perguntas->perguntas, sizeof(Pergunta), banco_perguntas->quant_perguntas, *arquivo_dat); //por fim eu salvo as perguntas no arquivo binário
-    if(retorno_fwrite != banco_perguntas->quant_perguntas){ //conferindo se as informações foram gravadas no arquivo binário
-        fclose(*arquivo_dat); //fecho antes de retornar o erro
-        *arquivo_dat = NULL;
-        return -1;
-    }
-
-    fclose(*arquivo_dat);
+    size_t total_ids = (size_t)banco_perguntas->quant_ids_disponiveis;
+    size_t total_perguntas = (size_t)banco_perguntas->quant_perguntas;
+    int gravou = fwrite(&banco_perguntas->quant_perguntas, sizeof(int), 1, *arquivo_dat) == 1 &&
+                 fwrite(&banco_perguntas->proximo_id, sizeof(int), 1, *arquivo_dat) == 1 &&
+                 fwrite(&banco_perguntas->quant_ids_disponiveis, sizeof(int), 1, *arquivo_dat) == 1 &&
+                 (total_ids == 0 || fwrite(banco_perguntas->ids_disponiveis, sizeof(int), total_ids, *arquivo_dat) == total_ids) &&
+                 (total_perguntas == 0 || fwrite(banco_perguntas->perguntas, sizeof(Pergunta), total_perguntas, *arquivo_dat) == total_perguntas);
+    int fechou = fclose(*arquivo_dat);
     *arquivo_dat = NULL;
 
-    return 0;
+    if (gravou && fechou == 0) {
+#ifdef _WIN32
+        if (MoveFileExA(temporario, destino, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+#else
+        if (rename(temporario, destino) == 0)
+#endif
+            return 0;
+    }
+
+    remove(temporario);
+    return -1;
  }//SALVAR BINARIO
 
 

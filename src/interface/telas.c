@@ -15,6 +15,7 @@
 #include "arte_cenas.h"
 #include "componentes.h"
 #include "cores.h"
+#include "editor_perguntas.h"
 #include "../quiz/quiz.h"
 
 typedef enum
@@ -352,7 +353,7 @@ static void desenhar_gruta(Font fonte, EstadoGruta estado, int ovos_restantes, b
         DrawTextEx(fonte, "A gruta está vazia.", (Vector2){48, 104}, 24, 1, RAYWHITE);
 }
 
-void executar_tela_teste(const Banco_perguntas *banco)
+void executar_tela_teste(Banco_perguntas *banco)
 {
     Tela tela_atual = TELA_MENU;
     EstadoGruta estado_gruta = GRUTA_VAZIA;
@@ -386,6 +387,11 @@ void executar_tela_teste(const Banco_perguntas *banco)
     const Rectangle lista_perguntas = {24, 138, 912, 274};  // Painel da lista no Figma.
     const Rectangle pagina_anterior = {650, voltar.y, 136, voltar.height};
     const Rectangle pagina_seguinte = {800, voltar.y, 136, voltar.height};
+    const Rectangle nova_pergunta = {680, campo_busca.y, 256, campo_busca.height};
+    const Rectangle editar_pergunta = {246, voltar.y, 150, voltar.height};
+    const Rectangle remover_pergunta = {410, voltar.y, 150, voltar.height};
+    EditorPerguntas editor = {0};
+    const char *retorno_edicao = NULL;
 
     // Containers.
     const Rectangle mapa = {24, 88, 492, 325};
@@ -544,6 +550,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 filtro_dificuldade = 0;
                 busca_id[0] = '\0';
                 busca_em_foco = false;
+                retorno_edicao = NULL;
                 tela_atual = TELA_GERENCIAMENTO;
             }
             else if (botao_clicado(sair)) // Encerra o while principal.
@@ -586,8 +593,35 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 tela_atual = TELA_MENU;
         }
         else if (tela_atual == TELA_GERENCIAMENTO) {
-            if (botao_clicado(voltar)) {
+            if (editor.modo != EDITOR_FECHADO) {
+                ModoEditorPerguntas modo = editor.modo;
+                if (atualizar_editor_perguntas(&editor, banco)) {
+                    pagina_perguntas = 0;
+                    id_selecionado = -1;
+                    retorno_edicao = modo == EDITOR_EXCLUIR ? "Pergunta excluída." : "Pergunta salva.";
+                    if (modo == EDITOR_NOVA) {
+                        busca_id[0] = '\0';
+                        filtro_dificuldade = 0;
+                    }
+                }
+            }
+            else if (botao_clicado(voltar)) {
                 tela_atual = TELA_MENU;
+            }
+            else if (botao_clicado(nova_pergunta)) {
+                busca_em_foco = false;
+                retorno_edicao = NULL;
+                abrir_editor_perguntas(&editor, EDITOR_NOVA, NULL);
+            }
+            else if (id_selecionado >= 0 &&
+                     (botao_clicado(editar_pergunta) || botao_clicado(remover_pergunta))) {
+                int indice = pesquisar_pergunta(banco, id_selecionado);
+                if (indice >= 0) {
+                    ModoEditorPerguntas modo = botao_clicado(editar_pergunta) ? EDITOR_ALTERAR : EDITOR_EXCLUIR;
+                    busca_em_foco = false;
+                    retorno_edicao = NULL;
+                    abrir_editor_perguntas(&editor, modo, &banco->perguntas[indice]);
+                }
             }
             else {
                 if (janela_em_foco && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -789,6 +823,9 @@ void executar_tela_teste(const Banco_perguntas *banco)
 
             desenhar_botao(fonte, voltar, "Voltar");
         }
+        else if (tela_atual == TELA_GERENCIAMENTO && editor.modo != EDITOR_FECHADO) {
+            desenhar_editor_perguntas(&editor, fonte, fonte_titulo);
+        }
         else if (tela_atual == TELA_GERENCIAMENTO) {
             const float x_id = lista_perguntas.x + 24;
             const float x_enunciado = lista_perguntas.x + 110;
@@ -814,6 +851,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
 
             const char *rotulo_filtro = filtro_dificuldade == 0 ? "Dificuldade: todas" : nomes_dificuldade[filtro_dificuldade];
             desenhar_botao(fonte, botao_dificuldade, rotulo_filtro);
+            desenhar_botao_com_estado(fonte, nova_pergunta, "Nova pergunta", BOTAO_PRIMARIO, true);
 
             desenhar_painel(lista_perguntas, COR_FACE_BOTAO);
 
@@ -857,10 +895,14 @@ void executar_tela_teste(const Banco_perguntas *banco)
 
             bool tem_anterior = pagina_perguntas > 0;
             bool tem_proxima = inicio + PERGUNTAS_POR_PAGINA < total;
-            float y_pagina = voltar.y + 14; // Alinha o indicador ao meio dos botões do rodapé.
+            float y_pagina = lista_perguntas.y + lista_perguntas.height + 16; // Indicador abaixo do painel da lista.
 
-            DrawTextEx(fonte, TextFormat("Página %d", pagina_perguntas + 1), (Vector2){lista_perguntas.x + 224, y_pagina}, 18, 1, COR_TEXTO_CLARO);
+            DrawTextEx(fonte, TextFormat("Página %d", pagina_perguntas + 1), (Vector2){lista_perguntas.x, y_pagina}, 18, 1, COR_TEXTO_CLARO);
+            if (retorno_edicao != NULL)
+                DrawTextEx(fonte, retorno_edicao, (Vector2){180, y_pagina}, 18, 1, COR_TEXTO_CLARO);
             desenhar_botao(fonte, voltar, "Voltar");
+            desenhar_botao_com_estado(fonte, editar_pergunta, "Editar", BOTAO_SECUNDARIO, id_selecionado >= 0);
+            desenhar_botao_com_estado(fonte, remover_pergunta, "Excluir", BOTAO_SECUNDARIO, id_selecionado >= 0);
             desenhar_botao_com_estado(fonte, pagina_anterior, "Anterior", BOTAO_SECUNDARIO, tem_anterior);
             desenhar_botao_com_estado(fonte, pagina_seguinte, "Próxima", BOTAO_SECUNDARIO, tem_proxima);
         }
@@ -875,13 +917,16 @@ void executar_tela_teste(const Banco_perguntas *banco)
 
             CenaQuiz cena = em_batalha ? CENA_BATALHA : CENA_JORNADA;
             if (partida.situacao == derrota)
-                cena = CENA_DERROTA;
+                cena = em_batalha ? CENA_DERROTA : CENA_DERROTA_JORNADA; // Exibe o dragão caído no castelo ou na jornada dependendo até onde ele chegou.
             else if (partida.situacao == vitoria)
                 cena = CENA_VITORIA;
 
             desenhar_painel(mapa, COR_ESCURO);
             desenhar_arte_quiz(cena);
-            const char *titulo_cenario = cena == CENA_JORNADA ? "Mapa aéreo" : "Castelo do príncipe";
+
+            const char *titulo_cenario = em_batalha ? "Castelo do príncipe" : "Mapa aéreo";
+            if (cena == CENA_DERROTA_JORNADA)
+                titulo_cenario = "Estrada para o castelo";
             DrawTextEx(fonte, titulo_cenario, (Vector2){quiz.x, 24}, tamanho_corpo, 1, BLACK);
 
             // Na batalha, desconta os 8 acertos ja feitos na jornada.

@@ -34,6 +34,8 @@ typedef enum {
     FILHOTE_ESQUERDA,
     FILHOTE_DIREITA,
     DRAGAO_CREDITOS,
+    FUNDO_DERROTA_JORNADA,
+    DRAGAO_CAIDO_JORNADA,
     TOTAL_ARTES,
 } Arte;
 
@@ -68,6 +70,8 @@ static ArteCena artes[TOTAL_ARTES] = {
     [FILHOTE_ESQUERDA] = {"assets/visual/cenas/19/filhote_gruta_direita.png"},
     [FILHOTE_DIREITA] = {"assets/visual/cenas/19/filhote_gruta_esquerda.png"},
     [DRAGAO_CREDITOS] = {"assets/visual/cenas/24/dragao_voo.png"},
+    [FUNDO_DERROTA_JORNADA] = {"assets/visual/fundos/derrota_jornada.png"},
+    [DRAGAO_CAIDO_JORNADA] = {"assets/visual/cenas/derrota_jornada/dragao_caido.png"},
 };
 
 void carregar_arte_cenas(void)
@@ -122,10 +126,10 @@ void desenhar_arte_quiz(CenaQuiz cena)
     switch (cena) {
     case CENA_JORNADA:
         desenhar_png(MAPA_JORNADA, 28, 92);
-        desenhar_png(BRILHO_JORNADA, 73, 353);
-        desenhar_png(BRILHO_JORNADA, 204, 324);
+        desenhar_png(BRILHO_JORNADA, 73, 348);
+        desenhar_png(BRILHO_JORNADA, 203, 319);
         desenhar_png(BRILHO_JORNADA, 326, 224);
-        desenhar_png(BRILHO_JORNADA, 451, 165);
+        desenhar_png(BRILHO_JORNADA, 456, 176);
         desenhar_png(DRAGAO_JORNADA, 124, 256);
         break;
     case CENA_BATALHA:
@@ -148,6 +152,10 @@ void desenhar_arte_quiz(CenaQuiz cena)
         desenhar_png(DRAGAO_DERROTA, 41, 260);
         desenhar_png(PRINCIPE_DERROTA, 368, 238);
         DrawRectangle(28, 92, 484, 316, Fade(BLACK, 0.24f)); // Na derrota, escurece toda a cena.
+        break;
+    case CENA_DERROTA_JORNADA:
+        desenhar_png(FUNDO_DERROTA_JORNADA, 28, 92);
+        desenhar_png(DRAGAO_CAIDO_JORNADA, 109, 240);
         break;
     }
 }
