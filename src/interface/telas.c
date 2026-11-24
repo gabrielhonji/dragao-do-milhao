@@ -274,6 +274,8 @@ void executar_tela_teste(const Banco_perguntas *banco)
     const Pergunta *pergunta_atual = NULL;
     Dificuldade dificuldade_em_falta = 0;
     bool faltam_perguntas = false;
+    Resultado_resposta retorno_resposta;
+    int retorno_retirada;
 
     // Botões.
     const Rectangle jogar = {48, 188, 280, 52};
@@ -424,7 +426,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
             }
             else if (confirmou || botao_clicado(jogar)) {
                 dificuldade_em_falta = verifica_banco_para_partida(banco);
-                if(dificuldade_em_falta == 0){ //verificando se não falta perguntas nas dificuldades
+                if (dificuldade_em_falta == 0) { //verificando se não falta perguntas nas dificuldades
                     inicializa_partida(&partida);
                     pergunta_atual = sorteia_pergunta(banco, &partida);
                     faltam_perguntas = pergunta_atual == NULL;
@@ -446,16 +448,18 @@ void executar_tela_teste(const Banco_perguntas *banco)
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
             if (botao_clicado(voltar)) // Voltar nessa tela tem ação de cancelar
                 tela_atual = TELA_JORNADA;
-            else if (botao_clicado(acao_quiz)) { // Confirma a retirada
-                partida.situacao = retirada;
+            else if (botao_clicado(acao_quiz)) {                // Confirma a retirada
+                retorno_retirada = confirma_retirada(&partida); //chama a função que recebe o checkpoint da retirada
                 previa_gruta = false;
-                if (partida.acertos >= 10)
-                    estado_gruta = GRUTA_OURO_MEDIO;
-                else if (partida.acertos >= 5)
-                    estado_gruta = GRUTA_OURO_BAIXO;
-                else
-                    estado_gruta = GRUTA_VAZIA;
-                tela_atual = TELA_GRUTA;
+                if (retorno_retirada >= 0) { //confirmando se a retirada tática funcionou
+                    if (retorno_retirada >= 10)
+                        estado_gruta = GRUTA_OURO_MEDIO;
+                    else if (retorno_retirada >= 5)
+                        estado_gruta = GRUTA_OURO_BAIXO;
+                    else
+                        estado_gruta = GRUTA_VAZIA;
+                    tela_atual = TELA_GRUTA;
+                }
             }
         }
         // Ações do botão de voltar em cada tela.
@@ -495,24 +499,18 @@ void executar_tela_teste(const Banco_perguntas *banco)
         else if (alternativa_selecionada >= 0 && (confirmou || botao_clicado(acao_quiz) || repetiu_alternativa)) {
             // Confirma a resposta.
             if (!resposta_confirmada) {
-                char resposta = 'A' + alternativa_selecionada;           // Transforma o índice das alternativas em letras.
-                resposta_correta = resposta == pergunta_atual->resposta; // Valida se a resposta ta certa.
+                char resposta = 'A' + alternativa_selecionada; // Transforma o índice das alternativas em letras.
                 resposta_confirmada = true;
 
-                if (resposta_correta) {
-                    partida.acertos++;
+                retorno_resposta = processa_resposta(&partida, pergunta_atual, resposta);
 
-                    // A ultima resposta correta significa que o jogador venceu o jogo.
-                    if (partida.questao_atual == 15)
-                        partida.situacao = vitoria;
-                }
-                else {
-                    // Até integrar o renascimento por ovos, o primeiro erro encerra a tentativa.
-                    partida.situacao = derrota;
-                }
+                if (retorno_resposta == resposta_acerto || retorno_resposta == resposta_marco || retorno_resposta == resposta_vitoria)
+                    resposta_correta = true;
+                else
+                    resposta_correta = false;
             }
             // Só avança em uma nova ação, depois de mostrar o resultado da resposta.
-            else if (resposta_correta && partida.questao_atual < 15 && !faltam_perguntas) {
+            else if ((resposta_correta || retorno_resposta == resposta_renascimento) && partida.questao_atual < 15 && !faltam_perguntas) {
                 const Pergunta *proxima = sorteia_pergunta(banco, &partida);
                 if (proxima == NULL)
                     faltam_perguntas = true;
@@ -546,38 +544,38 @@ void executar_tela_teste(const Banco_perguntas *banco)
                        BLACK);
             desenhar_botao(fonte, jogar, "Jogar");
 
-            if (dificuldade_em_falta != 0){
-                switch (dificuldade_em_falta)
-                {
-                case muito_facil:
-                    DrawTextEx(fonte, "O banco precisa de pelo menos 2 perguntas muito fáceis.", (Vector2){48, 260},
-                            tamanho_corpo, 1, MAROON);
-                    break;
+            if (dificuldade_em_falta != 0) {
+                switch (dificuldade_em_falta) {
+                    case muito_facil:
+                        DrawTextEx(fonte, "O banco precisa de pelo menos 2 perguntas muito fáceis.", (Vector2){48, 260},
+                                   tamanho_corpo, 1, MAROON);
+                        break;
 
-                case facil:
-                    DrawTextEx(fonte, "O banco precisa de pelo menos 2 perguntas fáceis.", (Vector2){48, 260},
-                            tamanho_corpo, 1, MAROON);
-                    break;
+                    case facil:
+                        DrawTextEx(fonte, "O banco precisa de pelo menos 2 perguntas fáceis.", (Vector2){48, 260},
+                                   tamanho_corpo, 1, MAROON);
+                        break;
 
-                case medio:
-                    DrawTextEx(fonte, "O banco precisa de pelo menos 7 perguntas médias.", (Vector2){48, 260},
-                            tamanho_corpo, 1, MAROON);
-                    break;
+                    case medio:
+                        DrawTextEx(fonte, "O banco precisa de pelo menos 7 perguntas médias.", (Vector2){48, 260},
+                                   tamanho_corpo, 1, MAROON);
+                        break;
 
-                case dificil:
-                    DrawTextEx(fonte, "O banco precisa de pelo menos 8 perguntas difíceis.", (Vector2){48, 260},
-                            tamanho_corpo, 1, MAROON);
-                    break;
+                    case dificil:
+                        DrawTextEx(fonte, "O banco precisa de pelo menos 8 perguntas difíceis.", (Vector2){48, 260},
+                                   tamanho_corpo, 1, MAROON);
+                        break;
 
-                case muito_dificil:
-                    DrawTextEx(fonte, "O banco precisa de pelo menos 9 perguntas muito difíceis.", (Vector2){48, 260},
-                            tamanho_corpo, 1, MAROON);
-                    break;
+                    case muito_dificil:
+                        DrawTextEx(fonte, "O banco precisa de pelo menos 9 perguntas muito difíceis.", (Vector2){48, 260},
+                                   tamanho_corpo, 1, MAROON);
+                        break;
 
-                default:
-                    break;
+                    default:
+                        break;
                 }
-            } else if (faltam_perguntas)
+            }
+            else if (faltam_perguntas)
                 DrawTextEx(fonte, "Sem perguntas para iniciar.", (Vector2){48, 260},
                            tamanho_corpo, 1, MAROON);
         }
@@ -587,7 +585,11 @@ void executar_tela_teste(const Banco_perguntas *banco)
             bool em_batalha = partida.questao_atual > questoes_jornada;
 
             const char *nome_etapa = em_batalha ? "Batalha" : "Jornada";
-            const char *titulo_quiz = TextFormat("%s - Questão %d de %d", nome_etapa, partida.questao_atual, total_questoes);
+            const char *titulo_quiz;
+            if (resposta_confirmada && retorno_resposta == resposta_renascimento)
+                titulo_quiz = TextFormat("Renascimento.");
+            else
+                titulo_quiz = TextFormat("%s - Questão %d de %d", nome_etapa, partida.questao_atual, total_questoes);
             DrawTextEx(fonte, titulo_quiz, (Vector2){24, 24}, tamanho_corpo, 1, BLACK);
 
             DrawRectangleRec(mapa, LIGHTGRAY);
@@ -656,7 +658,9 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 mensagem = "Sem perguntas para avançar.";
             // Define a mensagem dependendo se errou, acertou ou ganhou;
             else if (resposta_confirmada) {
-                if (!resposta_correta)
+                if (retorno_resposta == resposta_renascimento) //Caso em que o jogador erra a
+                    mensagem = TextFormat("Você renascerá na questão %d.", partida.checkpoint + 1);
+                else if (!resposta_correta)
                     mensagem = "Resposta incorreta.";
                 else if (partida.questao_atual == 15)
                     mensagem = "Quiz concluído, a princesa foi salva.";
@@ -671,7 +675,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 DrawTextEx(fonte, mensagem, posicao, tamanho_corpo, 1.0f, BLACK);
             }
 
-            bool pode_continuar = resposta_confirmada && resposta_correta && partida.questao_atual < 15;
+            bool pode_continuar = resposta_confirmada && ((retorno_resposta == resposta_renascimento) || resposta_correta) && partida.questao_atual < 15;
             if (alternativa_selecionada >= 0 && !faltam_perguntas && (!resposta_confirmada || pode_continuar)) {
                 const char *rotulo = resposta_confirmada ? "Continuar" : "Confirmar";
                 desenhar_botao(fonte, acao_quiz, rotulo);
