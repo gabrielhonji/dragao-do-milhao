@@ -132,6 +132,49 @@ static void desenhar_enunciado(Font fonte, Rectangle area, const Pergunta *pergu
     DrawTextEx(fonte, texto, (Vector2){area.x, area.y}, tamanho, espacamento, BLACK);
 }
 
+/**
+ * @brief Desenha o enunciado em uma linha e corta em um fim de palavra se passar da largura.
+ *
+ * @param fonte Fonte utilizada no enunciado.
+ * @param texto Enunciado da questão a ser desenhada.
+ * @param posicao Canto superior esquerdo da prévia.
+ * @param largura Largura disponível até a próxima coluna.
+ */
+static void desenhar_previa_enunciado(Font fonte, const char *texto, Vector2 posicao, float largura)
+{
+    const float tamanho = 18;
+    const float espacamento = 1;
+    // strpbrk procura em texto o primeiro '\r' ou '\n' e retorna seu endereço, ou NULL se não encontrar.
+    // '\r' é o retorno de carro (um \n em que ao inves de criar uma nova linha ele concatena o restante ao ínicio da string) e aparece antes de '\n' nas quebras de linha do Windows.
+    if (strpbrk(texto, "\r\n") == NULL && MeasureTextEx(fonte, texto, tamanho, espacamento).x <= largura) {
+        DrawTextEx(fonte, texto, posicao, tamanho, espacamento, COR_TEXTO_CLARO);
+        return;
+    }
+
+    const char *fim_previa = texto;
+
+    // Como na quebra de linha do quiz, só mede nos separadores entre palavras.
+    for (const char *fim_palavra = texto; *fim_palavra != '\0'; fim_palavra++) {
+        char separador = *fim_palavra;
+        bool quebra_linha = separador == '\n' || separador == '\r';
+        if (separador != ' ' && !quebra_linha)
+            continue;
+
+        // Em %.*s, % abre a conversão, . indica um limite, * lê esse limite de um int e s indica uma string.
+        // A diferença entre os ponteiros dá o limite em bytes. Os três pontos finais são texto literal.
+        const char *trecho = TextFormat("%.*s...", (int)(fim_palavra - texto), texto);
+        if (MeasureTextEx(fonte, trecho, tamanho, espacamento).x > largura)
+            break;
+
+        fim_previa = fim_palavra;
+        if (quebra_linha)
+            break; // A prévia termina antes da quebra já presente no enunciado.
+    }
+
+    const char *previa = TextFormat("%.*s...", (int)(fim_previa - texto), texto);
+    DrawTextEx(fonte, previa, posicao, tamanho, espacamento, COR_TEXTO_CLARO);
+}
+
 enum
 {
     AJUDA_BURRO,
@@ -287,6 +330,15 @@ void executar_tela_teste(const Banco_perguntas *banco)
     const Rectangle creditos = {jogar.x, gerenciar.y + passo, 151, jogar.height};
     const Rectangle sair = {creditos.x + creditos.width + 9, creditos.y, 158, jogar.height};
     const Rectangle voltar = {24, 464, 200, 52};
+
+    // Elementos da tela de gerenciamento de perguntas.
+    const int perguntas_por_pagina = 4;
+    int pagina_perguntas = 0; // O índice começa em zero, mas a tela mostra "Página 1".
+
+    const Rectangle lista_perguntas = {24, 138, 912, 274}; // Painel da lista no Figma.
+    const Rectangle pagina_anterior = {650, voltar.y, 136, voltar.height};
+    const Rectangle pagina_seguinte = {800, voltar.y, 136, voltar.height};
+
     // Containers.
     const Rectangle mapa = {24, 88, 492, 325};
     const Rectangle quiz = {544, 88, 392, 325};
@@ -450,6 +502,10 @@ void executar_tela_teste(const Banco_perguntas *banco)
             }
             else if (botao_clicado(creditos))
                 tela_atual = TELA_CREDITOS;
+            else if (botao_clicado(gerenciar)) {
+                pagina_perguntas = 0; // Abre a lista na primeira página.
+                tela_atual = TELA_GERENCIAMENTO;
+            }
             else if (botao_clicado(sair)) // Encerra o while principal.
                 break;
             else if (confirmou || botao_clicado(jogar)) { // Inicia um novo jogo.
@@ -488,6 +544,17 @@ void executar_tela_teste(const Banco_perguntas *banco)
         else if (tela_atual == TELA_CREDITOS) {
             if (botao_clicado(voltar))
                 tela_atual = TELA_MENU;
+        }
+        else if (tela_atual == TELA_GERENCIAMENTO) {
+            // A próxima página só existe se o índice da primeira pergunta dela estiver no vetor.
+            int inicio_proxima = (pagina_perguntas + 1) * perguntas_por_pagina;
+
+            if (botao_clicado(voltar))
+                tela_atual = TELA_MENU;
+            else if (pagina_perguntas > 0 && botao_clicado(pagina_anterior))
+                pagina_perguntas--;
+            else if (inicio_proxima < banco->quant_perguntas && botao_clicado(pagina_seguinte))
+                pagina_perguntas++;
         }
         // Ações do botão de voltar em cada tela.
         else if (botao_clicado(voltar)) {
@@ -570,18 +637,20 @@ void executar_tela_teste(const Banco_perguntas *banco)
         // O recorte usa coordenadas da janela. Tudo que cair fora dessa área deixa as barras intactas.
         BeginScissorMode((int)area_exibida.x, (int)area_exibida.y, (int)area_exibida.width, (int)area_exibida.height);
         BeginMode2D(camera); // Daqui até EndMode2D, podemos desenhar nas coordenadas de 960 × 540.
-        // Esse usa fundo escuro é o grupo que contem o tema escuro.
-        bool usa_fundo_escuro = tela_atual == TELA_MENU || tela_atual == TELA_CREDITOS;
+        // Esse usa_fundo_escuro é o grupo que contem o tema escuro.
+        bool usa_fundo_escuro = tela_atual == TELA_MENU ||
+                               tela_atual == TELA_CREDITOS ||
+                               tela_atual == TELA_GERENCIAMENTO;
         Color fundo = usa_fundo_escuro ? COR_FUNDO_MENU : RAYWHITE;
         DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, fundo);
 
-        // Desenha as telas e seus elementos
+        /* Desenha as telas e seus elementos. */
         if (tela_atual == TELA_MENU) {
             desenhar_painel((Rectangle){24, 24, 524, 492}, COR_ESCURO);
 
             // Desenha o mapa do menu.
             if (IsTextureValid(mapa_menu))
-                DrawTexture(mapa_menu, 28, 28, WHITE); // Coloca o canto superior esquerdo do mapa dentro da moldura.
+                DrawTexture(mapa_menu, 28, 28, WHITE);     // Coloca o canto superior esquerdo do mapa dentro da moldura.
             DrawRectangle(28, 28, 516, 484, COR_VEU_MAPA); // Escurece só o mapa com 30% de opacidade.
 
             // Desenha o dragão do menu.
@@ -618,8 +687,8 @@ void executar_tela_teste(const Banco_perguntas *banco)
             DrawTextEx(fonte_titulo, "Créditos", (Vector2){mapa.x, 13}, 34, 1, COR_TEXTO_CLARO);
 
             // O PNG exportado começa 4 px para dentro da moldura do mapa.
-            const int x_mapa = (int) mapa.x + 4;
-            const int y_mapa = (int) mapa.y + 4;
+            const int x_mapa = (int)mapa.x + 4;
+            const int y_mapa = (int)mapa.y + 4;
 
             // Pinta o fundo e a borda antes do mapa. O véu escurece o mapa, e o dragão desenhado depois mantém suas cores.
             desenhar_painel(mapa, COR_ESCURO);
@@ -664,6 +733,65 @@ void executar_tela_teste(const Banco_perguntas *banco)
             DrawTextEx(fonte, "Fundamentos de Programação 2", (Vector2){x_texto, y_disciplina}, tamanho_rodape, 1, COR_TEXTO_CLARO);
 
             desenhar_botao(fonte, voltar, "Voltar");
+        }
+        else if (tela_atual == TELA_GERENCIAMENTO) {
+            const float x_id = lista_perguntas.x + 24;
+            const float x_enunciado = lista_perguntas.x + 110;
+            const float x_dificuldade = lista_perguntas.x + 712;
+            const float y_cabecalho = lista_perguntas.y + 18;
+            const float primeira_linha = lista_perguntas.y + 49;
+            const float altura_linha = 43;
+            const float espaco_linhas = 6;
+            const float largura_enunciado = x_dificuldade - x_enunciado - 16; // Deixa 16 px antes da dificuldade.
+
+            const char *nomes_dificuldade[] = {
+                "Desconhecida", "Muito fácil", "Fácil", "Média", "Difícil", "Muito difícil",
+            };
+
+            DrawTextEx(fonte_titulo, "Gerenciar perguntas", (Vector2){lista_perguntas.x, 13}, 34, 1, COR_TEXTO_CLARO);
+            // Desenha a moldura em degraus e pinta seu interior com a cor da face dos botões.
+            desenhar_painel(lista_perguntas, COR_FACE_BOTAO);
+
+            // Escreve os cabeçalhos.
+            DrawTextEx(fonte, "ID", (Vector2){x_id, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+            DrawTextEx(fonte, "Enunciado", (Vector2){x_enunciado, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+            DrawTextEx(fonte, "Dificuldade", (Vector2){x_dificuldade, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+
+            // A página 0 começa no índice 0, a página 1 no índice 4, e assim por diante.
+            int inicio = pagina_perguntas * perguntas_por_pagina;
+            for (int linha = 0; linha < perguntas_por_pagina; linha++) {
+                int indice = inicio + linha; // Soma a posição da linha ao primeiro índice da página.
+                if (indice >= banco->quant_perguntas)
+                    break; // A última página pode ter menos de quatro perguntas.
+
+                const Pergunta *pergunta = &banco->perguntas[indice];
+                float y_linha = primeira_linha + linha * (altura_linha + espaco_linhas);
+                float y_texto = y_linha + 12; // Recuo vertical do texto dentro da faixa.
+                // Fundo escuro da linha, com recuo de 12 px dos dois lados do painel.
+                Rectangle faixa = {lista_perguntas.x + 12, y_linha, lista_perguntas.width - 24, altura_linha};
+                DrawRectangleRec(faixa, COR_ESCURO);
+
+                int dificuldade = pergunta->dificuldade;
+                if (dificuldade < muito_facil || dificuldade > muito_dificil)
+                    dificuldade = 0; // Usa o rótulo "Desconhecida" para valores fora da escala.
+
+                // %03d exibe o ID com pelo menos três dígitos, preenchendo com zeros à esquerda.
+                DrawTextEx(fonte, TextFormat("%03d", pergunta->identificador), (Vector2){x_id, y_texto}, 18, 1, COR_TEXTO_CLARO);
+                desenhar_previa_enunciado(fonte, pergunta->enunciado, (Vector2){x_enunciado, y_texto}, largura_enunciado);
+                DrawTextEx(fonte, nomes_dificuldade[dificuldade], (Vector2){x_dificuldade, y_texto}, 18, 1, COR_TEXTO_CLARO);
+            }
+
+            if (banco->quant_perguntas == 0)
+                DrawTextEx(fonte, "Nenhuma pergunta cadastrada.", (Vector2){x_id, primeira_linha}, 18, 1, COR_TEXTO_CLARO);
+
+            bool tem_anterior = pagina_perguntas > 0;
+            bool tem_proxima = inicio + perguntas_por_pagina < banco->quant_perguntas;
+            float y_pagina = voltar.y + 14; // Alinha o indicador ao meio dos botões do rodapé.
+
+            DrawTextEx(fonte, TextFormat("Página %d", pagina_perguntas + 1), (Vector2){lista_perguntas.x + 224, y_pagina}, 18, 1, COR_TEXTO_CLARO);
+            desenhar_botao(fonte, voltar, "Voltar");
+            desenhar_botao_com_estado(fonte, pagina_anterior, "Anterior", BOTAO_SECUNDARIO, tem_anterior);
+            desenhar_botao_com_estado(fonte, pagina_seguinte, "Próxima", BOTAO_SECUNDARIO, tem_proxima);
         }
         else if (tela_atual == TELA_JORNADA) {
             const int questoes_jornada = 8;

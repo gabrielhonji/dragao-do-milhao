@@ -11,11 +11,21 @@
 
 O sprite antigo anexado ajudou a recuperar o tipo de dragão desejado. As duas escolhas acima refinam essa identidade e determinam a referência para o próximo preview. [Sprite · dragão.png](https://chatgpt.com/library?file_id=libfile_54171b61458c81918d8e805c9b308c88&account_id=personal)
 
+## Montagem do menu com a arte aprovada
+
+O sprite do menu vem do **quadrante superior direito da prancha de acabamentos**, marcado como 02. Esse quadrante já reúne o dragão 01 e o acabamento 02. A prancha de personagens explica a escolha do desenho, e o quadrante da prancha de acabamentos é a fonte para o PNG do menu. [One dragon, four pixel art styles.png](https://chatgpt.com/library?file_id=libfile_41913da098388191bed826414bbe492b&account_id=personal)
+
+1. Recortar o quadrante aprovado, isolar o fundo e exportar com transparência. Ajustar posição, margem e escala somente para o encaixe, mantendo as proporções e usando vizinho mais próximo para preservar as bordas dos pixels.
+2. Antes de chamar o sprite de pronto, comparar lado a lado com o quadrante aprovado. Conferir silhueta, proporções, pose, paleta e acabamento, com atenção ao pescoço, à cabeça, às patas e às manchas de cor nas asas. Em seguida, abrir a prévia de 960 × 540 com o mesmo PNG.
+3. Se a prancha estiver inacessível, indicar a falha de acesso e deixar pendente a parte da montagem que depende do sprite. O trabalho independente no vale pode seguir. Gerar ou redesenhar o dragão somente quando Honji pedir uma variação.
+
+Na primeira prévia, a transferência da prancha falhou e a geração substituta mudou a pose e o acabamento. O dragão daquela prévia foi rejeitado para o menu. Sua imagem serviu para testar a composição com o vale.
+
 ## O dragão 01
 
 - A **cabeça** tem olho ciano pequeno sob a sobrancelha, testa inclinada, focinho curto em cunha e maxilar inferior definido. Os chifres de marfim curvam para trás e saem junto ao topo do crânio. As placas da bochecha ajudam a dar volume à parte de trás da cabeça. Em poses novas, encurtar o focinho antes de detalhar se a silhueta começar a lembrar a de um jacaré.
 - O **corpo** é de um adulto de porte médio, com pescoço em arco, garganta dourada, peito e coxas firmes. As membranas azul-petróleo contrastam com a pele cobre e castanha. O olho funciona como um ponto pequeno de atenção.
-- Na **pose de voo** da referência, a asa próxima aberta deixa as membranas visíveis, a cabeça olha para a direita, a cauda curva para trás e as patas aparecem sob o corpo. Esse é o gesto de partida para o menu. Em outras poses, preservar os marcos anatômicos e a leitura das articulações.
+- Na **pose de voo** da referência, a asa próxima aberta deixa as membranas visíveis, a cabeça olha para a direita, a cauda curva para trás e as patas aparecem sob o corpo. Essa pose é a aprovada para o menu. Em outras poses, preservar os marcos anatômicos e a leitura das articulações.
 
 ## Como desenhar no acabamento 02
 
@@ -23,7 +33,7 @@ O sprite antigo anexado ajudou a recuperar o tipo de dragão desejado. As duas e
 2. **Agrupar pixels em manchas de tamanhos variados.** Na asa do 02 há trechos amplos de membrana, manchas médias onde ela dobra e detalhes pequenos nas transições. Esse equilíbrio preserva áreas lisas e dá volume suficiente para ler as dobras à distância.
 3. **Fazer a borda pertencer ao material.** O cobre iluminado e o azul-petróleo da membrana podem chegar à silhueta. Guardar os tons mais escuros para a parte de baixo, a junção da asa e as sobreposições de membros. Um contorno escuro contínuo faria o dragão parecer recortado e colado sobre o cenário.
 4. **Dar uma função à textura.** Concentrar os pixels menores na virada do ombro, nas dobras da membrana ou na transição de uma placa para outra. Manter áreas calmas ao redor. Luz e sombra devem continuar legíveis no tamanho do menu.
-5. **Trabalhar na grade de pixels.** A prancha aprova a linguagem visual. Na arte de produção, definir a grade do sprite, manter os degraus nítidos e conferir ampliações inteiras sem suavização. Os números e o fundo neutro fazem parte da apresentação da prancha.
+5. **Trabalhar na grade de pixels.** Para novas poses e cenários no acabamento aprovado, definir a grade, manter os degraus nítidos e conferir ampliações inteiras sem suavização. Os números e o fundo neutro fazem parte da apresentação da prancha.
 
 ## Como levar a mesma linguagem ao vale
 
