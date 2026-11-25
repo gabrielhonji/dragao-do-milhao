@@ -10,6 +10,7 @@
  */
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -19,6 +20,42 @@
 
 static int cadastro_pergunta(Pergunta *pergunta);
 static void descartar_linha(void);
+
+/** @brief Carrega o banco salvo ou importa e grava as perguntas iniciais se o binário estiver ausente. */
+static bool preparar_banco_perguntas(Banco_perguntas *banco, FILE **arquivo_dat)
+{
+    int retorno = carregar_binario(banco, arquivo_dat);
+    if (retorno == -2) {
+        puts("Banco de perguntas ausente. Carregando o CSV inicial.");
+        FILE *arquivo_csv = NULL;
+        int quantidade = carregar_csv(banco, &arquivo_csv);
+        if (quantidade < 0) {
+            fputs("Erro ao ler dados/perguntas_iniciais.csv.\n", stderr);
+            return false;
+        }
+        printf("Foram lidas %d perguntas do arquivo .csv\n", quantidade);
+
+        retorno = salvar_binario_inicial(banco, arquivo_dat);
+        if (retorno == 0) {
+            puts("Arquivo binário criado");
+            return true;
+        }
+        if (retorno < 0) {
+            fputs("Erro ao criar dados/perguntas.dat.\n", stderr);
+            return false;
+        }
+
+        // Outra execução criou o banco depois da nossa tentativa de leitura.
+        retorno = carregar_binario(banco, arquivo_dat);
+    }
+
+    if (retorno != 0) {
+        fputs("Erro ao carregar dados/perguntas.dat.\n", stderr);
+        return false;
+    }
+    puts("Arquivo binário carregado");
+    return true;
+}
 
 int main(int quantidade_argumentos, char *argumentos[])
 {
@@ -31,36 +68,17 @@ int main(int quantidade_argumentos, char *argumentos[])
     }
 
     Banco_perguntas banco_perguntas;
-    FILE *arquivos_csv = NULL;
-    int retorno_carregar_csv;
     int opcao;
     FILE *arquivo_dat = NULL;
-    int retorno_binario;
     FILE *arquivo_exportacao_csv = NULL;
     int retorno_exportar_csv;
 
     inicializa_banco(&banco_perguntas);
 
-    retorno_binario = carregar_binario(&banco_perguntas, &arquivo_dat);
-    if (retorno_binario == -2) {                                              //o arquivo binário não existir significa que estou na primeira execução, nesse caso leio as perguntas do CSV.
-        printf("Não foi possível abrir o binário.Tentando carregar o CSV\n"); //falha na abertura do arquivo binário
-        retorno_carregar_csv = carregar_csv(&banco_perguntas, &arquivos_csv);
-        if (retorno_carregar_csv == -1) {
-            free(banco_perguntas.perguntas);
-            perror("Erro na abertura do arquivo CSV");
-            exit(EXIT_FAILURE); //caso de erro no carregamento do arquivo CSV, eu saio do programa e imprimo essa mensagem de erro
-        }
-        else {
-            printf("\nForam lidas %d perguntas do arquivo .csv\n", retorno_carregar_csv); //teste
-        }
-    }
-    else if (retorno_binario == -1) { //erro na abertura do arquivo binário
+    if (!preparar_banco_perguntas(&banco_perguntas, &arquivo_dat)) {
         free(banco_perguntas.perguntas);
-        perror("Erro na abertura do arquivo binário");
-        exit(EXIT_FAILURE); //caso de erro no carregamento do arquivo binário, eu saio do programa e imprimo essa mensagem de erro
-    }
-    else {
-        printf("Arquivo binário carregado\n");
+        free(banco_perguntas.ids_disponiveis);
+        return EXIT_FAILURE;
     }
 
     if (modo_visual) {
@@ -72,6 +90,7 @@ int main(int quantidade_argumentos, char *argumentos[])
         return 0;
     }
 
+    bool banco_alterado = false;
     do {
         printf("\nMENU DE CADASTRO\n");
         printf("    1 - Cadastrar Pergunta Nova\n");
@@ -110,6 +129,8 @@ int main(int quantidade_argumentos, char *argumentos[])
                 if (!cadastro_pergunta(&pergunta))
                     break;
                 int resultado = inserir_pergunta(&banco_perguntas, &pergunta);
+                if (resultado == 0)
+                    banco_alterado = true;
                 puts(resultado == 0 ? "Pergunta cadastrada com sucesso." : "Não foi possível cadastrar a pergunta.");
                 break;
             }
@@ -156,6 +177,8 @@ int main(int quantidade_argumentos, char *argumentos[])
                 if (!cadastro_pergunta(&pergunta))
                     break;
                 int resultado = alterar_pergunta(&banco_perguntas, id_pergunta_alteracao, &pergunta);
+                if (resultado == 0)
+                    banco_alterado = true;
                 puts(resultado == 0 ? "Pergunta alterada com sucesso." : "Não foi possível alterar a pergunta.");
                 break;
             }
@@ -170,6 +193,8 @@ int main(int quantidade_argumentos, char *argumentos[])
                     }
                 } while (id_pergunta_excluida < 0);
                 int resultado = excluir_pergunta(&banco_perguntas, id_pergunta_excluida);
+                if (resultado == 0)
+                    banco_alterado = true;
                 puts(resultado == 0 ? "Pergunta excluída com sucesso." : "Não foi possível excluir a pergunta.");
                 break;
             }
@@ -211,12 +236,11 @@ int main(int quantidade_argumentos, char *argumentos[])
         } //switch
     } while (opcao != 0);
 
-    retorno_binario = salvar_binario(&banco_perguntas, &arquivo_dat);
-    if (retorno_binario == -1) {
-        printf("Erro ao salvar arquivo binário\n");
-    }
-    else {
-        printf("Arquivo binário criado\n");
+    if (banco_alterado) {
+        if (salvar_binario(&banco_perguntas, &arquivo_dat) == -1)
+            puts("Erro ao salvar arquivo binário");
+        else
+            puts("Arquivo binário atualizado");
     }
 
     free(banco_perguntas.perguntas);
