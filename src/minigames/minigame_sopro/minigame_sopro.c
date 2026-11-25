@@ -1,73 +1,43 @@
 /**
  * @file minigame_sopro.c
  * @author Enzo Andreassa Pizza (enzoandreassa@alunos.utfpr.edu.br)
- * @brief Controla o movimento, o tempo e o resultado do Sopro Ancestral.
+ * @brief Controla a carga, o tempo e o resultado do Sopro Ancestral.
  * @version 0.1
  * @date 2026-11-23
- * 
+ *
  * @copyright Copyright (c) 2026
- * 
  */
 #include <stdlib.h>
 #include "minigame_sopro.h"
 
-static MinigameSopro jogo;
-
-void iniciarMinigameSopro(void)
+void iniciarMinigameSopro(MinigameSopro *jogo)
 {
-
-    jogo.tempo =0;
-    jogo.posicao_barra =0;
-    jogo.velocidade_barra =10;
-    jogo.resultado =0;
-
-    jogo.zona_inicio =rand()%43;
-    jogo.zona_final =jogo.zona_inicio +8;
+    jogo->carga = 0;
+    jogo->resultado = 0;
+    jogo->tempo = 0;
 }
 
-static float atualizaBarra(float posicao_barra, float velocidade_da_barra, float tempo_decorrido){
-   posicao_barra += velocidade_da_barra * tempo_decorrido;
-   return posicao_barra;
-}
+void atualizarMinigame(MinigameSopro *jogo, float tempo_decorrido, int apertou_espaco)
+{
+    if (jogo->resultado != 0)
+        return; // Mantém o estado da rodada encerrada para a tela de resultado.
 
-void atualizarMinigame(float tempo_decorrido, int apertou_espaco){
+    jogo->tempo += tempo_decorrido;
 
-    if(jogo.resultado!=0){
+    if (jogo->tempo >= SOPRO_TEMPO_LIMITE) { // Verifica o prazo antes de aplicar o toque.
+        jogo->resultado = -1;
         return;
     }
 
-    jogo.tempo+=tempo_decorrido;
-      if(jogo.tempo >=10){
-         jogo.resultado =-1;
-         return;
-      }
+    jogo->carga -= 22.0f * tempo_decorrido; // Calcula a queda pela duração do quadro.
+    if (jogo->carga <= 0.0f)
+        jogo->carga = 0.0f;
 
-    jogo.posicao_barra=atualizaBarra(jogo.posicao_barra,jogo.velocidade_barra,tempo_decorrido);
+    if (apertou_espaco == 1) // Aplica o ganho apenas no quadro do novo aperto.
+        jogo->carga += 7.0f;
 
-    if(jogo.posicao_barra>=50){
-        jogo.posicao_barra=50;
-        jogo.velocidade_barra=-10;
+    if (jogo->carga >= 100.0f) { // Limita a barra à carga máxima ao vencer.
+        jogo->carga = 100.0f;
+        jogo->resultado = 1;
     }
-    else if(jogo.posicao_barra<=0){
-        jogo.posicao_barra=0;
-        jogo.velocidade_barra=10;
-    }
-
-    if(apertou_espaco==1){
-        if(jogo.posicao_barra>=jogo.zona_inicio && jogo.posicao_barra<=jogo.zona_final){
-            jogo.resultado =1;
-        }
-        else{
-            jogo.resultado =-1;
-        }
-    }
-}
-
-int obterResultadoMinigame(void){
-   return jogo.resultado;
-}
-
-const MinigameSopro *obterEstadoMinigameSopro(void)
-{
-    return &jogo;
 }

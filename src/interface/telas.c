@@ -17,6 +17,7 @@
 #include "cores.h"
 #include "editor_perguntas.h"
 #include "../quiz/quiz.h"
+#include "../minigames/minigames.h"
 
 typedef enum
 {
@@ -26,6 +27,7 @@ typedef enum
     TELA_GRUTA,
     TELA_CREDITOS,
     TELA_GERENCIAMENTO,
+    TELA_SOPRO,
 } Tela;
 enum
 {
@@ -361,6 +363,7 @@ void executar_tela_teste(Banco_perguntas *banco)
     const int teclas_gruta[] = {KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR}; // Uma tecla por estado para testar sem precisar ficar jogando milhares de vezes.
     const int ovos_teste[] = {0, 0, 1, 2};                              // Filhotes para cada teste.
     Partida partida;
+    MinigameSopro sopro;
     const Pergunta *pergunta_atual = NULL;
     int questao_exibida = 0; // Mantém o número na tela até o próximo sorteio, mesmo após o renascimento.
     Dificuldade dificuldade_em_falta = 0;
@@ -409,6 +412,7 @@ void executar_tela_teste(Banco_perguntas *banco)
 
     // Elementos do quiz.
     const Rectangle acao_quiz = {quiz.x, voltar.y, 200, voltar.height}; // Botão de confirmar.
+    const Rectangle voltar_sopro = {600, 484, 200, 44};
     int alternativa_selecionada = -1;
     bool resposta_confirmada = false;
     Resultado_resposta resultado_resposta = 0; // Só é consultado depois de confirmar.
@@ -593,6 +597,7 @@ void executar_tela_teste(Banco_perguntas *banco)
         }
         // Cancelar preserva a pergunta aberta. Confirmar leva a recompensa dos marcos à gruta.
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
+
             if (botao_clicado(voltar)) // Voltar nessa tela tem ação de cancelar
                 tela_atual = TELA_JORNADA;
             else if (botao_clicado(acao_quiz)) { // Confirma a retirada
@@ -691,6 +696,19 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
         }
         // Ações do botão de voltar em cada tela.
+        else if (tela_atual == TELA_SOPRO) {
+            if (sopro.resultado == 0) {
+                atualizarMinigame(&sopro, GetFrameTime(), janela_em_foco && IsKeyPressed(KEY_SPACE));
+            }
+            else if (botao_clicado(voltar_sopro)) {
+                if (sopro.resultado == 1) {
+                    aplicar_ajuda(AJUDA_DRAGAO, pergunta_atual, &dicas);
+                    if (alternativa_selecionada >= 0 && dicas.eliminadas[alternativa_selecionada])
+                        alternativa_selecionada = -1;
+                }
+                tela_atual = TELA_JORNADA;
+            }
+        }
         else if (botao_clicado(voltar)) {
             if (tela_atual == TELA_GRUTA || faltam_perguntas)
                 tela_atual = TELA_MENU;
@@ -713,6 +731,11 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
         }
         // Consome o uso e aplica o efeito à pergunta que já está na tela.
+        else if (ajuda_clicada == AJUDA_DRAGAO) {
+            usos_ajuda[AJUDA_DRAGAO]--;
+            iniciarMinigameSopro(&sopro);
+            tela_atual = TELA_SOPRO;
+        }
         else if (ajuda_clicada >= 0) {
             usos_ajuda[ajuda_clicada]--;
             if (ajuda_clicada == AJUDA_BURRO)
@@ -1071,6 +1094,42 @@ void executar_tela_teste(Banco_perguntas *banco)
             // Divide o espaço vertical livre para alinhar o texto ao botão Voltar.
             const Vector2 posicao_texto = {quiz.x, voltar.y + (voltar.height - tamanho_corpo) / 2.0f};
             DrawTextEx(fonte, texto_gruta, posicao_texto, tamanho_corpo, 1, BLACK);
+        }
+        else if (tela_atual == TELA_SOPRO) {
+            float tempo_restante = SOPRO_TEMPO_LIMITE - sopro.tempo;
+            if (tempo_restante <= 0)
+                tempo_restante = 0.0f;
+
+            float progresso = 1.0f - tempo_restante / SOPRO_TEMPO_LIMITE;
+            int espessura = 24 + (int)(136.0f * progresso);
+            Color borda = Fade(RED, 0.70f * progresso * progresso);
+            const Rectangle barra = {160, 458, 640, 18};
+            Rectangle preenchimento = barra;
+            preenchimento.width *= sopro.carga / 100.0f;
+            Color transparente = Fade(RED, 0.0f);
+
+            desenhar_painel((Rectangle){156, 104, 648, 344}, COR_ESCURO);
+            desenhar_arte_sopro();
+
+            DrawRectangleGradientV(0, 0, LARGURA_BASE, espessura, borda, transparente);
+            DrawRectangleGradientH(0, 0, espessura, ALTURA_BASE, borda, transparente);
+            DrawRectangleGradientH(LARGURA_BASE - espessura, 0, espessura, ALTURA_BASE, transparente, borda);
+            DrawRectangleGradientV(0, ALTURA_BASE - espessura, LARGURA_BASE, espessura, transparente, borda);
+
+            DrawTextEx(fonte, TextFormat("%.1f s", tempo_restante), (Vector2){720, 30}, tamanho_corpo, 1, BLACK);
+            DrawTextEx(fonte_titulo, "Sopro Ancestral", (Vector2){160, 12}, tamanho_titulo, 1, BLACK);
+            DrawTextEx(fonte, "Aperte Espaço repetidamente para carregar o sopro.", (Vector2){160, 75}, tamanho_corpo, 1, BLACK);
+
+            DrawRectangleRec(barra, COR_FACE_BLOQUEADA);
+            DrawRectangleRec(preenchimento, COR_FACE_PRIMARIA);
+
+            if (sopro.resultado != 0) {
+                if (sopro.resultado == 1)
+                    DrawTextEx(fonte, "Sopro carregado!", (Vector2){160, 494}, tamanho_corpo, 1, BLACK);
+                else
+                    DrawTextEx(fonte, "Tempo esgotado!", (Vector2){160, 494}, tamanho_corpo, 1, BLACK);
+                desenhar_botao(fonte, voltar_sopro, "Voltar à pergunta");
+            }
         }
 
         // Sai das coordenadas do jogo, libera o recorte e apresenta o quadro pronto.

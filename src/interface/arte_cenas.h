@@ -51,4 +51,6 @@ void desenhar_arte_quiz(CenaQuiz cena);
  */
 void desenhar_arte_gruta(EstadoGruta estado, int filhotes, bool mostrar_dragao);
 
+void desenhar_arte_sopro(void);
+
 #endif
