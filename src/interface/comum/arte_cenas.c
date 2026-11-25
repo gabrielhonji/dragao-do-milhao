@@ -43,6 +43,8 @@ typedef enum
     TROTE_FOGO,
     TROTE_OVO,
     TROTE_CARTA_SELADA,
+    ECO_CEU,
+    ECO_POMBA,
     TOTAL_ARTES,
 } Arte;
 
@@ -86,6 +88,8 @@ static ArteCena artes[TOTAL_ARTES] = {
     [TROTE_FOGO] = {"assets/visual/icones/trote_carta_fogo.png"},
     [TROTE_OVO] = {"assets/visual/icones/trote_carta_ovo.png"},
     [TROTE_CARTA_SELADA] = {"assets/visual/cenas/12/carta_selada.png"},
+    [ECO_CEU] = {"assets/visual/fundos/ceu_povoado.png"},
+    [ECO_POMBA] = {"assets/visual/cenas/12/pomba.png"},
 };
 
 // A cor multiplica o RGB do sprite durante o desenho. O alfa 255 preserva a transparência do PNG.
@@ -153,6 +157,22 @@ void desenhar_arte_sopro(void)
 {
     desenhar_png(PATIO_SOPRO, 160, 108);
     desenhar_png_com_luz(DRAGAO_SOPRO, 190, 182, luz_patio);
+}
+
+void desenhar_fundo_eco(Vector2 origem)
+{
+    desenhar_png(ECO_CEU, (int)origem.x, (int)origem.y);
+}
+
+void desenhar_pomba_eco(Vector2 centro)
+{
+    Texture2D textura = artes[ECO_POMBA].textura;
+    if (!IsTextureValid(textura))
+        return;
+
+    // 24 por 20 preserva a proporção do PNG e deixa as asas ligeiramente além do corpo.
+    Rectangle destino = {centro.x - 12, centro.y - 10, 24, 20}; // Metade do tamanho centraliza o sprite.
+    DrawTexturePro(textura, (Rectangle){0, 0, textura.width, textura.height}, destino, (Vector2){0}, 0.0f, WHITE);
 }
 
 // As coordenadas abaixo são as da coluna destino do manifesto de sprites v2.
