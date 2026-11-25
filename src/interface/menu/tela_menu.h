@@ -15,6 +15,7 @@ typedef struct
     Rectangle gerenciar;
     Rectangle creditos;
     Rectangle sair;
+    Rectangle som;
 } BotoesMenu;
 
 typedef enum
@@ -24,6 +25,7 @@ typedef enum
     MENU_CREDITOS,
     MENU_RANKING,
     MENU_GERENCIAR,
+    MENU_ALTERNAR_SOM,
     MENU_SAIR,
     MENU_JOGAR,
 } AcaoMenu;
@@ -42,8 +44,9 @@ AcaoMenu ler_acao_menu(const BotoesMenu *botoes, bool janela_em_foco, bool confi
  * @param tamanho_titulo Altura lógica do título.
  * @param dificuldade_em_falta Nome da dificuldade que precisa de perguntas, ou NULL.
  * @param faltam_perguntas Indica que a primeira pergunta não pôde ser sorteada.
+ * @param som_ligado Estado do som mostrado no botão.
  */
 void desenhar_menu(const BotoesMenu *botoes, Font fonte, Font fonte_titulo,
-                  int tamanho_titulo, const char *dificuldade_em_falta, bool faltam_perguntas);
+                  int tamanho_titulo, const char *dificuldade_em_falta, bool faltam_perguntas, bool som_ligado);
 
 #endif

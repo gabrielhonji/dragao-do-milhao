@@ -77,6 +77,13 @@ AcaoQuiz atualizar_quiz(TelaQuiz *tela, const LayoutQuiz *layout, const Banco_pe
  */
 void aplicar_efeito_ajuda_quiz(TelaQuiz *tela, int ajuda);
 
+/**
+ * @brief Indica se a pergunta exibida pertence à Batalha.
+ * @param tela Quiz com o número da questão mostrado ao jogador.
+ * @return Verdadeiro a partir da primeira pergunta no castelo.
+ */
+bool quiz_em_batalha(const TelaQuiz *tela);
+
 /** @brief Desenha a cena, os indicadores da partida e a pergunta atual. */
 void desenhar_quiz(const TelaQuiz *tela, const LayoutQuiz *layout, Font fonte, int tamanho_corpo);
 

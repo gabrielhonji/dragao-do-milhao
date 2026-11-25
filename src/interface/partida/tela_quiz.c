@@ -9,6 +9,11 @@
 #include "../comum/componentes.h"
 #include "../comum/cores.h"
 
+enum
+{
+    QUESTOES_JORNADA = 8,
+};
+
 static const char *const nomes_ajuda[TOTAL_AJUDAS] = {"Burro", "Dragão", "Princesa"};
 
 /**
@@ -253,11 +258,16 @@ void aplicar_efeito_ajuda_quiz(TelaQuiz *tela, int ajuda)
         tela->alternativa_selecionada = -1;
 }
 
+bool quiz_em_batalha(const TelaQuiz *tela)
+{
+    // A questão 8 ainda mostra a Jornada. A troca acontece quando a questão 9 aparece.
+    return tela->questao_exibida > QUESTOES_JORNADA;
+}
+
 void desenhar_quiz(const TelaQuiz *tela, const LayoutQuiz *layout, Font fonte, int tamanho_corpo)
 {
-    const int questoes_jornada = 8;
     const int total_questoes = 15;
-    bool em_batalha = tela->questao_exibida > questoes_jornada;
+    bool em_batalha = quiz_em_batalha(tela);
     bool renascendo = tela->resposta_confirmada && tela->resultado_resposta == resposta_renascimento;
 
     const char *nome_etapa = em_batalha ? "Batalha" : "Jornada";
@@ -291,7 +301,7 @@ void desenhar_quiz(const TelaQuiz *tela, const LayoutQuiz *layout, Font fonte, i
     }
     else {
         int valor = em_batalha ? calcula_pv_principe(&tela->partida) : tela->partida.acertos;
-        int limite = em_batalha ? PV_MAX_PRINCIPE : questoes_jornada;
+        int limite = em_batalha ? PV_MAX_PRINCIPE : QUESTOES_JORNADA;
         const char *progresso = TextFormat("%s: %d/%d", em_batalha ? "PV" : "Etapas", valor, limite);
         DrawTextEx(fonte, progresso, posicao_progresso, 20, 1, BLACK);
 

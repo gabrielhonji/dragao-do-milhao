@@ -11,6 +11,7 @@
 
 #include "telas.h"
 #include "comum/arte_cenas.h"
+#include "comum/audio.h"
 #include "comum/componentes.h"
 #include "comum/cores.h"
 #include "../quiz/quiz.h"
@@ -100,6 +101,21 @@ static bool fonte_carregada(Font fonte)
     return fonte.texture.id != 0 && fonte.texture.id != GetFontDefault().texture.id;
 }
 
+/**
+ * @brief Escolhe a música de acordo com a tela e a etapa exibida.
+ * @param tela Tela ativa no quadro.
+ * @param quiz Estado da pergunta, usado para distinguir a Jornada da Batalha.
+ * @return Trilha da Batalha no quiz do castelo. A trilha da Jornada cobre as demais telas.
+ */
+static TrilhaAudio trilha_da_tela(Tela tela, const TelaQuiz *quiz)
+{
+    if (tela == TELA_JORNADA && quiz_em_batalha(quiz))
+        return TRILHA_BATALHA;
+
+    // Compartilhar a trilha evita reiniciar a música ao abrir Créditos, Ranking ou outras telas.
+    return TRILHA_JORNADA;
+}
+
 void executar_tela_teste(Banco_perguntas *banco)
 {
     // Navegação e botão compartilhado pelas telas.
@@ -159,6 +175,7 @@ void executar_tela_teste(Banco_perguntas *banco)
     }
 
     carregar_arte_cenas();
+    iniciar_audio();
 
     int escala_da_fonte = 1;
     int ultima_escala_solicitada = 1;
@@ -172,6 +189,8 @@ void executar_tela_teste(Banco_perguntas *banco)
         // Sem uma área útil, avança o quadro sem desenhar a interface.
         Rectangle area_exibida = calcular_area_exibicao();
         if (area_exibida.width <= 0 || area_exibida.height <= 0) {
+            // Mesmo quando pulamos o desenho do quadro, a música precisa receber mais amostras.
+            atualizar_audio(trilha_da_tela(tela_atual, &tela_quiz));
             BeginDrawing();
             EndDrawing();
             continue;
@@ -224,6 +243,8 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
             else if (acao == MENU_CREDITOS)
                 tela_atual = TELA_CREDITOS;
+            else if (acao == MENU_ALTERNAR_SOM)
+                alternar_som();
             else if (acao == MENU_RANKING) {
                 carregar_ranking(&tela_ranking);
                 tela_atual = TELA_RANKING;
@@ -319,6 +340,9 @@ void executar_tela_teste(Banco_perguntas *banco)
                 atualizar_previa_gruta(&tela_gruta, janela_em_foco);
         }
 
+        // As ações já trocaram a tela e a pergunta. Usa a mesma etapa que será desenhada neste quadro.
+        atualizar_audio(trilha_da_tela(tela_atual, &tela_quiz));
+
         // Para desenhar, a câmera faz o caminho jogo → janela: amplia pelo zoom e soma a margem.
         Camera2D camera = {.offset = {area_exibida.x, area_exibida.y}, .zoom = escala};
         BeginDrawing();
@@ -338,7 +362,7 @@ void executar_tela_teste(Banco_perguntas *banco)
         /* Desenha as telas e seus elementos. */
         if (tela_atual == TELA_MENU) {
             const char *nivel = dificuldade_em_falta == 0 ? NULL : nomes_dificuldade[dificuldade_em_falta];
-            desenhar_menu(&botoes_menu, fonte, fonte_titulo, tamanho_titulo, nivel, tela_quiz.faltam_perguntas);
+            desenhar_menu(&botoes_menu, fonte, fonte_titulo, tamanho_titulo, nivel, tela_quiz.faltam_perguntas, som_esta_ligado());
         }
         else if (tela_atual == TELA_RANKING) {
             desenhar_ranking(&tela_ranking, fonte, fonte_titulo, voltar);
@@ -376,6 +400,7 @@ void executar_tela_teste(Banco_perguntas *banco)
 
     liberar_ranking(&tela_ranking);
     descarregar_arte_cenas();
+    encerrar_audio();
 
     // Descarrega as fontes.
     UnloadFont(fonte_titulo);
