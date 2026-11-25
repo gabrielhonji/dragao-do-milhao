@@ -43,7 +43,7 @@ Execute os comandos **na raiz do repositório**, onde está o Makefile:
 
 Para abrir o cadastro no terminal, compile com `make` e execute `./dragao-do-milhao --terminal`. No Windows, depois de compilar com `mingw32-make`, execute `.\dragao-do-milhao.exe --terminal` no PowerShell.
 
-No terminal, escolha uma opção pelo número correspondente. A opção `0` encerra o programa e salva o banco em binário. Na interface gráfica, o banco é salvo ao confirmar uma alteração em **Gerenciar perguntas**.
+No terminal, escolha uma opção pelo número correspondente. A opção `0` encerra o programa e salva as alterações no banco binário. Na interface gráfica, as alterações são salvas ao confirmar uma operação em **Gerenciar perguntas**.
 
 ## Arquivos de dados
 
@@ -53,7 +53,7 @@ No terminal, escolha uma opção pelo número correspondente. A opção `0` ence
 | `dados/perguntas.dat`            | Banco atualizado pelos dois modos  |
 | `dados/perguntas_exportadas.csv` | Exportação solicitada pela opção 7 |
 
-Na primeira execução, quando o binário ainda não existe, o programa importa o CSV inicial. Nas execuções seguintes, recupera o banco pelo binário. Alterar o CSV inicial depois disso não atualiza automaticamente o banco salvo.
+Na primeira execução, quando o binário ainda não existe, o programa importa o CSV inicial e grava `dados/perguntas.dat` antes de abrir o menu. Nas execuções seguintes, carrega o banco direto do binário. Alterar o CSV inicial depois disso não atualiza automaticamente o banco salvo.
 
 Para carregar um CSV inicial atualizado, feche o jogo e, se `dados/perguntas.dat` existir, mova o arquivo para fora do repositório. Depois, execute `make run`. O banco anterior preserva as alterações feitas no cadastro e pode ser guardado como cópia de segurança. Como o binário é gerado localmente e ignorado pelo Git, cada cópia do projeto pode ter seu próprio banco salvo.
 

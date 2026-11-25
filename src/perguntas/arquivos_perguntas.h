@@ -19,6 +19,9 @@
 
     int salvar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat); //salva os dados em um arquivo binário
 
+    /** @brief Cria o binário inicial. Retorna 1 quando o arquivo já existe, 0 em sucesso ou -1 em caso de erro. */
+    int salvar_binario_inicial(Banco_perguntas *banco_perguntas, FILE **arquivo_dat);
+
     int carregar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat); //carrega os dados salvos do arquivo binário
 
     int exportar_csv(Banco_perguntas *banco_perguntas, FILE **arquivo_exportacao_csv); //exporta as perguntas para um outro arquivo_csv, contendo as alterações feitas nas perguntas

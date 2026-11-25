@@ -12,6 +12,8 @@
  #include <stdio.h>
  #include <stdlib.h>
  #include <string.h>
+ #include <errno.h>
+ #include <stdbool.h>
  #ifdef _WIN32
  #include <windows.h>
  #else
@@ -47,6 +49,12 @@
 
     while(contador_perguntas < LIMITE_PERGUNTAS && fgets(perguntas_lidas[contador_perguntas], sizeof perguntas_lidas[0], *arquivo_csv) != NULL){ // O limite também dimensiona o vetor de linhas.
         contador_perguntas ++; //contabiliza as linhas lidas, sendo válidas ou não
+    }
+
+    if (ferror(*arquivo_csv)) {
+        fclose(*arquivo_csv);
+        *arquivo_csv = NULL;
+        return -1;
     }
     
     for(int i = 0; i<contador_perguntas; i++){
@@ -149,20 +157,21 @@
     fclose(*arquivo_csv);
     *arquivo_csv = NULL;
 
-    return contador_perguntas;
+    return banco_perguntas->quant_perguntas;
 
  }//CARREGAR CSV
 
 
 
  /**
-  * @brief Função que abre o arquivo binário, salva as perguntas cadastradas e retorna -1 em caso de erro. Se houver sucesso retorna 0;
+  * @brief Grava o banco em um arquivo temporário e o publica após concluir a gravação.
   * 
   * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
   * @param arquivo_dat recebe o arquivo binário onde serão salvas as informações
-  * @return int retorna -1 em erro e se houver sucesso retorna 0
+  * @param substituir Verdadeiro para atualizar um banco salvo, falso para criar o banco inicial.
+  * @return 0 em sucesso, 1 se já existe um banco que deve ser preservado ou -1 em caso de erro.
   */
- int salvar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat)
+ static int gravar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat, bool substituir)
  {
     const char *destino = "dados/perguntas.dat";
     char temporario[72];
@@ -188,18 +197,43 @@
     int fechou = fclose(*arquivo_dat);
     *arquivo_dat = NULL;
 
+    int resultado = -1;
     if (gravou && fechou == 0) {
 #ifdef _WIN32
-        if (MoveFileExA(temporario, destino, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
-#else
-        if (rename(temporario, destino) == 0)
-#endif
+        DWORD opcoes = substituir ? MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH : MOVEFILE_WRITE_THROUGH;
+        if (MoveFileExA(temporario, destino, opcoes))
             return 0;
+        DWORD erro = GetLastError();
+        if (!substituir && (erro == ERROR_ALREADY_EXISTS || erro == ERROR_FILE_EXISTS))
+            resultado = 1;
+#else
+        if (substituir && rename(temporario, destino) == 0)
+            return 0;
+        // O link publica o banco inicial somente se o destino ainda estiver livre.
+        if (!substituir) {
+            if (link(temporario, destino) == 0)
+                resultado = 0;
+            else if (errno == EEXIST)
+                resultado = 1;
+        }
+#endif
     }
 
     remove(temporario);
-    return -1;
- }//SALVAR BINARIO
+    return resultado;
+ }
+
+
+ int salvar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat)
+ {
+    return gravar_binario(banco_perguntas, arquivo_dat, true);
+ }
+
+
+ int salvar_binario_inicial(Banco_perguntas *banco_perguntas, FILE **arquivo_dat)
+ {
+    return gravar_binario(banco_perguntas, arquivo_dat, false);
+ }
 
 
 
@@ -217,9 +251,8 @@
     int retorno_fread;
 
     *arquivo_dat = fopen("dados/perguntas.dat", "rb");
-    if(*arquivo_dat == NULL){ //caso dê erro na abertura do arquivo eu retorno -2 para a main
-        return -2; //esse -2 vai ser lido na main
-    }
+    if (*arquivo_dat == NULL)
+        return errno == ENOENT ? -2 : -1;
 
     //LENDO A QUANTIDADE DE PERGUNTAS
     retorno_fread = fread(&banco_perguntas_temp.quant_perguntas, sizeof(int), 1, *arquivo_dat);
