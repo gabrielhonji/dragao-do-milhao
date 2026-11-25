@@ -15,7 +15,6 @@
 #include "arte_cenas.h"
 #include "componentes.h"
 #include "cores.h"
-#include "editor_perguntas.h"
 #include "../quiz/quiz.h"
 #include "../quiz/arquivo_partidas.h"
 #include "tela_menu.h"
@@ -23,6 +22,7 @@
 #include "tela_ranking.h"
 #include "tela_registro.h"
 #include "tela_gruta.h"
+#include "tela_gerenciamento.h"
 
 typedef enum
 {
@@ -39,7 +39,6 @@ enum
 {
     LARGURA_BASE = 960,
     ALTURA_BASE = 540,
-    PERGUNTAS_POR_PAGINA = 4,
 };
 
 /**
@@ -135,90 +134,6 @@ static void desenhar_enunciado(Font fonte, Rectangle area, const Pergunta *pergu
     }
 
     DrawTextEx(fonte, texto, (Vector2){area.x, area.y}, tamanho, espacamento, BLACK);
-}
-
-/**
- * @brief Reúne os índices das perguntas que aparecem na página filtrada.
- *
- * @param banco Banco de perguntas consultado.
- * @param busca ID digitado, ou string vazia para exibir qualquer ID.
- * @param dificuldade Dificuldade desejada, ou 0 para exibir todas.
- * @param pagina Índice da página, começando em zero.
- * @param indices Vetor preenchido com os índices das perguntas visíveis.
- * @return Total de perguntas que passam pela busca e pelo filtro.
- */
-static int coletar_pagina_perguntas(const Banco_perguntas *banco, const char *busca, int dificuldade, int pagina, int indices[PERGUNTAS_POR_PAGINA])
-{
-    const bool busca_ativa = busca[0] != '\0'; // Só ativa a busca se tiver algo escrito no input.
-    // atoi converte os dígitos do campo em int, então "007" e "7" buscam o mesmo ID.
-    const int id_procurado = atoi(busca);
-    const int inicio = pagina * PERGUNTAS_POR_PAGINA;
-    int total = 0;
-
-    for (int i = 0; i < banco->quant_perguntas; i++) {
-        const Pergunta *pergunta = &banco->perguntas[i];
-        // Com a busca preenchida, só passam perguntas cujo ID é igual ao digitado.
-        if (busca_ativa && pergunta->identificador != id_procurado)
-            continue;
-        // O filtro 0 aceita todas. Qualquer outro valor exige que a dificuldade coincida.
-        if (dificuldade != 0 && (int)pergunta->dificuldade != dificuldade)
-            continue;
-
-        // total é o índice deste resultado na lista filtrada, antes de contar a pergunta atual.
-        int linha = total - inicio;
-        if (linha >= 0 && linha < PERGUNTAS_POR_PAGINA)
-            indices[linha] = i;
-
-        total++;
-    }
-
-    return total;
-}
-/**
- * @brief Calcula a área usada para desenhar e clicar em uma linha.
- * @param painel Área que contém a listagem.
- * @param linha Posição na página, começando em zero.
- * @return Retângulo da linha na tela lógica.
- */
-static Rectangle faixa_pergunta(Rectangle painel, int linha)
-{
-    const float recuo = 12;    // Margem esquerda e direita das faixas.
-    const float topo = 49;     // Espaço entre o topo do painel e a primeira faixa.
-    const float altura = 43;   // Altura de uma faixa.
-    const float intervalo = 6; // Espaço livre entre duas faixas.
-
-    return (Rectangle){painel.x + recuo, painel.y + topo + linha * (altura + intervalo),
-                       painel.width - 2 * recuo, altura};
-}
-
-/**
- * @brief Lê dígitos e Backspace para atualizar o campo de busca.
- * @param busca Texto editável do campo.
- * @param capacidade Tamanho do vetor, incluindo espaço para o '\0'.
- * @return Verdadeiro se o conteúdo foi alterado.
- */
-static bool atualizar_busca_id(char *busca, size_t capacidade)
-{
-    size_t tamanho = strlen(busca); // Usa o tipo retornado por strlen e também usado por sizeof.
-    bool mudou = false;
-
-    if (tamanho > 0 && IsKeyPressed(KEY_BACKSPACE)) {
-        busca[--tamanho] = '\0';
-        mudou = true;
-    }
-
-    // GetCharPressed lê o próximo caractere digitado. O laço consome a fila até receber 0.
-    for (int tecla = GetCharPressed(); tecla != 0; tecla = GetCharPressed()) {
-        if (tecla < '0' || tecla > '9' || tamanho + 1 >= capacidade)
-            continue;
-
-        busca[tamanho] = (char)tecla;
-        tamanho++;             // Avança para a posição onde vai ficar o terminador.
-        busca[tamanho] = '\0'; // Mantém a string terminada após cada dígito.
-        mudou = true;
-    }
-
-    return mudou;
 }
 
 enum
@@ -327,23 +242,7 @@ void executar_tela_teste(Banco_perguntas *banco)
 
     TelaGruta tela_gruta = {.estado = GRUTA_VAZIA};
 
-    // Elementos da tela de gerenciamento de perguntas.
-    int pagina_perguntas = 0;
-    int id_selecionado = -1;    // -1 indica que nenhuma pergunta foi selecionada.
-    int filtro_dificuldade = 0; // 0 mostra todas. As dificuldades válidas vão de 1 a 5.
-    char busca_id[5] = "";      // Quatro dígitos do ID e o '\0' no final.
-    bool busca_em_foco = false; // O campo só recebe texto depois de um clique nele.
-    EditorPerguntas editor = {0};
-    const char *retorno_edicao = NULL;
-
-    const Rectangle campo_busca = {24, 76, 360, 44};        // Área da busca no Figma.
-    const Rectangle botao_dificuldade = {400, 76, 229, 44}; // Área do filtro no Figma.
-    const Rectangle lista_perguntas = {24, 138, 912, 274};  // Painel da lista no Figma.
-    const Rectangle pagina_anterior = {650, voltar.y, 136, voltar.height};
-    const Rectangle pagina_seguinte = {800, voltar.y, 136, voltar.height};
-    const Rectangle nova_pergunta = {680, campo_busca.y, 256, campo_busca.height};
-    const Rectangle editar_pergunta = {246, voltar.y, 150, voltar.height};
-    const Rectangle remover_pergunta = {410, voltar.y, 150, voltar.height};
+    TelaGerenciamento tela_gerenciamento = {0};
 
     // Painéis reaproveitados pelo quiz e pelos créditos.
     const Rectangle mapa = {24, 88, 492, 325};
@@ -512,12 +411,7 @@ void executar_tela_teste(Banco_perguntas *banco)
             else if (acao == MENU_GERENCIAR) {
                 dificuldade_em_falta = 0;
                 faltam_perguntas = false;
-                pagina_perguntas = 0;
-                id_selecionado = -1;
-                filtro_dificuldade = 0;
-                busca_id[0] = '\0';
-                busca_em_foco = false;
-                retorno_edicao = NULL;
+                abrir_gerenciamento(&tela_gerenciamento, voltar);
                 tela_atual = TELA_GERENCIAMENTO;
             }
             else if (acao == MENU_SAIR) // Encerra o while principal.
@@ -569,80 +463,8 @@ void executar_tela_teste(Banco_perguntas *banco)
                 tela_atual = TELA_MENU;
         }
         else if (tela_atual == TELA_GERENCIAMENTO) {
-            // Enquanto o formulário estiver aberto, ele recebe os cliques e o teclado da tela.
-            if (editor.modo != EDITOR_FECHADO) {
-                ModoEditorPerguntas modo = editor.modo;
-                if (atualizar_editor_perguntas(&editor, banco)) {
-                    // A gravação pode mudar a quantidade e a ordem das linhas. Recomeça a lista.
-                    pagina_perguntas = 0;
-                    id_selecionado = -1;
-                    retorno_edicao = modo == EDITOR_EXCLUIR ? "Pergunta excluída." : "Pergunta salva.";
-                    if (modo == EDITOR_NOVA) {
-                        // Limpa os filtros da busca para incluir a nova pergunta nos resultados.
-                        busca_id[0] = '\0';
-                        filtro_dificuldade = 0;
-                    }
-                }
-            }
-            else if (botao_clicado(voltar)) {
+            if (atualizar_gerenciamento(&tela_gerenciamento, banco, janela_em_foco))
                 tela_atual = TELA_MENU;
-            }
-            else if (botao_clicado(nova_pergunta)) {
-                busca_em_foco = false;
-                retorno_edicao = NULL;
-                abrir_editor_perguntas(&editor, EDITOR_NOVA, NULL);
-            }
-            else if (id_selecionado >= 0 &&
-                     (botao_clicado(editar_pergunta) || botao_clicado(remover_pergunta))) {
-                // Busca pelo ID selecionado. O índice do vetor pode mudar após outra operação.
-                int indice = pesquisar_pergunta(banco, id_selecionado);
-                if (indice >= 0) {
-                    ModoEditorPerguntas modo = botao_clicado(editar_pergunta) ? EDITOR_ALTERAR : EDITOR_EXCLUIR;
-                    busca_em_foco = false;
-                    retorno_edicao = NULL;
-                    abrir_editor_perguntas(&editor, modo, &banco->perguntas[indice]);
-                }
-            }
-            else {
-                if (janela_em_foco && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-                    busca_em_foco = botao_clicado(campo_busca);
-
-                // Só lê o teclado se o campo e a janela estiverem em foco.
-                // A leitura devolve true quando um dígito foi escrito ou apagado.
-                bool mudou_busca = busca_em_foco && janela_em_foco && atualizar_busca_id(busca_id, sizeof busca_id);
-                bool mudou_filtro = botao_clicado(botao_dificuldade);
-
-                if (mudou_filtro)
-                    filtro_dificuldade = filtro_dificuldade == muito_dificil ? 0 : filtro_dificuldade + 1;
-
-                if (mudou_busca || mudou_filtro) {
-                    pagina_perguntas = 0;
-                    id_selecionado = -1;
-                }
-
-                int indices[PERGUNTAS_POR_PAGINA];
-                int total = coletar_pagina_perguntas(banco, busca_id, filtro_dificuldade, pagina_perguntas, indices);
-                int inicio = pagina_perguntas * PERGUNTAS_POR_PAGINA;
-
-                // Navegação das páginas.
-                if (pagina_perguntas > 0 && botao_clicado(pagina_anterior)) {
-                    pagina_perguntas--;
-                    id_selecionado = -1;
-                }
-                else if (inicio + PERGUNTAS_POR_PAGINA < total && botao_clicado(pagina_seguinte)) {
-                    pagina_perguntas++;
-                    id_selecionado = -1;
-                }
-                else {
-                    for (int linha = 0; linha < PERGUNTAS_POR_PAGINA && inicio + linha < total; linha++) {
-                        if (botao_clicado(faixa_pergunta(lista_perguntas, linha))) {
-                            // A posição no vetor serve para ler a pergunta. O ID identifica o registro escolhido.
-                            id_selecionado = banco->perguntas[indices[linha]].identificador;
-                            break;
-                        }
-                    }
-                }
-            }
         }
         else if (tela_atual == TELA_REGISTRAR_RESULTADO) {
             if (atualizar_registro(&tela_registro, &partida, salvar_ranking, janela_em_foco, confirmou))
@@ -731,76 +553,8 @@ void executar_tela_teste(Banco_perguntas *banco)
         else if (tela_atual == TELA_CREDITOS) {
             desenhar_creditos(fonte, fonte_titulo, mapa, quiz, voltar);
         }
-        else if (tela_atual == TELA_GERENCIAMENTO && editor.modo != EDITOR_FECHADO) {
-            desenhar_editor_perguntas(&editor, fonte, fonte_titulo);
-        }
         else if (tela_atual == TELA_GERENCIAMENTO) {
-            const float x_id = lista_perguntas.x + 24;
-            const float x_enunciado = lista_perguntas.x + 110;
-            const float x_dificuldade = lista_perguntas.x + 712;
-            const float y_cabecalho = lista_perguntas.y + 18;
-            const float largura_enunciado = x_dificuldade - x_enunciado - 16; // Deixa 16 px antes da dificuldade.
-
-            DrawTextEx(fonte_titulo, "Gerenciar perguntas", (Vector2){lista_perguntas.x, 13}, 34, 1, COR_TEXTO_CLARO);
-            Color fundo_busca = busca_em_foco ? COR_FACE_SELECIONADA : COR_ESCURO;
-            desenhar_painel(campo_busca, fundo_busca);
-            const char *rotulo_busca = busca_id[0] == '\0' ? "Buscar por ID" : busca_id;
-            Vector2 posicao_busca = {campo_busca.x + 12, campo_busca.y + 13}; // Margem à esquerda e texto centralizado na altura.
-            DrawTextEx(fonte, rotulo_busca, posicao_busca, 18, 1, COR_TEXTO_CLARO);
-
-            const char *rotulo_filtro = filtro_dificuldade == 0 ? "Dificuldade: todas" : nomes_dificuldade[filtro_dificuldade];
-            desenhar_botao(fonte, botao_dificuldade, rotulo_filtro);
-            desenhar_botao_com_estado(fonte, nova_pergunta, "Nova pergunta", BOTAO_PRIMARIO, true);
-
-            desenhar_painel(lista_perguntas, COR_FACE_BOTAO);
-
-            // Escreve os cabeçalhos.
-            DrawTextEx(fonte, "ID", (Vector2){x_id, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-            DrawTextEx(fonte, "Enunciado", (Vector2){x_enunciado, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-            DrawTextEx(fonte, "Dificuldade", (Vector2){x_dificuldade, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-
-            int indices[PERGUNTAS_POR_PAGINA];
-            int total = coletar_pagina_perguntas(banco, busca_id, filtro_dificuldade, pagina_perguntas, indices);
-            int inicio = pagina_perguntas * PERGUNTAS_POR_PAGINA;
-
-            // Desenha os mesmos resultados e retângulos que a lógica de clique usa.
-            for (int linha = 0; linha < PERGUNTAS_POR_PAGINA && inicio + linha < total; linha++) {
-                const Pergunta *pergunta = &banco->perguntas[indices[linha]];
-                Rectangle faixa = faixa_pergunta(lista_perguntas, linha);
-                float y_texto = faixa.y + 12; // Recuo vertical do texto dentro da faixa.
-
-                bool selecionada = pergunta->identificador == id_selecionado;
-                DrawRectangleRec(faixa, selecionada ? COR_FACE_SELECIONADA : COR_ESCURO);
-                if (selecionada)
-                    DrawRectangleLinesEx(faixa, 2, COR_BORDA_SELECIONADA); // Contorno de 2 px para destacar a escolha.
-
-                int dificuldade = pergunta->dificuldade;
-                if (dificuldade < muito_facil || dificuldade > muito_dificil)
-                    dificuldade = 0; // Usa o rótulo "Desconhecida" para valores fora da escala.
-
-                // %03d exibe o ID com pelo menos três dígitos, preenchendo com zeros à esquerda.
-                DrawTextEx(fonte, TextFormat("%03d", pergunta->identificador), (Vector2){x_id, y_texto}, 18, 1, COR_TEXTO_CLARO);
-                desenhar_previa_texto(fonte, pergunta->enunciado, (Vector2){x_enunciado, y_texto}, largura_enunciado);
-                DrawTextEx(fonte, nomes_dificuldade[dificuldade], (Vector2){x_dificuldade, y_texto}, 18, 1, COR_TEXTO_CLARO);
-            }
-
-            if (total == 0) {
-                const char *mensagem_lista = banco->quant_perguntas == 0 ? "Nenhuma pergunta cadastrada." : "Nenhuma pergunta encontrada.";
-                DrawTextEx(fonte, mensagem_lista, (Vector2){x_id, faixa_pergunta(lista_perguntas, 0).y}, 18, 1, COR_TEXTO_CLARO);
-            }
-
-            bool tem_anterior = pagina_perguntas > 0;
-            bool tem_proxima = inicio + PERGUNTAS_POR_PAGINA < total;
-            float y_pagina = lista_perguntas.y + lista_perguntas.height + 16; // Indicador abaixo do painel da lista.
-
-            DrawTextEx(fonte, TextFormat("Página %d", pagina_perguntas + 1), (Vector2){lista_perguntas.x, y_pagina}, 18, 1, COR_TEXTO_CLARO);
-            if (retorno_edicao != NULL)
-                DrawTextEx(fonte, retorno_edicao, (Vector2){180, y_pagina}, 18, 1, COR_TEXTO_CLARO);
-            desenhar_botao(fonte, voltar, "Voltar");
-            desenhar_botao_com_estado(fonte, editar_pergunta, "Editar", BOTAO_SECUNDARIO, id_selecionado >= 0);
-            desenhar_botao_com_estado(fonte, remover_pergunta, "Excluir", BOTAO_SECUNDARIO, id_selecionado >= 0);
-            desenhar_botao_com_estado(fonte, pagina_anterior, "Anterior", BOTAO_SECUNDARIO, tem_anterior);
-            desenhar_botao_com_estado(fonte, pagina_seguinte, "Próxima", BOTAO_SECUNDARIO, tem_proxima);
+            desenhar_gerenciamento(&tela_gerenciamento, banco, fonte, fonte_titulo, nomes_dificuldade);
         }
         else if (tela_atual == TELA_JORNADA) {
             const int questoes_jornada = 8;
