@@ -94,7 +94,11 @@ src/
     └── arquivos_perguntas.h
 ```
 
-A `main` coordena o menu e a inicialização. O módulo `banco_perguntas` gerencia a coleção e as consultas. O módulo `arquivos_perguntas` cuida da importação, persistência e exportação.
+A `main` coordena a inicialização e o menu. No terminal, ela lê os dados, chama o banco e mostra a mensagem correspondente ao retorno da operação. O módulo `banco_perguntas` gerencia a coleção e faz as consultas. O módulo `arquivos_perguntas` cuida da importação, persistência e exportação.
+
+O terminal e a interface gráfica podem usar as mesmas funções de cadastro. `inserir_pergunta` recebe uma `Pergunta` preenchida e atribui um ID, reaproveitando os IDs excluídos na ordem das exclusões. `alterar_pergunta` recebe o ID e uma estrutura com os novos dados e mantém o identificador original. `excluir_pergunta` recebe o ID a excluir. A inserção e a alteração verificam a resposta e a dificuldade antes de modificar o banco.
+
+Essas operações atualizam a coleção em memória e devolvem um código para o chamador. Os parâmetros e os códigos de retorno de cada função estão documentados em [banco_perguntas.c](src/perguntas/banco_perguntas.c). No fluxo do terminal, o banco é salvo ao encerrar o programa.
 
 ## Banco inicial de perguntas
 
