@@ -18,6 +18,7 @@
  #include <unistd.h>
  #endif
  #include "arquivos_perguntas.h"
+ #define LIMITE_PERGUNTAS 150
 
  /**
   * @brief Função que carrega o arquivo CSV das perguntas, caso não consiga carregar, retorna -1. Além de carregar armazena as perguntas do arquivo no nosso vetor de perguntas
@@ -44,7 +45,7 @@
 
     fgets(texto, 100, *arquivo_csv); //lê a primeira linha do csv - cabeçalho - não contabilizo as linhas aqui
 
-    while(contador_perguntas < 100 && fgets(perguntas_lidas[contador_perguntas], 1200, *arquivo_csv) != NULL){ //o fgets vai rodar até que seja possível ler linhas, caso não seja possível ele retorna NULL por padrão. A limitação em 100 é para a quantidade de perguntas, visto que vamos trabalhar com só até 100 perguntas
+    while(contador_perguntas < LIMITE_PERGUNTAS && fgets(perguntas_lidas[contador_perguntas], 1200, *arquivo_csv) != NULL){ //o fgets vai rodar até que seja possível ler linhas, caso não seja possível ele retorna NULL por padrão. A limitação em 100 é para a quantidade de perguntas, visto que vamos trabalhar com só até o limite definido de perguntas
         contador_perguntas ++; //contabiliza as linhas lidas, sendo válidas ou não
     }
     
