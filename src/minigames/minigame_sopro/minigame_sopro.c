@@ -1,20 +1,20 @@
 /**
  * @file minigame_sopro.c
  * @author Enzo Andreassa Pizza (enzoandreassa@alunos.utfpr.edu.br)
- * @brief 
+ * @brief Controla o movimento, o tempo e o resultado do Sopro Ancestral.
  * @version 0.1
  * @date 2026-11-23
  * 
  * @copyright Copyright (c) 2026
  * 
  */
-#include <stdio.h>
 #include <stdlib.h>
 #include "minigame_sopro.h"
 
-MinigameSopro jogo;
-//adicionar srand(time(NULL)) na main
-void iniciarMinigameSopro(){
+static MinigameSopro jogo;
+
+void iniciarMinigameSopro(void)
+{
 
     jogo.tempo =0;
     jogo.posicao_barra =0;
@@ -25,7 +25,7 @@ void iniciarMinigameSopro(){
     jogo.zona_final =jogo.zona_inicio +8;
 }
 
-float atualizaBarra(float posicao_barra, float velocidade_da_barra, float tempo_decorrido){
+static float atualizaBarra(float posicao_barra, float velocidade_da_barra, float tempo_decorrido){
    posicao_barra += velocidade_da_barra * tempo_decorrido;
    return posicao_barra;
 }
@@ -65,4 +65,9 @@ void atualizarMinigame(float tempo_decorrido, int apertou_espaco){
 
 int obterResultadoMinigame(void){
    return jogo.resultado;
+}
+
+const MinigameSopro *obterEstadoMinigameSopro(void)
+{
+    return &jogo;
 }

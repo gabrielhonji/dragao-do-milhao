@@ -13,6 +13,7 @@
     #define ARQUIVOS_PERGUNTAS_H
 
     #include "banco_perguntas.h"
+    #include <stdio.h>
 
     int carregar_csv(Banco_perguntas *banco_perguntas, FILE **arquivo_csv); //carrega o arquivo csv inicial com as perguntas
 

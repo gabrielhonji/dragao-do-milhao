@@ -12,7 +12,13 @@
  #include <stdio.h>
  #include <stdlib.h>
  #include <string.h>
+ #ifdef _WIN32
+ #include <windows.h>
+ #else
+ #include <unistd.h>
+ #endif
  #include "arquivos_perguntas.h"
+ #define LIMITE_PERGUNTAS 150
 
  /**
   * @brief Função que carrega o arquivo CSV das perguntas, caso não consiga carregar, retorna -1. Além de carregar armazena as perguntas do arquivo no nosso vetor de perguntas
@@ -25,7 +31,7 @@
 
     char texto[101]; //variável usada para ler o cabeçalho do arquivo csv
     int contador_perguntas = 0;
-    char perguntas_lidas[100][1201]; //as perguntas vão ser armazenadas nesse vetor de strings, somente depois vou transformar strings em dados das perguntas de fato
+    char perguntas_lidas[LIMITE_PERGUNTAS][1201]; //as perguntas vão ser armazenadas nesse vetor de strings, somente depois vou transformar strings em dados das perguntas de fato
     Pergunta *perguntas_temp;
     char *fim; //variável usada para armazenar o fim de cada leitura seccionada das perguntas
     char *virgulas[8]; //vetor usado para armazenar a posição de cada vírgula e começar a leitura do próximo campo a partir desta posição
@@ -39,7 +45,7 @@
 
     fgets(texto, 100, *arquivo_csv); //lê a primeira linha do csv - cabeçalho - não contabilizo as linhas aqui
 
-    while(contador_perguntas < 100 && fgets(perguntas_lidas[contador_perguntas], 1200, *arquivo_csv) != NULL){ //o fgets vai rodar até que seja possível ler linhas, caso não seja possível ele retorna NULL por padrão. A limitação em 100 é para a quantidade de perguntas, visto que vamos trabalhar com só até 100 perguntas
+    while(contador_perguntas < LIMITE_PERGUNTAS && fgets(perguntas_lidas[contador_perguntas], sizeof perguntas_lidas[0], *arquivo_csv) != NULL){ // O limite também dimensiona o vetor de linhas.
         contador_perguntas ++; //contabiliza as linhas lidas, sendo válidas ou não
     }
     
@@ -156,46 +162,49 @@
   * @param arquivo_dat recebe o arquivo binário onde serão salvas as informações
   * @return int retorna -1 em erro e se houver sucesso retorna 0
   */
- int salvar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat){
+ int salvar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat)
+ {
+    const char *destino = "dados/perguntas.dat";
+    char temporario[72];
 
-    int retorno_fwrite;
-
-    *arquivo_dat = fopen("dados/perguntas.dat", "wb");
-    if(*arquivo_dat == NULL){ //caso dê erro na abertura do arquivo eu retorno -1 para a main
+    // Grava no mesmo diretório antes de substituir o banco, para preservar o arquivo se a gravação falhar.
+#ifdef _WIN32
+    unsigned long processo = GetCurrentProcessId();
+#else
+    unsigned long processo = (unsigned long)getpid();
+#endif
+    snprintf(temporario, sizeof temporario, "dados/perguntas-%lu.tmp", processo);
+    *arquivo_dat = fopen(temporario, "wb");
+    if (*arquivo_dat == NULL)
         return -1;
-    }
 
-    retorno_fwrite = fwrite(&banco_perguntas->quant_perguntas, sizeof(int), 1, *arquivo_dat); //o primeiro dado salvo no arquivo binário é a quantidade de perguntas
-    if(retorno_fwrite != 1){ //conferindo se as informações foram gravadas no arquivo binário
-        fclose(*arquivo_dat); //fecho antes de retornar o erro
-        *arquivo_dat = NULL;
-        return -1;
-    }
-
-    retorno_fwrite = fwrite(&banco_perguntas->proximo_id, sizeof(int), 1, *arquivo_dat); //o segundo dado salvo no arquivo binário é o próximo id que será utilizado para cadastrar perguntas futuras
-    if(retorno_fwrite != 1){ //conferindo se as informações foram gravadas no arquivo binário
-        fclose(*arquivo_dat); //fecho antes de retornar o erro
-        *arquivo_dat = NULL;
-        return -1;
-    }
-
-    retorno_fwrite = fwrite(banco_perguntas->perguntas, sizeof(Pergunta), banco_perguntas->quant_perguntas, *arquivo_dat); //por fim eu salvo as perguntas no arquivo binário
-    if(retorno_fwrite != banco_perguntas->quant_perguntas){ //conferindo se as informações foram gravadas no arquivo binário
-        fclose(*arquivo_dat); //fecho antes de retornar o erro
-        *arquivo_dat = NULL;
-        return -1;
-    }
-
-    fclose(*arquivo_dat);
+    size_t total_ids = (size_t)banco_perguntas->quant_ids_disponiveis;
+    size_t total_perguntas = (size_t)banco_perguntas->quant_perguntas;
+    int gravou = fwrite(&banco_perguntas->quant_perguntas, sizeof(int), 1, *arquivo_dat) == 1 &&
+                 fwrite(&banco_perguntas->proximo_id, sizeof(int), 1, *arquivo_dat) == 1 &&
+                 fwrite(&banco_perguntas->quant_ids_disponiveis, sizeof(int), 1, *arquivo_dat) == 1 &&
+                 (total_ids == 0 || fwrite(banco_perguntas->ids_disponiveis, sizeof(int), total_ids, *arquivo_dat) == total_ids) &&
+                 (total_perguntas == 0 || fwrite(banco_perguntas->perguntas, sizeof(Pergunta), total_perguntas, *arquivo_dat) == total_perguntas);
+    int fechou = fclose(*arquivo_dat);
     *arquivo_dat = NULL;
 
-    return 0;
+    if (gravou && fechou == 0) {
+#ifdef _WIN32
+        if (MoveFileExA(temporario, destino, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+#else
+        if (rename(temporario, destino) == 0)
+#endif
+            return 0;
+    }
+
+    remove(temporario);
+    return -1;
  }//SALVAR BINARIO
 
 
 
  /**
-  * @brief Função que carrega o arquivo binário e salva as informações presentes nele nos campos destinados. A primeira informação é a quant de perguntas, a segunda é o próximo ID e por fim tenho os dados das perguntas em si. Caso de erro retorna -1 para a main, em caso de sucesso retorna 0. Se o arquivo não existir, retorna -2.
+  * @brief Função que carrega o arquivo binário e salva as informações presentes nele nos campos destinados. A primeira informação é a quant de perguntas, a segunda é o próximo ID, a terceira é a quantidade de ids disponíveis para cadastrar (ids fantasmas), a quarta são os ids fantasmas caso houver e por fim tenho os dados das perguntas em si. Caso de erro retorna -1 para a main, em caso de sucesso retorna 0. Se o arquivo não existir, retorna -2.
   * 
   * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
   * @param arquivo_dat recebe o arquivo binário de onde serão lidas as informações
@@ -212,6 +221,7 @@
         return -2; //esse -2 vai ser lido na main
     }
 
+    //LENDO A QUANTIDADE DE PERGUNTAS
     retorno_fread = fread(&banco_perguntas_temp.quant_perguntas, sizeof(int), 1, *arquivo_dat);
     if(retorno_fread != 1){ //conferindo se as informações foram lidas do arquivo binário
         fclose(*arquivo_dat); //fecho antes de retornar o erro
@@ -236,6 +246,7 @@
         banco_perguntas_temp.capacidade_reservada = 0;
     }
 
+    //LENDO QUAL O VALOR DO PRÓXIMO ID
     retorno_fread = fread(&banco_perguntas_temp.proximo_id, sizeof(int), 1, *arquivo_dat); //o segundo dado salvo no arquivo binário é o próximo id que será utilizado para cadastrar perguntas futuras
     if(retorno_fread != 1){ //conferindo se as informações foram lidas do arquivo binário
         fclose(*arquivo_dat); //fecho antes de retornar o erro
@@ -244,18 +255,56 @@
         return -1;
     }
 
+    //LENDO A QUANTIDADE DE IDS ARMAZENADOS
+    retorno_fread = fread(&banco_perguntas_temp.quant_ids_disponiveis, sizeof(int), 1, *arquivo_dat);
+    if(retorno_fread != 1){ //conferindo se as informações foram lidas do arquivo binário
+        free(banco_perguntas_temp.perguntas);
+        fclose(*arquivo_dat); //fecho antes de retornar o erro
+        *arquivo_dat = NULL;
+        return -1;
+    }
+    if(banco_perguntas_temp.quant_ids_disponiveis > 0){
+        banco_perguntas_temp.ids_disponiveis = malloc(sizeof(int)*banco_perguntas_temp.quant_ids_disponiveis); //aloco um espaço na memória para o vetor banco_perguntas_temp igual a quant de ids lidos do arquivo binário
+        if(banco_perguntas_temp.ids_disponiveis == NULL){
+            free(banco_perguntas_temp.perguntas);
+            fclose(*arquivo_dat); //fecho antes de retornar o erro
+            *arquivo_dat = NULL;
+            printf("Erro na alocação de memória\n");
+            return -1;
+        }//se eu recebi que a quantidade de ids_dispniveis maior que 0, reservo um espaço para receber os ids
+    }else if(banco_perguntas_temp.quant_ids_disponiveis < 0){
+        free(banco_perguntas_temp.perguntas);
+        fclose(*arquivo_dat); //fecho antes de retornar o erro
+        *arquivo_dat = NULL;
+        return -1;
+        //caso em que a quantidade de ids lidas é negativa
+    }
+
+    if(banco_perguntas_temp.quant_ids_disponiveis > 0){//só leio as perguntas caso eu tiver uma quantidade de perguntas maior do que 0
+        retorno_fread = fread(banco_perguntas_temp.ids_disponiveis, sizeof(int), banco_perguntas_temp.quant_ids_disponiveis, *arquivo_dat); //por fim eu leio os IDs no arquivo binário
+        if(retorno_fread != banco_perguntas_temp.quant_ids_disponiveis){ //conferindo se as informações foram lidas do arquivo binário
+            fclose(*arquivo_dat); //fecho antes de retornar o erro
+            *arquivo_dat = NULL;
+            free(banco_perguntas_temp.ids_disponiveis); //libero oq foi alocado em caso de erro
+            free(banco_perguntas_temp.perguntas);
+            return -1;
+        }
+    }
+
     if(banco_perguntas_temp.quant_perguntas > 0){//só leio as perguntas caso eu tiver uma quantidade de perguntas maior do que 0
         retorno_fread = fread(banco_perguntas_temp.perguntas, sizeof(Pergunta), banco_perguntas_temp.quant_perguntas, *arquivo_dat); //por fim eu leio as perguntas no arquivo binário
         if(retorno_fread != banco_perguntas_temp.quant_perguntas){ //conferindo se as informações foram lidas do arquivo binário
             fclose(*arquivo_dat); //fecho antes de retornar o erro
             *arquivo_dat = NULL;
             free(banco_perguntas_temp.perguntas); //libero oq foi alocado em caso de erro
+            free(banco_perguntas_temp.ids_disponiveis); //libero o vetor caso dê erro
             return -1;
         }
     }
 
     //primeiro salvo as informações em um banco de perguntas temporário, caso dê tudo certo passo as informações desse para o original
     free(banco_perguntas->perguntas); //libero o endereço do vetor antigo antes de atribuir o novo
+    free(banco_perguntas->ids_disponiveis); //libero o vetor
     *banco_perguntas = banco_perguntas_temp;
 
     fclose(*arquivo_dat);
