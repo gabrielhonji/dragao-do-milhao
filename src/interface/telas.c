@@ -29,6 +29,7 @@ typedef enum
     TELA_CREDITOS,
     TELA_GERENCIAMENTO,
     TELA_RANKING,
+    TELA_REGISTRAR_RESULTADO,
 } Tela;
 enum
 {
@@ -356,36 +357,73 @@ static void desenhar_gruta(Font fonte, EstadoGruta estado, int ovos_restantes, b
         DrawTextEx(fonte, "A gruta está vazia.", (Vector2){48, 104}, 24, 1, RAYWHITE);
 }
 
+/**
+ * @brief Desenha a tabela ou o aviso de carregamento do ranking.
+ * @param fonte Fonte dos registros e do botão Voltar.
+ * @param fonte_titulo Fonte do título da tela.
+ * @param voltar Área do botão que retorna ao menu.
+ * @param registos_ranking Vetor de registros já ordenado.
+ * @param total_ranking Quantidade de registros ou código de erro da leitura.
+ */
+static void desenhar_ranking(Font fonte, Font fonte_titulo, Rectangle voltar, const Registro_partida *registos_ranking, int total_ranking)
+{
+    DrawTextEx(fonte_titulo, "Ranking", (Vector2){24, 24}, 34, 1, COR_TEXTO_CLARO);
+    desenhar_botao(fonte, voltar, "Voltar");
+
+    const Rectangle painel_ranking = {24, 80, 912, 348}; // Painel entre o título e o footer.
+    desenhar_painel(painel_ranking, COR_ESCURO);
+
+    const float y_cabecalho = 104;
+    const float altura_linha = 36; // Distância vertical entre os registros.
+    const float x_posicao = 48;
+    const float x_nome = 110;
+    const float x_acertos = 540;
+    const float x_ovos = 670;
+    const float x_tempo = 780;
+
+    if (total_ranking < 0)
+        DrawTextEx(fonte, "Não foi possível carregar o ranking.", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_AVISO);
+    else if (total_ranking == 0)
+        DrawTextEx(fonte, "Nenhum resultado foi registrado.", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+    else {
+        // Escreve os cabeçalhos.
+        DrawTextEx(fonte, "#", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+        DrawTextEx(fonte, "Nome", (Vector2){x_nome, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+        DrawTextEx(fonte, "Acertos", (Vector2){x_acertos, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+        DrawTextEx(fonte, "Ovos", (Vector2){x_ovos, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+        DrawTextEx(fonte, "Tempo", (Vector2){x_tempo, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+
+        // Linhas de rankings.
+        const int limite_visivel = 8; // Quantidade de linhas que cabe no painel.
+        for (int i = 0; i < total_ranking && i < limite_visivel; i++) {
+            const Registro_partida *registro = &registos_ranking[i];
+            float y = y_cabecalho + (i + 1) * altura_linha; // A primeira linha vem depois do cabeçalho
+
+            DrawTextEx(fonte, TextFormat("%d", i + 1), (Vector2){x_posicao, y}, 18, 1, COR_TEXTO_CLARO);
+            desenhar_previa_enunciado(fonte, registro->nome_jogador, (Vector2){x_nome, y}, x_acertos - x_nome - 16); // Preserva 16px antes de Acertos.
+            DrawTextEx(fonte, TextFormat("%d", registro->progresso), (Vector2){x_acertos, y}, 18, 1, COR_TEXTO_CLARO);
+            DrawTextEx(fonte, TextFormat("%d", registro->ovos_restantes), (Vector2){x_ovos, y}, 18, 1, COR_TEXTO_CLARO);
+            DrawTextEx(fonte, TextFormat("%.2f s", registro->tempo_ativo), (Vector2){x_tempo, y}, 18, 1, COR_TEXTO_CLARO);
+        }
+    }
+}
+
 void executar_tela_teste(Banco_perguntas *banco)
 {
+    // Navegação e botão compartilhado pelas telas.
     Tela tela_atual = TELA_MENU;
-    EstadoGruta estado_gruta = GRUTA_VAZIA;
-    bool previa_gruta = false;                                          // Indica se a gruta foi aberta pelo F2 para testar os estados.
-    const int teclas_gruta[] = {KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR}; // Uma tecla por estado para testar sem precisar ficar jogando milhares de vezes.
-    const int ovos_teste[] = {0, 0, 1, 2};                              // Filhotes para cada teste.
-    Partida partida;
-    const Pergunta *pergunta_atual = NULL;
-    int questao_exibida = 0; // Mantém o número na tela até o próximo sorteio, mesmo após o renascimento.
+    const Rectangle voltar = {24, 464, 200, 52};
+
+    // Menu principal e aviso de banco insuficiente.
     Dificuldade dificuldade_em_falta = 0;
-    bool faltam_perguntas = false;
-    Registro_partida *registos_ranking = NULL; // Vetor alocado ao abrir o RANKING.
-    int total_ranking = 0;                     // Quantidade de registros ou código de erro caso aconteça.
-
-    // Botões.
     const Rectangle jogar = {586, 205, 318, 44}; // Primeira linha da coluna.
-    const float passo = jogar.height + 12;       // 12px livres entre as linhas, agindo como um gap.
-
-    // Todas as posições verticais são a chamada do Y do componente anterior + passo (gap).
+    const float passo = jogar.height + 12;       // A altura do botão mais 12 px de espaço até o próximo.
     const Rectangle ranking = {jogar.x, jogar.y + passo, jogar.width, jogar.height};
     const Rectangle gerenciar = {jogar.x, ranking.y + passo, jogar.width, jogar.height};
     const Rectangle creditos = {jogar.x, gerenciar.y + passo, 151, jogar.height};
-    const Rectangle sair = {creditos.x + creditos.width + 9, creditos.y, 158, jogar.height};
-    const Rectangle voltar = {24, 464, 200, 52};
+    const Rectangle sair = {creditos.x + creditos.width + 9, creditos.y, 158, jogar.height}; // Intervalo de 9 px entre os botões.
 
-    // Elementos da tela de gerenciamento de perguntas.
-    int pagina_perguntas = 0;
-    int id_selecionado = -1;    // -1 indica que nenhuma pergunta foi selecionada.
-    int filtro_dificuldade = 0; // 0 mostra todas. As dificuldades válidas vão de 1 a 5.
+    // Nomes usados no menu e na lista de perguntas.
     const char *nomes_dificuldade[] = {
         "Desconhecida",
         "Muito fácil",
@@ -394,8 +432,28 @@ void executar_tela_teste(Banco_perguntas *banco)
         "Difícil",
         "Muito difícil",
     };
+
+    // Ranking e formulário de registro.
+    Registro_partida *registos_ranking = NULL; // Vetor alocado ao abrir o ranking.
+    int total_ranking = 0;                     // Quantidade de registros ou código de erro da leitura.
+    char nome_ranking[41] = "";                // Até 40 bytes de nome e o '\0'.
+    bool selecionar_nome = false;
+    const char *erro_ranking = NULL;
+
+    // Resultado e prévia da gruta.
+    EstadoGruta estado_gruta = GRUTA_VAZIA;
+    bool previa_gruta = false; // Indica se a gruta foi aberta pelo F2 sem uma partida.
+    const int teclas_gruta[] = {KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR}; // Uma tecla para cada estado da prévia.
+    const int ovos_teste[] = {0, 0, 1, 2}; // Quantidade de filhotes para cada estado da prévia.
+
+    // Elementos da tela de gerenciamento de perguntas.
+    int pagina_perguntas = 0;
+    int id_selecionado = -1;    // -1 indica que nenhuma pergunta foi selecionada.
+    int filtro_dificuldade = 0; // 0 mostra todas. As dificuldades válidas vão de 1 a 5.
     char busca_id[5] = "";      // Quatro dígitos do ID e o '\0' no final.
     bool busca_em_foco = false; // O campo só recebe texto depois de um clique nele.
+    EditorPerguntas editor = {0};
+    const char *retorno_edicao = NULL;
 
     const Rectangle campo_busca = {24, 76, 360, 44};        // Área da busca no Figma.
     const Rectangle botao_dificuldade = {400, 76, 229, 44}; // Área do filtro no Figma.
@@ -405,19 +463,23 @@ void executar_tela_teste(Banco_perguntas *banco)
     const Rectangle nova_pergunta = {680, campo_busca.y, 256, campo_busca.height};
     const Rectangle editar_pergunta = {246, voltar.y, 150, voltar.height};
     const Rectangle remover_pergunta = {410, voltar.y, 150, voltar.height};
-    EditorPerguntas editor = {0};
-    const char *retorno_edicao = NULL;
 
-    // Containers.
+    // Painéis reaproveitados pelo quiz e pelos créditos.
     const Rectangle mapa = {24, 88, 492, 325};
     const Rectangle quiz = {544, 88, 392, 325};
 
-    // Elementos do quiz.
-    const Rectangle acao_quiz = {quiz.x, voltar.y, 200, voltar.height}; // Botão de confirmar.
+    // Partida e resposta da pergunta que está na tela.
+    Partida partida;
+    const Pergunta *pergunta_atual = NULL;
+    int questao_exibida = 0; // Mantém o número na tela até o próximo sorteio, mesmo após o renascimento.
+    bool faltam_perguntas = false;
     int alternativa_selecionada = -1;
     bool resposta_confirmada = false;
     Resultado_resposta resultado_resposta = 0; // Só é consultado depois de confirmar.
+    const Rectangle acao_quiz = {quiz.x, voltar.y, 200, voltar.height};
+    const Rectangle salvar_ranking = acao_quiz; // Usa a mesma posição de confirmação no rodapé.
 
+    // Ajudas da partida e seus efeitos na pergunta atual.
     // A linha de ajudas começa 5 px abaixo da borda inferior da cena.
     const float y_ajudas = mapa.y + mapa.height + 5;
     // Retângulos, nomes e usos seguem a mesma ordem dos índices das ajudas.
@@ -430,6 +492,7 @@ void executar_tela_teste(Banco_perguntas *banco)
     int usos_ajuda[TOTAL_AJUDAS] = {0}; // Usos restantes em toda a partida.
     DicasPergunta dicas = {0};          // Efeitos que valem para a pergunta exibida.
 
+    // Distribuição do enunciado e das alternativas.
     const float margem = 16.0f; // Recuo lateral dos painéis e superior do enunciado.
     const float altura_enunciado = 76.0f;
     const float espaco_apos_enunciado = 12.0f;
@@ -563,11 +626,11 @@ void executar_tela_teste(Banco_perguntas *banco)
             else if (botao_clicado(creditos))
                 tela_atual = TELA_CREDITOS;
             else if (botao_clicado(ranking)) {
-                FILE *arquivo_ranking = NULL; //* porque geramos ele como null e desse jeito?
+                FILE *arquivo_ranking = NULL; // O leitor recebe seu endereço e abre o arquivo.
                 total_ranking = carregar_registro_partidas(&registos_ranking, &arquivo_ranking);
 
                 // Antes do primeiro resultado salvo, o arquivo ainda não existe.
-                if (total_ranking == -2 && errno == ENOENT) //* oque estamos verificando nessse -2 e oq essa errno recebe p gnt checar se é enoent, qq é enoent, falo vc explicar legal isso
+                if (total_ranking == -2 && errno == ENOENT) // A abertura falhou porque o arquivo ou caminho não existe.
                     total_ranking = 0;
 
                 tela_atual = TELA_RANKING;
@@ -590,6 +653,10 @@ void executar_tela_teste(Banco_perguntas *banco)
                 dificuldade_em_falta = verifica_banco_para_partida(banco);
                 if (dificuldade_em_falta == 0) {
                     inicializa_partida(&partida);
+                    // Cada tentativa começa com o formulário de registro limpo.
+                    nome_ranking[0] = '\0';
+                    selecionar_nome = false;
+                    erro_ranking = NULL;
                     pergunta_atual = sorteia_pergunta(banco, &partida);
                     faltam_perguntas = pergunta_atual == NULL;
 
@@ -606,7 +673,7 @@ void executar_tela_teste(Banco_perguntas *banco)
                 }
             }
         }
-        // Cancelar preserva a pergunta aberta. Confirmar leva a recompensa dos marcos à gruta.
+        // Cancelar preserva a pergunta aberta. Confirmar encerra a tentativa no último marco.
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
             if (botao_clicado(voltar)) // Voltar nessa tela tem ação de cancelar
                 tela_atual = TELA_JORNADA;
@@ -621,7 +688,8 @@ void executar_tela_teste(Banco_perguntas *banco)
                     else
                         estado_gruta = GRUTA_VAZIA;
                     previa_gruta = false;
-                    tela_atual = TELA_GRUTA;
+                    // O resultado precisa ser salvo antes da gruta quando entra no ranking.
+                    tela_atual = partida_entra_no_ranking(&partida) ? TELA_REGISTRAR_RESULTADO : TELA_GRUTA;
                 }
             }
         }
@@ -712,6 +780,33 @@ void executar_tela_teste(Banco_perguntas *banco)
                 }
             }
         }
+        else if (tela_atual == TELA_REGISTRAR_RESULTADO) {
+            // Lê a digitação, o Backspace e o Ctrl+A do campo de nome.
+            if (janela_em_foco)
+                editar_texto(nome_ranking, sizeof nome_ranking, &selecionar_nome);
+
+            if (confirmou || botao_clicado(salvar_ranking)) {
+                // Pula espaços, tabs e quebras de linha. Chegar ao '\0' indica que o nome está em branco.
+                if (nome_ranking[strspn(nome_ranking, " \t\r\n")] == '\0') {
+                    erro_ranking = "Digite um nome para registrar o resultado.";
+                }
+                else {
+                    Registro_partida registro = {0};
+                    FILE *arquivo_ranking = NULL;
+
+                    // As duas funções retornam 0 no sucesso e um valor negativo na falha.
+                    if (preenche_registro_partida(&registro, &partida, nome_ranking) != 0)
+                        erro_ranking = "Não foi possível preparar o resultado.";
+                    else if (salvar_registro_partida(&registro, &arquivo_ranking) != 0)
+                        erro_ranking = "Falha ao salvar. Tente novamente.";
+                    else {
+                        // Sair do formulário após gravar impede salvar a mesma tentativa duas vezes.
+                        erro_ranking = NULL;
+                        tela_atual = TELA_GRUTA;
+                    }
+                }
+            }
+        }
         // Ações do botão de voltar em cada tela.
         else if (botao_clicado(voltar)) {
             if (tela_atual == TELA_GRUTA || faltam_perguntas)
@@ -722,7 +817,7 @@ void executar_tela_teste(Banco_perguntas *banco)
                 // O jogador já leu o resultado. Só a vitória leva ouro para a gruta.
                 estado_gruta = partida.situacao == vitoria ? GRUTA_OURO_ALTO : GRUTA_VAZIA;
                 previa_gruta = false;
-                tela_atual = TELA_GRUTA;
+                tela_atual = partida_entra_no_ranking(&partida) ? TELA_REGISTRAR_RESULTADO : TELA_GRUTA;
             }
         }
         else if (tela_atual == TELA_GRUTA) {
@@ -786,7 +881,8 @@ void executar_tela_teste(Banco_perguntas *banco)
         bool usa_fundo_escuro = tela_atual == TELA_MENU ||
                                 tela_atual == TELA_CREDITOS ||
                                 tela_atual == TELA_GERENCIAMENTO ||
-                                tela_atual == TELA_RANKING;
+                                tela_atual == TELA_RANKING ||
+                                tela_atual == TELA_REGISTRAR_RESULTADO;
         Color fundo = usa_fundo_escuro ? COR_FUNDO_MENU : RAYWHITE;
         DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, fundo);
 
@@ -824,45 +920,7 @@ void executar_tela_teste(Banco_perguntas *banco)
                 DrawTextEx(fonte, "Sem perguntas para iniciar.", posicao_aviso, 20, 1, COR_AVISO);
         }
         else if (tela_atual == TELA_RANKING) {
-            DrawTextEx(fonte_titulo, "Ranking", (Vector2){24, 24}, 34, 1, COR_TEXTO_CLARO);
-            desenhar_botao(fonte, voltar, "Voltar");
-
-            const Rectangle painel_ranking = {24, 80, 912, 348}; // Painel entre o título e o footer.
-            desenhar_painel(painel_ranking, COR_ESCURO);
-
-            const float y_cabecalho = 104;
-            const float altura_linha = 36; // Distância vertical entre os registros.
-            const float x_posicao = 48;
-            const float x_nome = 110;
-            const float x_acertos = 540;
-            const float x_ovos = 670;
-            const float x_tempo = 780;
-
-            if (total_ranking < 0)
-                DrawTextEx(fonte, "Não foi possível carregar o ranking.", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_AVISO);
-            else if (total_ranking == 0)
-                DrawTextEx(fonte, "Nenhum resultado foi registrado.", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-            else {
-                // Escreve os cabeçalhos.
-                DrawTextEx(fonte, "#", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-                DrawTextEx(fonte, "Nome", (Vector2){x_nome, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-                DrawTextEx(fonte, "Acertos", (Vector2){x_acertos, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-                DrawTextEx(fonte, "Ovos", (Vector2){x_ovos, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-                DrawTextEx(fonte, "Tempo", (Vector2){x_tempo, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-
-                // Linhas de rankings.
-                const int limite_visivel = 8; // Quantidade de linhas que cabe no painel.
-                for (int i = 0; i < total_ranking && i < limite_visivel; i++) {
-                    const Registro_partida *registro = &registos_ranking[i];
-                    float y = y_cabecalho + (i + 1) * altura_linha; // A primeira linha vem depois do cabeçalho
-
-                    DrawTextEx(fonte, TextFormat("%d", i + 1), (Vector2){x_posicao, y}, 18, 1, COR_TEXTO_CLARO);
-                    desenhar_previa_enunciado(fonte, registro->nome_jogador, (Vector2){x_nome, y}, x_acertos - x_nome - 16); // Preserva 16px antes de Acertos.
-                    DrawTextEx(fonte, TextFormat("%d", registro->progresso), (Vector2){x_acertos, y}, 18, 1, COR_TEXTO_CLARO);
-                    DrawTextEx(fonte, TextFormat("%d", registro->ovos_restantes), (Vector2){x_ovos, y}, 18, 1, COR_TEXTO_CLARO);
-                    DrawTextEx(fonte, TextFormat("%.2f s", registro->tempo_ativo), (Vector2){x_tempo, y}, 18, 1, COR_TEXTO_CLARO);
-                }
-            }
+            desenhar_ranking(fonte, fonte_titulo, voltar, registos_ranking, total_ranking);
         }
         else if (tela_atual == TELA_CREDITOS) {
             const Rectangle painel_equipe = quiz;
@@ -1102,7 +1160,9 @@ void executar_tela_teste(Banco_perguntas *banco)
 
             if (faltam_perguntas)
                 desenhar_botao(fonte, voltar, "Voltar");
-            else if (partida.situacao == derrota || partida.situacao == vitoria)
+            else if (partida.situacao == vitoria)
+                desenhar_botao(fonte, voltar, "Registrar nome");
+            else if (partida.situacao == derrota)
                 desenhar_botao(fonte, voltar, "Ver gruta");
             else
                 // O !resposta_confimada significa que o botão desabilita após o usuário confirmar uma alternativa.
@@ -1113,6 +1173,20 @@ void executar_tela_teste(Banco_perguntas *banco)
             DrawTextEx(fonte, "Encerrar a tentativa e voltar à gruta?", (Vector2){48, 184}, tamanho_corpo, 1, BLACK);
             desenhar_botao(fonte, voltar, "Cancelar");
             desenhar_botao(fonte, acao_quiz, "Retirar");
+        }
+        else if (tela_atual == TELA_REGISTRAR_RESULTADO) {
+            const Rectangle campo_nome = {160, 180, 640, 48};
+            const Vector2 posicao_rotulo = {campo_nome.x, campo_nome.y - 40}; // Deixa o rótulo acima da caixa de texto.
+
+            DrawTextEx(fonte_titulo, "Registrar resultado", (Vector2){24, 24}, 34, 1, COR_TEXTO_CLARO);
+            DrawTextEx(fonte, "A lenda vai se lembrar de você como...", posicao_rotulo, 24, 1, COR_TEXTO_CLARO);
+            desenhar_campo(fonte, campo_nome, nome_ranking, true, selecionar_nome);
+            desenhar_botao_com_estado(fonte, salvar_ranking, "Salvar", BOTAO_PRIMARIO, true);
+
+            if (erro_ranking != NULL) {
+                const Vector2 posicao_erro = {campo_nome.x, campo_nome.y + campo_nome.height + 12}; // Deixa 12 px abaixo do campo.
+                DrawTextEx(fonte, erro_ranking, posicao_erro, 20, 1, COR_AVISO);
+            }
         }
         else if (tela_atual == TELA_GRUTA) {
             int filhotes = previa_gruta ? ovos_teste[estado_gruta] : partida.ovos_restantes;
