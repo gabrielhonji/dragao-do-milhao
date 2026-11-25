@@ -342,8 +342,7 @@ void executar_tela_teste(Banco_perguntas *banco)
             desenhar_sopro(&sopro, fonte, fonte_titulo, tamanho_corpo, tamanho_titulo, LARGURA_BASE, ALTURA_BASE);
         }
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
-            desenhar_retirada(fonte, fonte_titulo, tamanho_corpo, tamanho_titulo,
-                              voltar, layout_quiz.acao_quiz);
+            desenhar_retirada(fonte, fonte_titulo, tamanho_corpo, tamanho_titulo, voltar, layout_quiz.acao_quiz);
         }
         else if (tela_atual == TELA_REGISTRAR_RESULTADO) {
             desenhar_registro(&tela_registro, fonte, fonte_titulo, salvar_ranking);
