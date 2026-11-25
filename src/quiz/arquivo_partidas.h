@@ -1,7 +1,7 @@
 /**
  * @file arquivo_partidas.h
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief Estruturação dos arquivos dos jogadores para Ranking
+ * @brief Declara o registro, a leitura e a ordenação dos resultados do ranking.
  * @version 0.1
  * @date 2026-11-24
  *
@@ -13,6 +13,7 @@
 #include "quiz.h"
 #include <stdio.h>
 
+/** @brief Resultado persistido de uma partida que entrou no ranking. */
 typedef struct{
     char nome_jogador[100];
     Situacao_partida desfecho;
@@ -28,7 +29,7 @@ int preenche_registro_partida(Registro_partida *registro_partida, const Partida 
 
 int salvar_registro_partida(const Registro_partida *registro_partida, FILE **arquivo_ranking);
 
-int carregar_registro_partidas(Registro_partida **registros_partidas, FILE **arquivo_ranking); //o ponteiro duplo no primeiro parâmetro permite retornar o vetor alocado para a interface
+int carregar_registro_partidas(Registro_partida **registros_partidas, FILE **arquivo_ranking);
 
 int registro_vem_antes(const Registro_partida *a, const Registro_partida *b);
 

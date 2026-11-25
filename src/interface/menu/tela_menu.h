@@ -30,10 +30,19 @@ typedef enum
     MENU_JOGAR,
 } AcaoMenu;
 
-/** @brief Calcula a posição dos botões usados no desenho e nos cliques. */
+/**
+ * @brief Calcula a posição dos botões usados no desenho e nos cliques.
+ * @return Retângulos dos botões em coordenadas da tela lógica.
+ */
 BotoesMenu montar_botoes_menu(void);
 
-/** @brief Lê a ação escolhida no menu neste quadro. */
+/**
+ * @brief Lê a ação escolhida no menu neste quadro.
+ * @param botoes Áreas dos botões do menu.
+ * @param janela_em_foco Indica se a janela pode receber atalhos de teclado.
+ * @param confirmou Indica se Enter foi pressionado para iniciar a partida.
+ * @return Ação selecionada ou MENU_SEM_ACAO quando nenhuma entrada corresponde a uma ação.
+ */
 AcaoMenu ler_acao_menu(const BotoesMenu *botoes, bool janela_em_foco, bool confirmou);
 
 /**
@@ -43,7 +52,7 @@ AcaoMenu ler_acao_menu(const BotoesMenu *botoes, bool janela_em_foco, bool confi
  * @param fonte_titulo Fonte do título.
  * @param tamanho_titulo Altura lógica do título.
  * @param dificuldade_em_falta Nome da dificuldade que precisa de perguntas, ou NULL.
- * @param faltam_perguntas Indica que a primeira pergunta não pôde ser sorteada.
+ * @param faltam_perguntas Indica que o quiz não conseguiu sortear uma pergunta.
  * @param som_ligado Estado do som mostrado no botão.
  */
 void desenhar_menu(const BotoesMenu *botoes, Font fonte, Font fonte_titulo,

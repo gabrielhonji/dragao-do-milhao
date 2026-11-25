@@ -26,7 +26,12 @@ typedef struct
  */
 bool atualizar_registro(TelaRegistro *tela, const Partida *partida, bool janela_em_foco, bool confirmou);
 
-/** @brief Desenha o campo de nome, a mensagem e o botão Salvar. */
+/**
+ * @brief Desenha o campo de nome, a mensagem e o botão Salvar.
+ * @param tela Estado do formulário, com o nome preenchido e o aviso de erro.
+ * @param fonte Fonte dos textos, do campo e do botão.
+ * @param fonte_titulo Fonte do título.
+ */
 void desenhar_registro(const TelaRegistro *tela, Font fonte, Font fonte_titulo);
 
 #endif

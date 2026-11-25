@@ -220,7 +220,7 @@ AcaoQuiz atualizar_quiz(TelaQuiz *tela, const LayoutQuiz *layout, const Banco_pe
                 tela->questao_exibida = tela->partida.questao_atual;
                 tela->alternativa_selecionada = -1;
                 tela->resposta_confirmada = false;
-                // Efeitos somem ao trocar a pergunta. Os usos restantes resetam por partida.
+                // Limpa os efeitos da pergunta anterior e preserva os usos restantes da partida.
                 tela->dicas = (DicasPergunta){0};
                 if (estava_na_jornada && quiz_em_batalha(tela))
                     return QUIZ_CHEGOU_CASTELO;
