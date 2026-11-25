@@ -26,6 +26,18 @@
 #include "minigames/tela_burro.h"
 #include "minigames/tela_sopro.h"
 
+#ifdef __linux__
+// Xlib e raylib usam o nome Font para tipos diferentes.
+#define Font X11Font
+#include <X11/Xlib.h>
+#undef Font
+
+// A raylib 5.5 fornece a janela GLFW em GetWindowHandle() no Linux.
+typedef struct GLFWwindow GLFWwindow;
+extern Display *glfwGetX11Display(void);
+extern Window glfwGetX11Window(GLFWwindow *janela);
+#endif
+
 typedef enum
 {
     TELA_MENU,
@@ -44,6 +56,36 @@ enum
     LARGURA_BASE = 960,
     ALTURA_BASE = 540,
 };
+
+/** @brief Alterna a tela cheia pelo gerenciador de janelas quando a sessão oferece esse recurso. */
+static void alternar_tela_cheia(void)
+{
+#ifdef __linux__
+    Display *tela = glfwGetX11Display();
+    if (tela != NULL) {
+        Atom estado = XInternAtom(tela, "_NET_WM_STATE", True);
+        Atom tela_cheia = XInternAtom(tela, "_NET_WM_STATE_FULLSCREEN", True);
+        if (estado != None && tela_cheia != None) {
+            // O gerenciador cobre o monitor inteiro e depois restaura a geometria da janela.
+            const long alternar_estado = 2;
+            const long origem_aplicativo = 1;
+            XEvent evento = {.xclient = {
+                .type = ClientMessage,
+                .window = glfwGetX11Window(GetWindowHandle()),
+                .message_type = estado,
+                .format = 32,
+                .data.l = {alternar_estado, (long)tela_cheia, 0, origem_aplicativo, 0},
+            }};
+            if (XSendEvent(tela, DefaultRootWindow(tela), False,
+                           SubstructureRedirectMask | SubstructureNotifyMask, &evento)) {
+                XFlush(tela);
+                return;
+            }
+        }
+    }
+#endif
+    ToggleBorderlessWindowed();
+}
 
 /**
  * @brief Calcula onde exibir a tela na janela.
@@ -153,7 +195,12 @@ void executar_tela_teste(Banco_perguntas *banco)
     const LayoutQuiz layout_quiz = montar_layout_quiz(mapa, quiz, voltar);
     const Rectangle salvar_ranking = layout_quiz.acao_quiz; // Posição compartilhada no rodapé.
 
-    SetConfigFlags(FLAG_VSYNC_HINT); // Pede que a apresentação dos quadros acompanhe a atualização do monitor.
+    unsigned int flags = FLAG_VSYNC_HINT;
+#ifdef __linux__
+    // O gerenciador pode recusar tela cheia para uma janela de tamanho fixo.
+    flags |= FLAG_WINDOW_RESIZABLE;
+#endif
+    SetConfigFlags(flags);
     InitWindow(LARGURA_BASE, ALTURA_BASE, "Dragão do Milhão");
     SetTargetFPS(60);
 
@@ -182,9 +229,8 @@ void executar_tela_teste(Banco_perguntas *banco)
 
     while (!WindowShouldClose()) {
         bool janela_em_foco = IsWindowFocused();
-        // A raylib alterna o modo sem bordas e restaura o tamanho e a posição anteriores.
         if (janela_em_foco && IsKeyPressed(KEY_F11))
-            ToggleBorderlessWindowed();
+            alternar_tela_cheia();
 
         // Sem uma área útil, avança o quadro sem desenhar a interface.
         Rectangle area_exibida = calcular_area_exibicao();
