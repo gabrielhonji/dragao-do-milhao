@@ -102,13 +102,13 @@ Essas operações atualizam a coleção em memória e devolvem um código para o
 
 ## Banco inicial de perguntas
 
-O arquivo `dados/perguntas_iniciais.csv` contém as 80 perguntas iniciais do projeto, distribuídas entre os cinco níveis de dificuldade:
+O arquivo `dados/perguntas_iniciais.csv` contém 120 perguntas da equipe, distribuídas entre os cinco níveis de dificuldade:
 
 | Dificuldade   | Quantidade |
 | ------------- | ---------: |
-| Muito fácil   |         20 |
-| Fácil         |         20 |
-| Médio         |         15 |
-| Difícil       |         15 |
-| Muito difícil |         10 |
-| **Total**     |     **80** |
+| Muito fácil   |         30 |
+| Fácil         |         30 |
+| Médio         |         25 |
+| Difícil       |         20 |
+| Muito difícil |         15 |
+| **Total**     |    **120** |
