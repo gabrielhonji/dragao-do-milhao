@@ -23,6 +23,7 @@
 #include "gerenciamento/tela_gerenciamento.h"
 #include "partida/tela_quiz.h"
 #include "partida/tela_retirada.h"
+#include "partida/tela_transicao.h"
 #include "minigames/tela_burro.h"
 #include "minigames/tela_eco.h"
 #include "minigames/tela_sopro.h"
@@ -42,6 +43,8 @@ extern Window glfwGetX11Window(GLFWwindow *janela);
 typedef enum
 {
     TELA_MENU,
+    TELA_INTRODUCAO,
+    TELA_CHEGADA_CASTELO,
     TELA_JORNADA,
     TELA_SOPRO,
     TELA_BURRO,
@@ -187,7 +190,7 @@ static bool fonte_carregada(Font fonte)
  */
 static TrilhaAudio trilha_da_tela(Tela tela, const TelaQuiz *quiz)
 {
-    if (tela == TELA_JORNADA && quiz_em_batalha(quiz))
+    if (tela == TELA_CHEGADA_CASTELO || ((tela == TELA_JORNADA || tela == TELA_CONFIRMAR_RETIRADA) && quiz_em_batalha(quiz)))
         return TRILHA_BATALHA;
 
     // Compartilhar a trilha evita reiniciar a música ao abrir Créditos, Ranking ou outras telas.
@@ -230,7 +233,6 @@ void executar_tela_teste(Banco_perguntas *banco)
     MinigameBurro burro = {0};
     FlappyBird eco = {0};
     const LayoutQuiz layout_quiz = montar_layout_quiz(mapa, quiz, voltar);
-    const Rectangle salvar_ranking = layout_quiz.acao_quiz; // Posição compartilhada no rodapé.
 
     unsigned int flags = FLAG_VSYNC_HINT;
 #ifdef __linux__
@@ -239,6 +241,11 @@ void executar_tela_teste(Banco_perguntas *banco)
 #endif
     SetConfigFlags(flags);
     InitWindow(LARGURA_BASE, ALTURA_BASE, "Dragão do Milhão");
+    Image icone_janela = LoadImage("assets/visual/icones/dragao_app.png");
+    if (IsImageValid(icone_janela)) {
+        SetWindowIcon(icone_janela);
+        UnloadImage(icone_janela); // A janela já recebeu uma cópia do ícone.
+    }
     SetTargetFPS(60);
 
     // Rasterização das fontes separadamente, tanto a do corpo quanto a do título.
@@ -360,16 +367,26 @@ void executar_tela_teste(Banco_perguntas *banco)
             else if (acao == MENU_JOGAR) {
                 // A reserva de perguntas de cada dificuldade cobre também os renascimentos.
                 dificuldade_em_falta = verifica_banco_para_partida(banco);
-                if (dificuldade_em_falta == 0) {
-                    tela_registro = (TelaRegistro){0};
-                    if (iniciar_quiz(&tela_quiz, banco))
-                        tela_atual = TELA_JORNADA;
-                }
+                if (dificuldade_em_falta == 0)
+                    tela_atual = TELA_INTRODUCAO;
             }
+        }
+        else if (tela_atual == TELA_INTRODUCAO) {
+            AcaoTransicao acao = ler_acao_transicao(TRANSICAO_ABERTURA, confirmou);
+            if (acao == TRANSICAO_VOLTAR)
+                tela_atual = TELA_MENU;
+            else if (acao == TRANSICAO_AVANCAR) {
+                tela_registro = (TelaRegistro){0};
+                tela_atual = iniciar_quiz(&tela_quiz, banco) ? TELA_JORNADA : TELA_MENU;
+            }
+        }
+        else if (tela_atual == TELA_CHEGADA_CASTELO) {
+            if (ler_acao_transicao(TRANSICAO_CHEGADA, confirmou) == TRANSICAO_AVANCAR)
+                tela_atual = TELA_JORNADA;
         }
         // Cancelar preserva a pergunta aberta. Confirmar encerra a tentativa no último marco.
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
-            AcaoRetirada acao = ler_acao_retirada(voltar, layout_quiz.acao_quiz);
+            AcaoRetirada acao = ler_acao_retirada();
             if (acao == RETIRADA_CANCELAR)
                 tela_atual = TELA_JORNADA;
             else if (acao == RETIRADA_CONFIRMAR) {
@@ -396,7 +413,7 @@ void executar_tela_teste(Banco_perguntas *banco)
                 tela_atual = TELA_MENU;
         }
         else if (tela_atual == TELA_REGISTRAR_RESULTADO) {
-            if (atualizar_registro(&tela_registro, &tela_quiz.partida, salvar_ranking, janela_em_foco, confirmou))
+            if (atualizar_registro(&tela_registro, &tela_quiz.partida, janela_em_foco, confirmou))
                 tela_atual = TELA_GRUTA;
         }
         else if (tela_atual == TELA_JORNADA) {
@@ -405,6 +422,8 @@ void executar_tela_teste(Banco_perguntas *banco)
                 tela_atual = TELA_MENU;
             else if (acao == QUIZ_PEDIR_RETIRADA)
                 tela_atual = TELA_CONFIRMAR_RETIRADA;
+            else if (acao == QUIZ_CHEGOU_CASTELO)
+                tela_atual = TELA_CHEGADA_CASTELO;
             else if (acao == QUIZ_ABRIR_SOPRO) {
                 iniciarMinigameSopro(&sopro);
                 tela_atual = TELA_SOPRO;
@@ -455,12 +474,7 @@ void executar_tela_teste(Banco_perguntas *banco)
         // As ações já trocaram a tela e a pergunta. Usa a mesma etapa que será desenhada neste quadro.
         atualizar_audio(trilha_da_tela(tela_atual, &tela_quiz));
 
-        bool usa_fundo_escuro = tela_atual == TELA_MENU ||
-                                tela_atual == TELA_CREDITOS ||
-                                tela_atual == TELA_GERENCIAMENTO ||
-                                tela_atual == TELA_RANKING ||
-                                tela_atual == TELA_REGISTRAR_RESULTADO;
-        Color fundo = usa_fundo_escuro ? COR_FUNDO_MENU : RAYWHITE;
+        Color fundo = COR_FUNDO_MENU;
         // As bordas da textura limitam o desenho nas coordenadas de 960 × 540.
         BeginTextureMode(quadro);
         ClearBackground(fundo);
@@ -483,6 +497,10 @@ void executar_tela_teste(Banco_perguntas *banco)
         else if (tela_atual == TELA_JORNADA) {
             desenhar_quiz(&tela_quiz, &layout_quiz, fonte, tamanho_corpo);
         }
+        else if (tela_atual == TELA_INTRODUCAO || tela_atual == TELA_CHEGADA_CASTELO) {
+            TransicaoPartida transicao = tela_atual == TELA_INTRODUCAO ? TRANSICAO_ABERTURA : TRANSICAO_CHEGADA;
+            desenhar_transicao(transicao, fonte, fonte_titulo, mapa, quiz);
+        }
         else if (tela_atual == TELA_SOPRO) {
             desenhar_sopro(&sopro, fonte, fonte_titulo, tamanho_corpo, tamanho_titulo, LARGURA_BASE, ALTURA_BASE);
         }
@@ -493,10 +511,13 @@ void executar_tela_teste(Banco_perguntas *banco)
             desenhar_eco(&eco, fonte, fonte_titulo, tamanho_corpo, tamanho_titulo);
         }
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
-            desenhar_retirada(fonte, fonte_titulo, tamanho_corpo, tamanho_titulo, voltar, layout_quiz.acao_quiz);
+            // A pergunta continua atrás do diálogo, enquanto só o diálogo recebe os cliques.
+            desenhar_quiz(&tela_quiz, &layout_quiz, fonte, tamanho_corpo);
+            DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, Fade(BLACK, 0.67f));
+            desenhar_retirada(fonte, fonte_titulo, tamanho_corpo);
         }
         else if (tela_atual == TELA_REGISTRAR_RESULTADO) {
-            desenhar_registro(&tela_registro, fonte, fonte_titulo, salvar_ranking);
+            desenhar_registro(&tela_registro, fonte, fonte_titulo);
         }
         else if (tela_atual == TELA_GRUTA) {
             desenhar_tela_gruta(&tela_gruta, &tela_quiz.partida, fonte, voltar, quiz.x, tamanho_corpo);

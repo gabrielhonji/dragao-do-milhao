@@ -35,6 +35,8 @@ typedef struct
     int alternativa_selecionada;
     bool resposta_confirmada;
     Resultado_resposta resultado_resposta;
+    float tempo_efeito; // Tempo da transição após um acerto, fora do relógio do ranking.
+    int dano_batalha;    // PV perdidos na resposta atual, para exibir durante o impacto.
     int usos_ajuda[TOTAL_AJUDAS];
     DicasPergunta dicas;
 } TelaQuiz;
@@ -43,7 +45,7 @@ typedef struct
 {
     Rectangle mapa;
     Rectangle painel;
-    Rectangle voltar;
+    Rectangle retirada;
     Rectangle acao_quiz;
     float y_ajudas;
     Rectangle ajuda_rec[TOTAL_AJUDAS];
@@ -60,10 +62,11 @@ typedef enum
     QUIZ_ABRIR_BURRO,
     QUIZ_ABRIR_ECO,
     QUIZ_MOSTRAR_RESULTADO,
+    QUIZ_CHEGOU_CASTELO,
 } AcaoQuiz;
 
 /** @brief Monta as áreas usadas tanto pelos cliques quanto pelo desenho. */
-LayoutQuiz montar_layout_quiz(Rectangle mapa, Rectangle painel, Rectangle voltar);
+LayoutQuiz montar_layout_quiz(Rectangle mapa, Rectangle painel, Rectangle rodape);
 
 /** @return Verdadeiro quando a primeira pergunta foi sorteada e a partida pode ser exibida. */
 bool iniciar_quiz(TelaQuiz *tela, const Banco_perguntas *banco);

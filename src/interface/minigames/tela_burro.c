@@ -38,8 +38,8 @@ bool atualizar_tela_burro(MinigameBurro *burro)
 void desenhar_burro(const MinigameBurro *burro, Font fonte, Font fonte_titulo, int tamanho_corpo, int tamanho_titulo)
 {
     const Rectangle tabuleiro = {224, 120, 512, 332};
-    DrawTextEx(fonte_titulo, "Trote Certeiro", (Vector2){224, 16}, tamanho_titulo, 1, COR_ESCURO);
-    DrawTextEx(fonte, "Vire duas cartas e encontre os três pares.", (Vector2){224, 80}, tamanho_corpo, 1, COR_ESCURO);
+    DrawTextEx(fonte_titulo, "Trote Certeiro", (Vector2){224, 16}, tamanho_titulo, 1, COR_TEXTO_CLARO);
+    DrawTextEx(fonte, "Vire duas cartas e encontre os três pares.", (Vector2){224, 80}, tamanho_corpo, 1, COR_TEXTO_CLARO);
     desenhar_painel(tabuleiro, COR_ESCURO);
 
     bool pode_virar = burro->resultado == 0 && burro->segunda_carta == -1;
@@ -62,7 +62,8 @@ void desenhar_burro(const MinigameBurro *burro, Font fonte, Font fonte_titulo, i
 
     if (burro->resultado != 0) {
         const char *mensagem = burro->resultado == 1 ? "O Burro tem um palpite!" : "Você ficou sem chances.";
-        DrawTextEx(fonte, mensagem, (Vector2){224, 490}, tamanho_corpo, 1, COR_ESCURO);
+        Color cor = burro->resultado == 1 ? COR_BORDA_ACERTO : COR_BORDA_ERRO;
+        DrawTextEx(fonte, mensagem, (Vector2){224, 490}, tamanho_corpo, 1, cor);
         desenhar_botao(fonte, voltar_burro, "Voltar à pergunta");
     }
 }

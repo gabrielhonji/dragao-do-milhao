@@ -46,20 +46,114 @@ void desenhar_painel(Rectangle area, Color fundo)
     preencher_face(interior, fundo);
 }
 
+/**
+ * @brief Quebra no último espaço que cabe, ou entre caracteres em palavras muito longas.
+ * @param linhas Destino com espaço para o dobro dos bytes do texto mais o terminador.
+ */
+static void quebrar_texto(Font fonte, const char *texto, char *linhas, int tamanho, float largura)
+{
+    char *fim = linhas;
+    char *inicio = linhas;
+    char *espaco = NULL;
+
+    while (*texto != '\0') {
+        int bytes;
+        int codigo = GetCodepointNext(texto, &bytes);
+        if (codigo == '\r' || codigo == '\n') {
+            *fim++ = '\n';
+            inicio = fim;
+            espaco = NULL;
+            texto += bytes;
+            if (codigo == '\r' && *texto == '\n')
+                texto++;
+            continue;
+        }
+
+        char *posicao = fim;
+        memcpy(fim, texto, (size_t)bytes);
+        texto += bytes;
+        fim += bytes;
+        *fim = '\0';
+        if (codigo == ' ')
+            espaco = posicao;
+        if (posicao == inicio || MeasureTextEx(fonte, inicio, tamanho, 1).x <= largura)
+            continue;
+
+        if (espaco != NULL && espaco >= inicio) {
+            *espaco = '\n';
+            inicio = espaco + 1;
+            espaco = NULL;
+        }
+        // Se a palavra após o último espaço também ultrapassa a largura, quebra antes da letra atual.
+        if (posicao > inicio && MeasureTextEx(fonte, inicio, tamanho, 1).x > largura) {
+            memmove(posicao + 1, posicao, (size_t)bytes + 1);
+            *posicao = '\n';
+            inicio = posicao + 1;
+            fim++;
+        }
+    }
+    *fim = '\0';
+}
+
+void desenhar_texto_ajustado(Font fonte, Rectangle area, const char *texto, int tamanho, Color cor, bool centralizar_verticalmente)
+{
+    char linhas[2 * strlen(texto) + 1]; // Cada caractere pode acrescentar no máximo uma quebra.
+    const char *visivel = texto;
+    Vector2 medida = MeasureTextEx(fonte, texto, tamanho, 1);
+
+    if (medida.x > area.width || medida.y > area.height || strchr(texto, '\r') != NULL) {
+        visivel = linhas;
+        for (;;) {
+            quebrar_texto(fonte, texto, linhas, tamanho, area.width);
+            medida = MeasureTextEx(fonte, linhas, tamanho, 1);
+            if ((medida.x <= area.width && medida.y <= area.height) || tamanho <= 1)
+                break;
+            tamanho--;
+        }
+    }
+
+    float y = centralizar_verticalmente ? area.y + (area.height - medida.y) / 2 : area.y;
+    DrawTextEx(fonte, visivel, (Vector2){area.x, y}, tamanho, 1, cor);
+}
+
 /* Desenhar botões */
 
 /** @brief Desenha as camadas comuns aos botões de ação e às alternativas do quiz. */
-static void desenhar_corpo_botao(Font fonte, Rectangle area, const char *rotulo, EstiloBotao estilo, bool habilitado, bool alinhar_esquerda)
+static void desenhar_corpo_botao(Font fonte, Rectangle area, const char *rotulo, EstiloBotao estilo,
+                                bool habilitado, bool alinhar_esquerda, float reserva_direita)
 {
     Color cor_face = COR_FACE_BOTAO;     // Superfície onde aparece o texto.
     Color cor_aresta = COR_ARESTA_BOTAO; // Faixa inferior que dá espessura ao botão.
     Color cor_borda = COR_BORDA_BOTAO;   // Contorno externo, visível em volta da face.
     Color cor_texto = COR_TEXTO_CLARO;   // Cor das letras sobre a face.
 
-    // Mantem a escolha visível mesmo depois de confirmar a resposta.
-    if (estilo == BOTAO_SELECIONADO) {
+    // Resultados e o fogo permanecem visíveis mesmo em opções que não recebem cliques.
+    if (estilo == BOTAO_ACERTO || estilo == BOTAO_ERRO) {
+        cor_face = estilo == BOTAO_ACERTO ? COR_FACE_ACERTO : COR_FACE_ERRO;
+        cor_borda = estilo == BOTAO_ACERTO ? COR_BORDA_ACERTO : COR_BORDA_ERRO;
+        cor_aresta = cor_face;
+    }
+    else if (estilo == BOTAO_SELECIONADO) {
         cor_face = COR_FACE_SELECIONADA;
         cor_borda = COR_BORDA_SELECIONADA;
+    }
+    else if (estilo == BOTAO_SAIDA) {
+        cor_face = habilitado ? COR_FACE_SAIDA : COR_FACE_BLOQUEADA;
+        cor_borda = habilitado ? COR_BORDA_SAIDA : COR_BORDA_SAIDA_INATIVA;
+        cor_aresta = COR_FACE_ERRO;
+        if (!habilitado)
+            cor_texto = COR_TEXTO_BLOQUEADO;
+    }
+    else if (estilo == BOTAO_DICA_FOGO) {
+        cor_face = COR_FACE_FOGO;
+        cor_borda = COR_ARESTA_PRIMARIA;
+        cor_texto = COR_TEXTO_BLOQUEADO;
+        cor_aresta = cor_face;
+    }
+    else if (estilo == BOTAO_DICA_BURRO || estilo == BOTAO_DICA_CARTA) {
+        cor_face = estilo == BOTAO_DICA_BURRO ? COR_FACE_BURRO : COR_FACE_CARTA;
+        cor_borda = estilo == BOTAO_DICA_BURRO ? COR_DICA_BURRO : COR_DICA_CARTA;
+        cor_aresta = cor_face;
     }
     else if (!habilitado) {
         cor_face = COR_FACE_BLOQUEADA;
@@ -90,24 +184,27 @@ static void desenhar_corpo_botao(Font fonte, Rectangle area, const char *rotulo,
     // O limite inferior é interior.y + interior.height. Subir uma espessura mantém a faixa dentro da face.
     DrawRectangleRec((Rectangle){area.x + recuo_aresta, interior.y + interior.height - espessura, area.width - 2 * recuo_aresta, espessura}, cor_aresta);
 
-    const float tamanho = 20;     // Altura de fonte escolhida para os rótulos dos botões.
-    const float recuo_texto = 12; // Margem esquerda comum às quatro respostas.
+    const int tamanho = 20; // Altura de fonte escolhida para os rótulos dos botões.
+    if (alinhar_esquerda) {
+        // Reserva 12 px de cada lado e 4 px acima e abaixo do texto.
+        Rectangle texto = {area.x + 12, area.y + 4, area.width - 24 - reserva_direita, area.height - 8};
+        desenhar_texto_ajustado(fonte, texto, rotulo, tamanho, cor_texto, true);
+        return;
+    }
+
     Vector2 medida = MeasureTextEx(fonte, rotulo, tamanho, 1);
     Vector2 posicao = {area.x + (area.width - medida.x) / 2, area.y + (area.height - medida.y) / 2};
-    if (alinhar_esquerda)
-        posicao.x = area.x + recuo_texto;
     DrawTextEx(fonte, rotulo, posicao, tamanho, 1, cor_texto);
 }
 
 void desenhar_botao_com_estado(Font fonte, Rectangle area, const char *rotulo, EstiloBotao estilo, bool habilitado)
 {
-    desenhar_corpo_botao(fonte, area, rotulo, estilo, habilitado, false);
+    desenhar_corpo_botao(fonte, area, rotulo, estilo, habilitado, false, 0);
 }
 
-void desenhar_alternativa(Font fonte, Rectangle area, const char *rotulo, bool selecionada, bool habilitada)
+void desenhar_alternativa(Font fonte, Rectangle area, const char *rotulo, EstiloBotao estilo, bool habilitada, float reserva_direita)
 {
-    EstiloBotao estilo = selecionada ? BOTAO_SELECIONADO : BOTAO_SECUNDARIO;
-    desenhar_corpo_botao(fonte, area, rotulo, estilo, habilitada, true);
+    desenhar_corpo_botao(fonte, area, rotulo, estilo, habilitada, true, reserva_direita);
 }
 
 void desenhar_botao(Font fonte, Rectangle area, const char *rotulo)

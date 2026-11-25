@@ -31,35 +31,32 @@ bool atualizar_tela_eco(FlappyBird *jogo, bool janela_em_foco)
  */
 static void desenhar_obstaculo(const Obstaculo *cano)
 {
-    // Usa apenas o trecho dentro do campo, inclusive na entrada e na saída do obstáculo.
-    float inicio = fmaxf(0.0f, cano->pos_x);
-    float fim = fminf(campo.width, cano->pos_x + ECO_LARGURA_OBSTACULO);
-    if (fim <= inicio)
-        return;
-
+    // O desenho veste os dois retângulos sólidos e mantém o mesmo vão usado pela colisão.
+    float x = campo.x + cano->pos_x;
     float meio_vao = ECO_TAMANHO_ABERTURA / 2.0f;
     float topo_vao = cano->abertura_y - meio_vao;
     float fim_vao = cano->abertura_y + meio_vao;
-    Rectangle superior = {campo.x + inicio, campo.y, fim - inicio, topo_vao};
-    Rectangle inferior = {campo.x + inicio, campo.y + fim_vao, fim - inicio, campo.height - fim_vao};
-    DrawRectangleRec(superior, COR_FACE_BOTAO);
-    DrawRectangleRec(inferior, COR_FACE_BOTAO);
+    Rectangle superior = {x, campo.y, ECO_LARGURA_OBSTACULO, topo_vao};
+    Rectangle inferior = {x, campo.y + fim_vao, ECO_LARGURA_OBSTACULO, campo.height - fim_vao};
+    desenhar_obstaculo_eco(superior, campo, false);
+    desenhar_obstaculo_eco(inferior, campo, true);
 }
 
 void desenhar_eco(const FlappyBird *jogo, Font fonte, Font fonte_titulo, int tamanho_corpo, int tamanho_titulo)
 {
-    DrawTextEx(fonte_titulo, "Eco da Torre", (Vector2){160, 12}, tamanho_titulo, 1, BLACK);
-    DrawTextEx(fonte, "Espaço para bater asas. Passe pelos vãos.", (Vector2){160, 75}, tamanho_corpo, 1, BLACK);
+    DrawTextEx(fonte_titulo, "Eco da Torre", (Vector2){160, 12}, tamanho_titulo, 1, COR_TEXTO_CLARO);
+    DrawTextEx(fonte, "Espaço para bater asas. Passe pelos vãos.", (Vector2){160, 75}, tamanho_corpo, 1, COR_TEXTO_CLARO);
     desenhar_painel((Rectangle){156, 104, 648, 344}, COR_ESCURO); // Moldura de 4 px em torno do campo.
     desenhar_fundo_eco((Vector2){campo.x, campo.y});
     desenhar_obstaculo(&jogo->cano);
-    desenhar_pomba_eco((Vector2){campo.x + jogo->posx_pombo, campo.y + jogo->posy_pombo});
+    desenhar_pomba_eco((Vector2){campo.x + jogo->posx_pombo, campo.y + jogo->posy_pombo}, campo);
 
     const char *placar = TextFormat("Passagens: %d/%d", jogo->pontuacao, ECO_META);
-    DrawTextEx(fonte, placar, (Vector2){160, 454}, tamanho_corpo, 1, BLACK);
+    DrawTextEx(fonte, placar, (Vector2){160, 454}, tamanho_corpo, 1, COR_TEXTO_CLARO);
     if (jogo->resultado != 0) {
         const char *mensagem = jogo->resultado == 1 ? "Carta entregue!" : "A pomba caiu!";
-        DrawTextEx(fonte, mensagem, (Vector2){160, 494}, tamanho_corpo, 1, BLACK);
+        Color cor = jogo->resultado == 1 ? COR_BORDA_ACERTO : COR_BORDA_ERRO;
+        DrawTextEx(fonte, mensagem, (Vector2){160, 494}, tamanho_corpo, 1, cor);
         desenhar_botao(fonte, voltar_eco, "Voltar à pergunta");
     }
 }
