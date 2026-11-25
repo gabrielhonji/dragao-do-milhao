@@ -11,8 +11,12 @@
 
 #ifndef TELAS_H
 #define TELAS_H
+#include "../perguntas/banco_perguntas.h"
 
-/** @brief Abre o modo visual e retorna quando a janela é fechada. */
-void executar_tela_teste(void);
+/**
+ * @brief Abre a janela de teste usando o banco carregado.
+ * @param banco Banco de perguntas mantido pela main.
+ */
+void executar_tela_teste(Banco_perguntas *banco);
 
 #endif
