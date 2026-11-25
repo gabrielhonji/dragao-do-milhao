@@ -525,6 +525,9 @@ void executar_tela_teste(Banco_perguntas *banco)
         int ajuda_clicada = -1;                                     // Índice da ajuda clicada neste quadro, ou -1.
 
         if (tela_atual == TELA_JORNADA && !resposta_confirmada) {
+            // Acumula a duração do último quadro enquanto a pergunta está aberta.
+            if (partida.situacao == andamento && pergunta_atual && !faltam_perguntas)
+                partida.tempo_ativo += GetFrameTime();
             // Só registra um clique em alternativa que ainda pode ser escolhida.
             for (int i = 0; i < 4; i++) {
                 if (!dicas.eliminadas[i] && botao_clicado(alternativa_rec[i])) {
