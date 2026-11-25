@@ -22,6 +22,7 @@
 #include "tela_creditos.h"
 #include "tela_ranking.h"
 #include "tela_registro.h"
+#include "tela_gruta.h"
 
 typedef enum
 {
@@ -301,22 +302,6 @@ static void aplicar_ajuda(int ajuda, const Pergunta *pergunta, DicasPergunta *di
         dicas->palpite_burro = '\0';
 }
 
-/**
- * @brief Desenha a gruta dependendo do estado atual e quantidade de ovos.
- *
- * @param fonte Fonte usada nos rótulos.
- * @param estado Define se há ouro e qual o tamanho da pilha.
- * @param ovos_restantes Quantidade de filhotes que aparecem ao lado da pilha.
- * @param mostrar_dragao Mostra o dragão vivo, mesmo que a retirada tenha ocorrido antes do primeiro marco.
- */
-static void desenhar_gruta(Font fonte, EstadoGruta estado, int ovos_restantes, bool mostrar_dragao)
-{
-    DrawTextEx(fonte, "Gruta", (Vector2){24, 24}, 24, 1, BLACK);
-    desenhar_arte_gruta(estado, ovos_restantes, mostrar_dragao);
-    if (!mostrar_dragao)
-        DrawTextEx(fonte, "A gruta está vazia.", (Vector2){48, 104}, 24, 1, RAYWHITE);
-}
-
 void executar_tela_teste(Banco_perguntas *banco)
 {
     // Navegação e botão compartilhado pelas telas.
@@ -340,11 +325,7 @@ void executar_tela_teste(Banco_perguntas *banco)
     TelaRanking tela_ranking = {0};
     TelaRegistro tela_registro = {0};
 
-    // Resultado e prévia da gruta.
-    EstadoGruta estado_gruta = GRUTA_VAZIA;
-    bool previa_gruta = false; // Indica se a gruta foi aberta pelo F2 sem uma partida.
-    const int teclas_gruta[] = {KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR}; // Uma tecla para cada estado da prévia.
-    const int ovos_teste[] = {0, 0, 1, 2}; // Quantidade de filhotes para cada estado da prévia.
+    TelaGruta tela_gruta = {.estado = GRUTA_VAZIA};
 
     // Elementos da tela de gerenciamento de perguntas.
     int pagina_perguntas = 0;
@@ -519,8 +500,7 @@ void executar_tela_teste(Banco_perguntas *banco)
         if (tela_atual == TELA_MENU) {
             AcaoMenu acao = ler_acao_menu(&botoes_menu, janela_em_foco, confirmou);
             if (acao == MENU_PREVIA_GRUTA) {
-                previa_gruta = true;
-                estado_gruta = GRUTA_VAZIA;
+                abrir_previa_gruta(&tela_gruta);
                 tela_atual = TELA_GRUTA;
             }
             else if (acao == MENU_CREDITOS)
@@ -572,14 +552,7 @@ void executar_tela_teste(Banco_perguntas *banco)
             else if (botao_clicado(acao_quiz)) { // Confirma a retirada
                 int marco = confirma_retirada(&partida);
                 if (marco >= 0) {
-                    // O ouro corresponde ao último marco conquistado na partida.
-                    if (marco == 10)
-                        estado_gruta = GRUTA_OURO_MEDIO;
-                    else if (marco == 5)
-                        estado_gruta = GRUTA_OURO_BAIXO;
-                    else
-                        estado_gruta = GRUTA_VAZIA;
-                    previa_gruta = false;
+                    preparar_gruta_retirada(&tela_gruta, marco);
                     // O resultado precisa ser salvo antes da gruta quando entra no ranking.
                     tela_atual = partida_entra_no_ranking(&partida) ? TELA_REGISTRAR_RESULTADO : TELA_GRUTA;
                 }
@@ -683,19 +656,12 @@ void executar_tela_teste(Banco_perguntas *banco)
                 tela_atual = TELA_CONFIRMAR_RETIRADA;
             else if (partida.situacao == derrota || partida.situacao == vitoria) {
                 // O jogador já leu o resultado. Só a vitória leva ouro para a gruta.
-                estado_gruta = partida.situacao == vitoria ? GRUTA_OURO_ALTO : GRUTA_VAZIA;
-                previa_gruta = false;
+                preparar_gruta_final(&tela_gruta, partida.situacao);
                 tela_atual = partida_entra_no_ranking(&partida) ? TELA_REGISTRAR_RESULTADO : TELA_GRUTA;
             }
         }
         else if (tela_atual == TELA_GRUTA) {
-            // Cada tecla escolhe o estado com o mesmo índice no enum.
-            for (int i = 0; i < 4; i++) {
-                if (previa_gruta && janela_em_foco && IsKeyPressed(teclas_gruta[i])) {
-                    estado_gruta = (EstadoGruta)i;
-                    break;
-                }
-            }
+            atualizar_previa_gruta(&tela_gruta, janela_em_foco);
         }
         // Consome o uso e aplica o efeito à pergunta que já está na tela.
         else if (ajuda_clicada >= 0) {
@@ -976,26 +942,7 @@ void executar_tela_teste(Banco_perguntas *banco)
             desenhar_registro(&tela_registro, fonte, fonte_titulo, salvar_ranking);
         }
         else if (tela_atual == TELA_GRUTA) {
-            int filhotes = previa_gruta ? ovos_teste[estado_gruta] : partida.ovos_restantes;
-            // Uma retirada antes do primeiro marco deixa o dragão vivo no chão, sem pilha.
-            bool mostrar_dragao = estado_gruta != GRUTA_VAZIA || (!previa_gruta && partida.situacao == retirada);
-            desenhar_gruta(fonte, estado_gruta, filhotes, mostrar_dragao);
-            desenhar_botao(fonte, voltar, "Voltar");
-
-            const char *texto_gruta = "Prévia: teclas 1 a 4";
-            if (!previa_gruta) {
-                if (partida.situacao == vitoria)
-                    texto_gruta = "Vitória! A princesa foi salva.";
-                else if (partida.situacao == derrota)
-                    texto_gruta = "Derrota! A gruta está vazia.";
-                else if (partida.checkpoint > 0)
-                    texto_gruta = TextFormat("Retirada no marco %d.", partida.checkpoint);
-                else
-                    texto_gruta = "Retirada antes do primeiro marco.";
-            }
-            // Divide o espaço vertical livre para alinhar o texto ao botão Voltar.
-            const Vector2 posicao_texto = {quiz.x, voltar.y + (voltar.height - tamanho_corpo) / 2.0f};
-            DrawTextEx(fonte, texto_gruta, posicao_texto, tamanho_corpo, 1, BLACK);
+            desenhar_tela_gruta(&tela_gruta, &partida, fonte, voltar, quiz.x, tamanho_corpo);
         }
 
         // Sai das coordenadas do jogo, libera o recorte e apresenta o quadro pronto.
