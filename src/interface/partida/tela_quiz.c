@@ -99,8 +99,8 @@ static void aplicar_ajuda(int ajuda, const Pergunta *pergunta, DicasPergunta *di
     if (total_incorretas == 0)
         return;
 
-    // Os valores de 1 a 70 representam os 70% de chance de o Burro acertar.
-    if (ajuda == AJUDA_BURRO && GetRandomValue(1, 100) <= 70) {
+    // Os valores de 1 a 60 representam os 60% de chance de o Burro acertar.
+    if (ajuda == AJUDA_BURRO && GetRandomValue(1, 100) <= 60) {
         dicas->palpite_burro = pergunta->resposta;
         return;
     }
@@ -214,7 +214,7 @@ AcaoQuiz atualizar_quiz(TelaQuiz *tela, const LayoutQuiz *layout, const Banco_pe
             return QUIZ_ABRIR_BURRO;
         }
 
-        aplicar_efeito_ajuda_quiz(tela, ajuda_clicada);
+        return QUIZ_ABRIR_ECO; // A Princesa revela a resposta depois da vitória.
     }
     // Enter, o botão de ação ou repetir o clique na alternativa confirmam a escolha.
     else if (!tela->faltam_perguntas && tela->alternativa_selecionada >= 0 &&

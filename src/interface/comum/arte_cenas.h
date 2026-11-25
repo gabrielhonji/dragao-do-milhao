@@ -61,4 +61,16 @@ void desenhar_arte_gruta(EstadoGruta estado, int filhotes, bool mostrar_dragao);
 /** @brief Desenha o pátio e o dragão na tela do Sopro Ancestral. */
 void desenhar_arte_sopro(void);
 
+/**
+ * @brief Desenha o céu e o povoado atrás do percurso do Eco da Torre.
+ * @param origem Canto superior esquerdo do campo.
+ */
+void desenhar_fundo_eco(Vector2 origem);
+
+/**
+ * @brief Desenha o sprite da pomba sobre sua posição no campo.
+ * @param centro Centro do corpo da pomba na tela.
+ */
+void desenhar_pomba_eco(Vector2 centro);
+
 #endif
