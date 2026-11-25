@@ -17,8 +17,9 @@ BotoesMenu montar_botoes_menu(void)
     const Rectangle gerenciar = {jogar.x, ranking.y + passo, jogar.width, jogar.height};
     const Rectangle creditos = {jogar.x, gerenciar.y + passo, 151, jogar.height};
     const Rectangle sair = {creditos.x + creditos.width + 9, creditos.y, 158, jogar.height}; // Intervalo de 9 px entre os botões.
+    const Rectangle som = {jogar.x, creditos.y + passo, jogar.width, jogar.height};
 
-    return (BotoesMenu){jogar, ranking, gerenciar, creditos, sair};
+    return (BotoesMenu){jogar, ranking, gerenciar, creditos, sair, som};
 }
 
 AcaoMenu ler_acao_menu(const BotoesMenu *botoes, bool janela_em_foco, bool confirmou)
@@ -31,6 +32,8 @@ AcaoMenu ler_acao_menu(const BotoesMenu *botoes, bool janela_em_foco, bool confi
         return MENU_RANKING;
     if (botao_clicado(botoes->gerenciar))
         return MENU_GERENCIAR;
+    if (botao_clicado(botoes->som))
+        return MENU_ALTERNAR_SOM;
     if (botao_clicado(botoes->sair))
         return MENU_SAIR;
     if (confirmou || botao_clicado(botoes->jogar))
@@ -39,7 +42,7 @@ AcaoMenu ler_acao_menu(const BotoesMenu *botoes, bool janela_em_foco, bool confi
 }
 
 void desenhar_menu(const BotoesMenu *botoes, Font fonte, Font fonte_titulo,
-                  int tamanho_titulo, const char *dificuldade_em_falta, bool faltam_perguntas)
+                  int tamanho_titulo, const char *dificuldade_em_falta, bool faltam_perguntas, bool som_ligado)
 {
     desenhar_painel((Rectangle){24, 24, 524, 492}, COR_ESCURO);
 
@@ -62,8 +65,9 @@ void desenhar_menu(const BotoesMenu *botoes, Font fonte, Font fonte_titulo,
     desenhar_botao(fonte, botoes->gerenciar, "Gerenciar perguntas");
     desenhar_botao(fonte, botoes->creditos, "Créditos");
     desenhar_botao(fonte, botoes->sair, "Sair");
+    desenhar_botao(fonte, botoes->som, som_ligado ? "Som ligado" : "Som desligado");
 
-    const Vector2 posicao_aviso = {botoes->jogar.x, botoes->sair.y + botoes->sair.height + 18}; // Espaço de 18 px abaixo dos botões.
+    const Vector2 posicao_aviso = {botoes->jogar.x, botoes->som.y + botoes->som.height + 18}; // Espaço de 18 px abaixo do botão de som.
     if (dificuldade_em_falta != NULL) {
         DrawTextEx(fonte, "Faltam perguntas no banco.", posicao_aviso, 20, 1, COR_AVISO);
         const char *nivel = TextFormat("Nível: %s", dificuldade_em_falta);
