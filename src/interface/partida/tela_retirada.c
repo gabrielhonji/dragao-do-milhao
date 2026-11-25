@@ -4,7 +4,7 @@
  */
 
 #include "tela_retirada.h"
-#include "componentes.h"
+#include "../comum/componentes.h"
 
 AcaoRetirada ler_acao_retirada(Rectangle cancelar, Rectangle confirmar)
 {

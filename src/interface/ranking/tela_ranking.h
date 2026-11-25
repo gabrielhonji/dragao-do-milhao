@@ -7,7 +7,7 @@
 #define TELA_RANKING_H
 
 #include <raylib.h>
-#include "../quiz/arquivo_partidas.h"
+#include "../../quiz/arquivo_partidas.h"
 
 typedef struct
 {

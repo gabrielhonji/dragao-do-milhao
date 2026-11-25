@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "tela_gerenciamento.h"
-#include "componentes.h"
-#include "cores.h"
+#include "../comum/componentes.h"
+#include "../comum/cores.h"
 
 enum {PERGUNTAS_POR_PAGINA = 4};
 

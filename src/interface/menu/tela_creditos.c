@@ -4,9 +4,9 @@
  */
 
 #include "tela_creditos.h"
-#include "arte_cenas.h"
-#include "componentes.h"
-#include "cores.h"
+#include "../comum/arte_cenas.h"
+#include "../comum/componentes.h"
+#include "../comum/cores.h"
 
 void desenhar_creditos(Font fonte, Font fonte_titulo, Rectangle mapa, Rectangle painel_equipe, Rectangle voltar)
 {

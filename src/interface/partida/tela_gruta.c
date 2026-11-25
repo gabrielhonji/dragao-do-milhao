@@ -4,7 +4,7 @@
  */
 
 #include "tela_gruta.h"
-#include "componentes.h"
+#include "../comum/componentes.h"
 
 void abrir_previa_gruta(TelaGruta *gruta)
 {

@@ -7,7 +7,7 @@
 #define TELA_SOPRO_H
 
 #include <raylib.h>
-#include "../minigames/minigame_sopro/minigame_sopro.h"
+#include "../../minigames/minigame_sopro/minigame_sopro.h"
 
 /**
  * @brief Avança o desafio ou lê o botão de voltar quando a rodada termina.

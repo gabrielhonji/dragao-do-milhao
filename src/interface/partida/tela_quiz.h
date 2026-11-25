@@ -7,7 +7,7 @@
 #define TELA_QUIZ_H
 
 #include <raylib.h>
-#include "../quiz/quiz.h"
+#include "../../quiz/quiz.h"
 
 enum
 {

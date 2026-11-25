@@ -7,7 +7,7 @@
 #define TELA_REGISTRO_H
 
 #include <raylib.h>
-#include "../quiz/quiz.h"
+#include "../../quiz/quiz.h"
 
 typedef struct
 {
