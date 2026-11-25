@@ -1,6 +1,6 @@
 # Minigames do Dragão do Milhão
 
-Cada minigame fica em uma subpasta do módulo. Para usar suas funções em `telas.c`, inclua `../minigames/minigames.h`. O Makefile compila as fontes dessas subpastas.
+Cada minigame tem uma subpasta com as regras e o estado da rodada. O Makefile compila as fontes dessas subpastas. A interface do Sopro fica em `src/interface/tela_sopro.c` e as trocas de tela ficam em `src/interface/telas.c`.
 
 ## Sopro Ancestral
 
@@ -18,4 +18,4 @@ Para virar uma tela do jogo, mova o baralho, os pares encontrados e as chances p
 
 ## Ligação com as ajudas
 
-Os botões do Burro e da Princesa ainda aplicam seus efeitos diretamente no quiz. Para integrar as próximas telas, siga o fluxo do Sopro e aplique a recompensa apenas ao voltar de uma rodada vencida. O Eco da Torre ainda precisa da própria implementação.
+Os botões do Burro e da Princesa ainda aplicam seus efeitos diretamente no quiz. Para integrar as próximas telas, siga o fluxo do Sopro e aplique a recompensa apenas ao voltar de uma rodada vencida. O protótipo do Eco da Torre fica em `minigame_flappybird/` e ainda precisa ser ligado à ajuda da Princesa.

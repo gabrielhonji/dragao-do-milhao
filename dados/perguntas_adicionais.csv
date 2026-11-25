@@ -1,0 +1,41 @@
+﻿id,pergunta,opcao_a,opcao_b,opcao_c,opcao_d,resposta_correta,nivel
+5,Qual é o nome do reino onde se passa a maior parte da aventura de The Legend of Zelda?,Hyrule,Mushroom Kingdom,San Andreas,Skyrim,A,1
+6,Qual personagem é o principal protagonista da série Halo?,Marcus Fenix,Master Chief,Kratos,Arthur Morgan,B,1
+9,Em qual jogo o jogador controla personagens como Pikachu e Charizard?,Digimon,Pokémon,Final Fantasy,Monster Hunter,B,1
+8,Qual é o nome do lutador que domina a criomancia(manipulação do gelo) de Mortal Kombat?,Reptile,Scorpion,Sub-Zero,Kung-lao,C,1
+1,Qual é o nome do protagonista da série God of War?,Dante,Kratos,Atreus,Leonidas,B,1
+4,Qual empresa desenvolveu o jogo League of Legends?,Valve,Blizzard Entertainment,Riot Games,Electronic Arts,C,1
+11,Qual é o nome do protagonista de Red Dead Redemption 2?,John Marston,Arthur Morgan,Dutch van der Linde,Bill Williamson,B,1
+12,Em qual jogo aparece o personagem Steve?,Terraria,Minecraft,Roblox,Among Us,B,1
+15,Qual empresa desenvolveu a série The Sims?,Rockstar Games,Electronic Arts,Valve,Atari,B,1
+17,Qual é o nome da princesa que Mario frequentemente precisa salvar?,Peach,Daisy,Rosalina,Zelda,A,1
+40,Qual é o nome do protagonista de Far Cry 3?,Jason Brody,Ajay Ghale,Jason Statham,Jack Carver,A,2
+41,Qual personagem de Mortal Kombat é conhecido por usar um chapéu de lâmina?,Scorpion,Raiden,Kung Lao,Sub-Zero,C,2
+42,"Em The Witcher 3: Wild Hunt, qual é o nome da filha adotiva de Geralt?",Yennefer,Triss,Ciri,Keira,C,2
+45,Qual é o nome do reino governado por Bowser na franquia Mario?,Hyrule,Dream Land,Mushroom Kingdom,Dark Land,D,2
+46,"Em Portal, qual é o nome da inteligência artificial que controla os testes?",Cortana,GLaDOS,SHODAN,EDI,B,2
+48,"Em Dark Souls, qual é o nome do primeiro chefe encontrado na área Undead Asylum?",Ornstein,Artorias,Iudex Gundyr,Asylum Demon,D,2
+49,Qual personagem acompanha Kazuma Kiryu em boa parte da história de Yakuza 0?,Goro Majima,Shun Akiyama,Taiga Saejima,Ichiban Kasuga,A,2
+50,Qual é o nome do protagonista de Persona 5?,Yu Narukami,Ren Amamiya,Akira Yuki,Ryuji Sakamoto,B,2
+52,"Em Stardew Valley, qual personagem administra a loja Pierre's General Store?",Clint,Willy,Pierre,Robin,C,2
+55,Qual é o nome da organização antagonista em Half-Life?,Black Mesa,Combine,The Resistance,Aperture Science,B,3
+57,Qual jogo da série Fallout se passa principalmente na região de Washington D.C.?,Fallout: New Vegas,Fallout 4,Fallout 3,Fallout 76,C,3
+58,Qual é o nome da protagonista de Metroid?,Samus Aran,Lara Croft,Jill Valentine,Ada Wong,A,3
+59,"Em BioShock, qual frase é usada para controlar mentalmente o protagonista?",Would you kindly,The cake is a lie,Stay awhile and listen,War never changes,A,3
+60,Qual empresa desenvolveu o jogo Bloodborne?,Capcom,Konami,FromSoftware,PlatinumGames,C,3
+61,Qual é o nome da cidade principal de Disco Elysium?,Rapture,Revachol,Columbia,Dunwall,B,3
+62,"Em Pokémon Gold e Silver, qual região pode ser explorada após concluir a Liga Pokémon?",Hoenn,Kalos,Kanto,Sinnoh,C,3
+63,Qual personagem é o principal antagonista de Far Cry 4?,Vaas Montenegro,Pagan Min,Joseph Seed,Hurk Drubman,B,3
+64,Qual é o nome da inteligência artificial antagonista de System Shock?,SHODAN,GLaDOS,Cortana,EDI,A,3
+65,Qual é o nome do protagonista de Sekiro: Shadows Die Twice?,Wolf,Genichiro,Ashina,Kuro,A,3
+53,Qual é o nome do cavalo de Arthur Morgan em Red Dead Redemption 2?,Buell,Rachel,Agro,Roach,B,2
+69,Qual é o nome da cidade onde se passa a maior parte de Mafia: The City of Lost Heaven?,Empire Bay,Lost Heaven,New Bordeaux,Carcer City,B,4
+70,Qual desenvolvedora criou o jogo Spec Ops: The Line?,Yager Development,Obsidian Entertainment,Volition,Remedy Entertainment,A,4
+71,"Em Resident Evil 7: Biohazard, qual é o sobrenome da família que mantém Ethan Winters prisioneiro?",Ashford,Baker,Salazar,Redfield,B,4
+72,Qual é o nome do vírus responsável pelo surto original em Resident Evil?,Las Plagas,Uroboros,T-Virus,C-Virus,C,4
+73,Qual banda fictícia aparece na trilha sonora de GTA: Vice City e tem a música Dance Hall Days?,The Outfield,Autograph,Yes,Wang Chung,D,4
+90,Qual personagem de Mortal Kombat foi originalmente criado como um erro de paleta do Scorpion?,Reptile,Noob Saibot,Ermac,Rain,A,5
+91,"Em GTA: Vice City, qual é o nome da banda fictícia liderada por Love Fist?",The Gurning Chimps,Love Fist,The Lost MC,The Forelli Brothers,B,5
+92,Qual personagem de Overwatch foi inicialmente apresentado como um robô de manutenção antes de se tornar um herói jogável?,Bastion,Orisa,Zenyatta,Ramattra,A,5
+93,Qual lutador de Mortal Kombat é conhecido por ter sido o primeiro personagem secreto da franquia?,Reptile,Smoke,Noob Saibot,Ermac,A,5
+94,Qual é o sobrenome da família caçadora de vampiros?,Belnades,Tepes,Lecarde,Belmont,D,5

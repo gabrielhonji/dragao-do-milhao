@@ -123,7 +123,8 @@ static void desenhar_png(Arte arte, int x, int y)
     desenhar_png_com_luz(arte, x, y, WHITE);
 }
 
-void desenhar_arte_sopro(void){
+void desenhar_arte_sopro(void)
+{
     desenhar_png(PATIO_SOPRO, 160, 108);
     desenhar_png_com_luz(DRAGAO_SOPRO, 190, 182, luz_patio);
 }
