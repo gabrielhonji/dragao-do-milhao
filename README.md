@@ -75,7 +75,7 @@ As respostas devem ser letras maiúsculas de `A` a `D`. Os níveis de dificuldad
 | 4     | Difícil       |
 | 5     | Muito difícil |
 
-A implementação atual utiliza CSV simples, com textos sem vírgulas ou quebras de linha dentro dos campos. A importação comporta até 100 perguntas. Os limites de texto são 500 bytes para o enunciado e 100 para cada alternativa
+A implementação atual utiliza CSV simples, com textos sem vírgulas ou quebras de linha dentro dos campos. A importação comporta até 150 perguntas. Os limites de texto são 500 bytes para o enunciado e 100 para cada alternativa
 
 Os campos numéricos da interface pressupõem a digitação de números. Valores fora dos intervalos permitidos são tratados pelo programa.
 

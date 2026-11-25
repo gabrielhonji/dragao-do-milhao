@@ -31,7 +31,7 @@
 
     char texto[101]; //variável usada para ler o cabeçalho do arquivo csv
     int contador_perguntas = 0;
-    char perguntas_lidas[100][1201]; //as perguntas vão ser armazenadas nesse vetor de strings, somente depois vou transformar strings em dados das perguntas de fato
+    char perguntas_lidas[LIMITE_PERGUNTAS][1201]; //as perguntas vão ser armazenadas nesse vetor de strings, somente depois vou transformar strings em dados das perguntas de fato
     Pergunta *perguntas_temp;
     char *fim; //variável usada para armazenar o fim de cada leitura seccionada das perguntas
     char *virgulas[8]; //vetor usado para armazenar a posição de cada vírgula e começar a leitura do próximo campo a partir desta posição
@@ -45,7 +45,7 @@
 
     fgets(texto, 100, *arquivo_csv); //lê a primeira linha do csv - cabeçalho - não contabilizo as linhas aqui
 
-    while(contador_perguntas < LIMITE_PERGUNTAS && fgets(perguntas_lidas[contador_perguntas], 1200, *arquivo_csv) != NULL){ //o fgets vai rodar até que seja possível ler linhas, caso não seja possível ele retorna NULL por padrão. A limitação em 100 é para a quantidade de perguntas, visto que vamos trabalhar com só até o limite definido de perguntas
+    while(contador_perguntas < LIMITE_PERGUNTAS && fgets(perguntas_lidas[contador_perguntas], sizeof perguntas_lidas[0], *arquivo_csv) != NULL){ // O limite também dimensiona o vetor de linhas.
         contador_perguntas ++; //contabiliza as linhas lidas, sendo válidas ou não
     }
     
