@@ -83,10 +83,9 @@ int salvar_registro_partida(const Registro_partida *registro_partida, FILE **arq
         return -1; //caso onde o registro falhou
     }
 
-    fclose(*arquivo_ranking); //fecho o arquivo
+    int retorno_fechamento = fclose(*arquivo_ranking);
     *arquivo_ranking = NULL;
-
-    return 0;
+    return retorno_fechamento == 0 ? 0 : -1; // Retorna 0 ou -1 dependendo se o fechamento foi bem sucedido.
 } //SALVAR REGISTRO PARTIDA
 
 /**

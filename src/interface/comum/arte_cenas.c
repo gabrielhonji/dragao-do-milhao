@@ -37,6 +37,8 @@ typedef enum
     DRAGAO_CREDITOS,
     FUNDO_DERROTA_JORNADA,
     DRAGAO_CAIDO_JORNADA,
+    PATIO_SOPRO,
+    DRAGAO_SOPRO,
     TROTE_VERSO,
     TROTE_FOGO,
     TROTE_OVO,
@@ -78,6 +80,8 @@ static ArteCena artes[TOTAL_ARTES] = {
     [DRAGAO_CREDITOS] = {"assets/visual/cenas/24/dragao_voo.png"},
     [FUNDO_DERROTA_JORNADA] = {"assets/visual/fundos/derrota_jornada.png"},
     [DRAGAO_CAIDO_JORNADA] = {"assets/visual/cenas/derrota_jornada/dragao_caido.png"},
+    [PATIO_SOPRO] = {"assets/visual/fundos/patio_sopro.png"},
+    [DRAGAO_SOPRO] = {"assets/visual/cenas/10/dragao_sopro.png"},
     [TROTE_VERSO] = {"assets/visual/icones/trote_carta_fechada.png"},
     [TROTE_FOGO] = {"assets/visual/icones/trote_carta_fogo.png"},
     [TROTE_OVO] = {"assets/visual/icones/trote_carta_ovo.png"},
@@ -143,6 +147,12 @@ void desenhar_arte_carta_burro(Rectangle area, int simbolo)
         area.y + (area.height - textura.height * escala) / 2,
     };
     DrawTextureEx(textura, posicao, 0.0f, escala, WHITE);
+}
+
+void desenhar_arte_sopro(void)
+{
+    desenhar_png(PATIO_SOPRO, 160, 108);
+    desenhar_png_com_luz(DRAGAO_SOPRO, 190, 182, luz_patio);
 }
 
 // As coordenadas abaixo são as da coluna destino do manifesto de sprites v2.
