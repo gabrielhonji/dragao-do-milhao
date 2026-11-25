@@ -19,6 +19,16 @@ id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,di
 17,Como é conhecido o pequeno protagonista controlado no primeiro Hollow Knight?,The Knight,Zote,Grimm,Hornet,A,1
 18,Qual série de luta reúne personagens como Ryu e Chun-Li?,Street Fighter,The King of Fighters,Tekken,Mortal Kombat,A,1
 19,Em qual país se passa a maior parte da aventura de Ezio em Assassin's Creed II?,Inglaterra,França,Itália,Espanha,C,1
+80,Em que reino se passa o primeiro jogo da série The Legend of Zelda?,Hyrule,Mushroom Kingdom,San Andreas,Skyrim,A,1
+81,Qual personagem é o principal protagonista da série Halo?,Marcus Fenix,Master Chief,Kratos,Arthur Morgan,B,1
+82,Qual franquia reúne criaturas como Pikachu e Charizard?,Digimon,Pokémon,Final Fantasy,Monster Hunter,B,1
+83,Qual ninja do clã Lin Kuei é conhecido por congelar seus oponentes em Mortal Kombat?,Reptile,Scorpion,Sub-Zero,Kung Lao,C,1
+84,Em God of War de 2018 qual é o nome do filho que acompanha Kratos?,Baldur,Magni,Atreus,Modi,C,1
+85,Qual empresa desenvolveu o jogo League of Legends?,Valve,Blizzard Entertainment,Riot Games,Electronic Arts,C,1
+86,Quem é o protagonista dos seis capítulos que antecedem o epílogo de Red Dead Redemption 2?,John Marston,Arthur Morgan,Dutch van der Linde,Bill Williamson,B,1
+87,Em qual jogo aparece o personagem Steve?,Terraria,Minecraft,Roblox,Among Us,B,1
+88,Qual empresa publicou o primeiro The Sims em 2000?,Rockstar Games,Electronic Arts,Valve,Atari,B,1
+89,Qual é o nome da princesa que Mario frequentemente precisa salvar?,Peach,Daisy,Rosalina,Zelda,A,1
 20,Qual esqueleto de Undertale é irmão de Papyrus e costuma fazer trocadilhos?,Sans,Napstablook,Mettaton,Asgore,A,2
 21,Qual garota Joel deve escoltar na história do primeiro The Last of Us?,Tess,Ellie,Marlene,Sarah,B,2
 22,Quem é o protagonista de Assassin's Creed II?,Ezio Auditore,Edward Kenway,Connor Kenway,Altaïr Ibn-La'Ahad,A,2
@@ -36,9 +46,19 @@ id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,di
 34,Quantos colossos fazem parte da campanha principal de Shadow of the Colossus?,16,14,18,12,A,2
 35,Qual é o nome do irmão de Cuphead?,King Dice,Chef Saltbaker,Elder Kettle,Mugman,D,2
 36,Qual chefe deve ser derrotado pela primeira vez para ativar o Hardmode em um mundo padrão de Terraria?,Devorador de Mundos,Parede de Carne,Esqueletron,Olho de Cthulhu,B,2
-37,Qual NPC de Terraria vende bombas e dinamite?,Armeiro,Demolicionista,Mercador,Mecânica,B,2
+37,Qual NPC de Terraria vende bombas e dinamite?,Armeiro,Especialista em Demolição,Mercador,Mecânica,B,2
 38,Qual destas descrições corresponde ao gênero principal de Brawlhalla?,Luta de plataforma,Estratégia por turnos,Simulação de corrida,Tiro tático em primeira pessoa,A,2
 39,Qual Pokémon teria moldado o mundo de acordo com as lendas de Sinnoh?,Lugia,Giratina,Rayquaza,Arceus,D,2
+90,Qual é o nome do protagonista de Far Cry 3?,Jason Brody,Ajay Ghale,Jason Statham,Jack Carver,A,2
+91,Qual personagem de Mortal Kombat é conhecido por usar um chapéu de lâmina?,Scorpion,Raiden,Kung Lao,Sub-Zero,C,2
+92,Em The Witcher 3: Wild Hunt qual é o nome da filha adotiva de Geralt?,Yennefer,Triss,Ciri,Keira,C,2
+93,Como é chamado o Mundo 8 na versão de NES de Super Mario Bros. 3?,Water Land,Sky Land,Pipe Land,Dark Land,D,2
+94,Em Portal qual é o nome da inteligência artificial que controla os testes?,Cortana,GLaDOS,SHODAN,EDI,B,2
+95,Em Dark Souls qual é o nome do primeiro chefe encontrado na área Undead Asylum?,Ornstein,Artorias,Iudex Gundyr,Asylum Demon,D,2
+96,Quem divide o protagonismo de Yakuza 0 com Kazuma Kiryu?,Goro Majima,Shun Akiyama,Taiga Saejima,Ichiban Kasuga,A,2
+98,Qual morador de Stardew Valley trabalha como ferreiro e abre geodos?,Robin,Willy,Clint,Gus,C,2
+101,Qual é o nome da protagonista de Metroid?,Samus Aran,Lara Croft,Jill Valentine,Ada Wong,A,2
+109,Qual é o nome do cavalo do veterano Hamish Sinclair em Red Dead Redemption 2?,Buell,Rachel,Agro,Roach,A,2
 40,Em qual ano Fortnite foi disponibilizado inicialmente em acesso antecipado?,2018,2016,2017,2015,C,3
 41,Qual é o nome do modo de Apex Legends em que as equipes lutam para ser a última sobrevivente?,Corrida contra o relógio,Battle royale,Defesa de torres,Captura de bandeira,B,3
 42,Qual dupla protagoniza as duas campanhas principais de Resident Evil 2 de 1998?,Leon S. Kennedy e Claire Redfield,Jill Valentine e Carlos Oliveira,Chris Redfield e Jill Valentine,Chris Redfield e Sheva Alomar,A,3
@@ -54,6 +74,16 @@ id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,di
 52,Qual criatura de Silent Hill 2 é reconhecida pelo enorme capacete triangular de metal?,Abstract Daddy,Lying Figure,Flesh Lip,Pyramid Head,D,3
 53,Qual planta aquática do Plants vs. Zombies original arrasta um zumbi para debaixo d'água e desaparece após o uso?,Lily Pad,Sea-shroom,Cattail,Tangle Kelp,D,3
 54,Qual linguagem predomina no código-fonte de Doom disponibilizado publicamente pela id Software?,Java,C,C++,Python,B,3
+97,Qual é o nome do protagonista em Persona 5: The Animation?,Yu Narukami,Ren Amamiya,Makoto Yuki,Ryuji Sakamoto,B,3
+99,Qual força de ocupação a resistência enfrenta em Half-Life 2?,Black Mesa,Combine,The Resistance,Aperture Science,B,3
+100,Qual jogo da série Fallout se passa principalmente na região de Washington D.C.?,Fallout: New Vegas,Fallout 4,Fallout 3,Fallout 76,C,3
+102,Em BioShock qual frase é usada para controlar mentalmente o protagonista?,Would you kindly,The cake is a lie,Stay awhile and listen,War never changes,A,3
+103,Qual empresa desenvolveu o jogo Bloodborne?,Capcom,Konami,FromSoftware,PlatinumGames,C,3
+104,Qual é o nome da cidade principal de Disco Elysium?,Rapture,Revachol,Columbia,Dunwall,B,3
+105,Em Pokémon Gold e Silver qual região pode ser explorada após concluir a Liga Pokémon?,Hoenn,Kalos,Kanto,Sinnoh,C,3
+106,Qual personagem é o principal antagonista de Far Cry 4?,Vaas Montenegro,Pagan Min,Joseph Seed,Hurk Drubman,B,3
+107,Qual é o nome da inteligência artificial antagonista de System Shock?,SHODAN,GLaDOS,Cortana,EDI,A,3
+108,Qual é o nome do protagonista de Sekiro: Shadows Die Twice?,Wolf,Genichiro,Ashina,Kuro,A,3
 55,Qual mapa de Counter-Strike foi criado por Dave Johnston como continuação do mapa Dust?,Inferno,Dust II,Nuke,Mirage,B,4
 56,Quem é o castelão enfrentado por Leon no Resident Evil 4 original de 2005?,Bitores Méndez,Osmund Saddler,Ramon Salazar,Jack Krauser,C,4
 57,Counter-Strike surgiu em 1999 como uma modificação de qual jogo?,Quake,Unreal,Half-Life,Doom,C,4
@@ -69,6 +99,11 @@ id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,di
 67,Qual é o nome do protagonista da campanha individual de Cry of Fear?,Simon Henriksson,Sebastian Castellanos,James Sunderland,David Leatherhoff,A,4
 68,Qual corporação militar privada contrata Jack Mitchell em Call of Duty: Advanced Warfare?,Konni Group,Shadow Company,Sentinel,Atlas,D,4
 69,Qual jogo da série principal Five Nights at Freddy's marcou a estreia de Phantom Mangle?,Five Nights at Freddy's,Five Nights at Freddy's 3,Five Nights at Freddy's 2,Five Nights at Freddy's 4,B,4
+110,Qual é o nome da cidade onde se passa a maior parte de Mafia: The City of Lost Heaven?,Empire Bay,Lost Heaven,New Bordeaux,Carcer City,B,4
+111,Qual desenvolvedora criou o jogo Spec Ops: The Line?,Yager Development,Obsidian Entertainment,Volition,Remedy Entertainment,A,4
+112,Em Resident Evil 7: Biohazard qual é o sobrenome da família que mantém Ethan Winters prisioneiro?,Ashford,Baker,Salazar,Redfield,B,4
+113,Qual vírus provoca a transformação em zumbis no incidente da Mansão Spencer do primeiro Resident Evil?,Las Plagas,Uroboros,T-Virus,C-Virus,C,4
+114,Qual banda interpreta Dance Hall Days na trilha sonora de GTA: Vice City?,The Outfield,Autograph,Yes,Wang Chung,D,4
 70,Qual é a identificação do planeta onde se passa o primeiro Subnautica?,4520A,4546B,4546C,4547B,B,5
 71,Qual RPG de mesa foi criado por Gary Gygax e Dave Arneson e publicado originalmente em 1974?,Call of Cthulhu,GURPS,Vampire: The Masquerade,Dungeons & Dragons,D,5
 72,Qual lutador retorna com o corpo em forma de zumbi em Mortal Kombat: Deception?,Kung Lao,Raiden,Shang Tsung,Liu Kang,D,5
@@ -79,43 +114,8 @@ id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,di
 77,Qual dragão é enfrentado na Torre de Vigia Ocidental durante a missão Dragon Rising de Skyrim?,Paarthurnax,Alduin,Mirmulnir,Odahviing,C,5
 78,Qual jogo de 2002 criado por Jazzuo inspirou Getting Over It with Bennett Foddy?,QWOP,Icy Tower,Sexy Hiking,Happy Wheels,C,5
 79,Qual arma Leon recebe no confronto final contra o Super Tyrant em Resident Evil 2 de 2019?,Pistola de choque,Lança-granadas GM 79,Lança-chamas químico,Lança-foguetes antitanque,D,5
-80,Qual é o nome do reino onde se passa a maior parte da aventura de The Legend of Zelda?,Hyrule,Mushroom Kingdom,San Andreas,Skyrim,A,1
-81,Qual personagem é o principal protagonista da série Halo?,Marcus Fenix,Master Chief,Kratos,Arthur Morgan,B,1
-82,Em qual jogo o jogador controla personagens como Pikachu e Charizard?,Digimon,Pokémon,Final Fantasy,Monster Hunter,B,1
-83,Qual é o nome do lutador que domina a criomancia(manipulação do gelo) de Mortal Kombat?,Reptile,Scorpion,Sub-Zero,Kung-lao,C,1
-84,Qual é o nome do protagonista da série God of War?,Dante,Kratos,Atreus,Leonidas,B,1
-85,Qual empresa desenvolveu o jogo League of Legends?,Valve,Blizzard Entertainment,Riot Games,Electronic Arts,C,1
-86,Qual é o nome do protagonista de Red Dead Redemption 2?,John Marston,Arthur Morgan,Dutch van der Linde,Bill Williamson,B,1
-87,Em qual jogo aparece o personagem Steve?,Terraria,Minecraft,Roblox,Among Us,B,1
-88,Qual empresa desenvolveu a série The Sims?,Rockstar Games,Electronic Arts,Valve,Atari,B,1
-89,Qual é o nome da princesa que Mario frequentemente precisa salvar?,Peach,Daisy,Rosalina,Zelda,A,1
-90,Qual é o nome do protagonista de Far Cry 3?,Jason Brody,Ajay Ghale,Jason Statham,Jack Carver,A,2
-91,Qual personagem de Mortal Kombat é conhecido por usar um chapéu de lâmina?,Scorpion,Raiden,Kung Lao,Sub-Zero,C,2
-92,Em The Witcher 3: Wild Hunt qual é o nome da filha adotiva de Geralt?,Yennefer,Triss,Ciri,Keira,C,2
-93,Qual é o nome do reino governado por Bowser na franquia Mario?,Hyrule,Dream Land,Mushroom Kingdom,Dark Land,D,2
-94,Em Portal qual é o nome da inteligência artificial que controla os testes?,Cortana,GLaDOS,SHODAN,EDI,B,2
-95,Em Dark Souls qual é o nome do primeiro chefe encontrado na área Undead Asylum?,Ornstein,Artorias,Iudex Gundyr,Asylum Demon,D,2
-96,Qual personagem acompanha Kazuma Kiryu em boa parte da história de Yakuza 0?,Goro Majima,Shun Akiyama,Taiga Saejima,Ichiban Kasuga,A,2
-97,Qual é o nome do protagonista de Persona 5?,Yu Narukami,Ren Amamiya,Akira Yuki,Ryuji Sakamoto,B,2
-98,Em Stardew Valley qual personagem administra a loja Pierre's General Store?,Clint,Willy,Pierre,Robin,C,2
-99,Qual é o nome da organização antagonista em Half-Life?,Black Mesa,Combine,The Resistance,Aperture Science,B,3
-100,Qual jogo da série Fallout se passa principalmente na região de Washington D.C.?,Fallout: New Vegas,Fallout 4,Fallout 3,Fallout 76,C,3
-101,Qual é o nome da protagonista de Metroid?,Samus Aran,Lara Croft,Jill Valentine,Ada Wong,A,3
-102,Em BioShock qual frase é usada para controlar mentalmente o protagonista?,Would you kindly,The cake is a lie,Stay awhile and listen,War never changes,A,3
-103,Qual empresa desenvolveu o jogo Bloodborne?,Capcom,Konami,FromSoftware,PlatinumGames,C,3
-104,Qual é o nome da cidade principal de Disco Elysium?,Rapture,Revachol,Columbia,Dunwall,B,3
-105,Em Pokémon Gold e Silver qual região pode ser explorada após concluir a Liga Pokémon?,Hoenn,Kalos,Kanto,Sinnoh,C,3
-106,Qual personagem é o principal antagonista de Far Cry 4?,Vaas Montenegro,Pagan Min,Joseph Seed,Hurk Drubman,B,3
-107,Qual é o nome da inteligência artificial antagonista de System Shock?,SHODAN,GLaDOS,Cortana,EDI,A,3
-108,Qual é o nome do protagonista de Sekiro: Shadows Die Twice?,Wolf,Genichiro,Ashina,Kuro,A,3
-109,Qual é o nome do cavalo de Arthur Morgan em Red Dead Redemption 2?,Buell,Rachel,Agro,Roach,B,2
-110,Qual é o nome da cidade onde se passa a maior parte de Mafia: The City of Lost Heaven?,Empire Bay,Lost Heaven,New Bordeaux,Carcer City,B,4
-111,Qual desenvolvedora criou o jogo Spec Ops: The Line?,Yager Development,Obsidian Entertainment,Volition,Remedy Entertainment,A,4
-112,Em Resident Evil 7: Biohazard qual é o sobrenome da família que mantém Ethan Winters prisioneiro?,Ashford,Baker,Salazar,Redfield,B,4
-113,Qual é o nome do vírus responsável pelo surto original em Resident Evil?,Las Plagas,Uroboros,T-Virus,C-Virus,C,4
-114,Qual banda fictícia aparece na trilha sonora de GTA: Vice City e tem a música Dance Hall Days?,The Outfield,Autograph,Yes,Wang Chung,D,4
-115,Qual personagem de Mortal Kombat foi originalmente criado como um erro de paleta do Scorpion?,Reptile,Noob Saibot,Ermac,Rain,A,5
-116,Em GTA: Vice City qual é o nome da banda fictícia liderada por Love Fist?,The Gurning Chimps,Love Fist,The Lost MC,The Forelli Brothers,B,5
-117,Qual personagem de Overwatch foi inicialmente apresentado como um robô de manutenção antes de se tornar um herói jogável?,Bastion,Orisa,Zenyatta,Ramattra,A,5
+115,Qual lutador de quatro braços é enfrentado imediatamente antes de Shao Kahn no arcade de Mortal Kombat II?,Kintaro,Goro,Motaro,Sheeva,A,5
+116,Qual banda fictícia está na limusine com uma bomba na missão Publicity Tour de GTA: Vice City?,The Gurning Chimps,Love Fist,The Lost MC,The Forelli Brothers,B,5
+117,Qual herói de Overwatch combateu na Crise Ômnica e passou a explorar o mundo fascinado pela natureza?,Bastion,Orisa,Zenyatta,Ramattra,A,5
 118,Qual lutador de Mortal Kombat é conhecido por ter sido o primeiro personagem secreto da franquia?,Reptile,Smoke,Noob Saibot,Ermac,A,5
-119,Qual é o sobrenome da família caçadora de vampiros?,Belnades,Tepes,Lecarde,Belmont,D,5
+119,Em Castlevania III: Dracula's Curse qual é o sobrenome do caçador de vampiros Trevor?,Belnades,Tepes,Lecarde,Belmont,D,5

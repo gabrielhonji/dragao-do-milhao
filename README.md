@@ -55,6 +55,8 @@ No terminal, escolha uma opção pelo número correspondente. A opção `0` ence
 
 Na primeira execução, quando o binário ainda não existe, o programa importa o CSV inicial. Nas execuções seguintes, recupera o banco pelo binário. Alterar o CSV inicial depois disso não atualiza automaticamente o banco salvo.
 
+Para carregar um CSV inicial atualizado, feche o jogo e, se `dados/perguntas.dat` existir, mova o arquivo para fora do repositório. Depois, execute `make run`. O banco anterior preserva as alterações feitas no cadastro e pode ser guardado como cópia de segurança. Como o binário é gerado localmente e ignorado pelo Git, cada cópia do projeto pode ter seu próprio banco salvo.
+
 A exportação gera uma cópia do banco atual em texto e substitui uma exportação anterior.
 
 ## Formato do CSV
@@ -102,7 +104,7 @@ Essas operações atualizam a coleção em memória e devolvem um código para o
 
 ## Banco inicial de perguntas
 
-O arquivo `dados/perguntas_iniciais.csv` contém 120 perguntas da equipe, distribuídas entre os cinco níveis de dificuldade:
+O arquivo `dados/perguntas_iniciais.csv` contém 120 perguntas da equipe, agrupadas em ordem crescente de dificuldade.
 
 | Dificuldade   | Quantidade |
 | ------------- | ---------: |
