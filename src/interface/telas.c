@@ -11,12 +11,14 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h> // Permite distinguir a primeira execução.
 #include "telas.h"
 #include "arte_cenas.h"
 #include "componentes.h"
 #include "cores.h"
 #include "editor_perguntas.h"
 #include "../quiz/quiz.h"
+#include "../quiz/arquivo_partidas.h"
 
 typedef enum
 {
@@ -26,6 +28,7 @@ typedef enum
     TELA_GRUTA,
     TELA_CREDITOS,
     TELA_GERENCIAMENTO,
+    TELA_RANKING,
 } Tela;
 enum
 {
@@ -365,6 +368,8 @@ void executar_tela_teste(Banco_perguntas *banco)
     int questao_exibida = 0; // Mantém o número na tela até o próximo sorteio, mesmo após o renascimento.
     Dificuldade dificuldade_em_falta = 0;
     bool faltam_perguntas = false;
+    Registro_partida *registos_ranking = NULL; // Vetor alocado ao abrir o RANKING.
+    int total_ranking = 0;                     // Quantidade de registros ou código de erro caso aconteça.
 
     // Botões.
     const Rectangle jogar = {586, 205, 318, 44}; // Primeira linha da coluna.
@@ -557,6 +562,16 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
             else if (botao_clicado(creditos))
                 tela_atual = TELA_CREDITOS;
+            else if (botao_clicado(ranking)) {
+                FILE *arquivo_ranking = NULL; //* porque geramos ele como null e desse jeito?
+                total_ranking = carregar_registro_partidas(&registos_ranking, &arquivo_ranking);
+
+                // Antes do primeiro resultado salvo, o arquivo ainda não existe.
+                if (total_ranking == -2 && errno == ENOENT) //* oque estamos verificando nessse -2 e oq essa errno recebe p gnt checar se é enoent, qq é enoent, falo vc explicar legal isso
+                    total_ranking = 0;
+
+                tela_atual = TELA_RANKING;
+            }
             else if (botao_clicado(gerenciar)) {
                 dificuldade_em_falta = 0;
                 faltam_perguntas = false;
@@ -608,6 +623,13 @@ void executar_tela_teste(Banco_perguntas *banco)
                     previa_gruta = false;
                     tela_atual = TELA_GRUTA;
                 }
+            }
+        }
+        else if (tela_atual == TELA_RANKING) {
+            if (botao_clicado(voltar)) {
+                free(registos_ranking);
+                registos_ranking = NULL; // Permite sair e abrir a tela de novo.
+                tela_atual = TELA_MENU;
             }
         }
         else if (tela_atual == TELA_CREDITOS) {
@@ -763,7 +785,8 @@ void executar_tela_teste(Banco_perguntas *banco)
         BeginMode2D(camera); // Daqui até EndMode2D, podemos desenhar nas coordenadas de 960 × 540.
         bool usa_fundo_escuro = tela_atual == TELA_MENU ||
                                 tela_atual == TELA_CREDITOS ||
-                                tela_atual == TELA_GERENCIAMENTO;
+                                tela_atual == TELA_GERENCIAMENTO ||
+                                tela_atual == TELA_RANKING;
         Color fundo = usa_fundo_escuro ? COR_FUNDO_MENU : RAYWHITE;
         DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, fundo);
 
@@ -786,7 +809,7 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
 
             desenhar_botao_com_estado(fonte, jogar, "Jogar", BOTAO_PRIMARIO, true);
-            desenhar_botao_com_estado(fonte, ranking, "Ranking", BOTAO_SECUNDARIO, false);
+            desenhar_botao(fonte, ranking, "Ranking");
             desenhar_botao(fonte, gerenciar, "Gerenciar perguntas");
             desenhar_botao(fonte, creditos, "Créditos");
             desenhar_botao(fonte, sair, "Sair");
@@ -799,6 +822,47 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
             else if (faltam_perguntas)
                 DrawTextEx(fonte, "Sem perguntas para iniciar.", posicao_aviso, 20, 1, COR_AVISO);
+        }
+        else if (tela_atual == TELA_RANKING) {
+            DrawTextEx(fonte_titulo, "Ranking", (Vector2){24, 24}, 34, 1, COR_TEXTO_CLARO);
+            desenhar_botao(fonte, voltar, "Voltar");
+
+            const Rectangle painel_ranking = {24, 80, 912, 348}; // Painel entre o título e o footer.
+            desenhar_painel(painel_ranking, COR_ESCURO);
+
+            const float y_cabecalho = 104;
+            const float altura_linha = 36; // Distância vertical entre os registros.
+            const float x_posicao = 48;
+            const float x_nome = 110;
+            const float x_acertos = 540;
+            const float x_ovos = 670;
+            const float x_tempo = 780;
+
+            if (total_ranking < 0)
+                DrawTextEx(fonte, "Não foi possível carregar o ranking.", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_AVISO);
+            else if (total_ranking == 0)
+                DrawTextEx(fonte, "Nenhum resultado foi registrado.", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+            else {
+                // Escreve os cabeçalhos.
+                DrawTextEx(fonte, "#", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+                DrawTextEx(fonte, "Nome", (Vector2){x_nome, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+                DrawTextEx(fonte, "Acertos", (Vector2){x_acertos, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+                DrawTextEx(fonte, "Ovos", (Vector2){x_ovos, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+                DrawTextEx(fonte, "Tempo", (Vector2){x_tempo, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+
+                // Linhas de rankings.
+                const int limite_visivel = 8; // Quantidade de linhas que cabe no painel.
+                for (int i = 0; i < total_ranking && i < limite_visivel; i++) {
+                    const Registro_partida *registro = &registos_ranking[i];
+                    float y = y_cabecalho + (i + 1) * altura_linha; // A primeira linha vem depois do cabeçalho
+
+                    DrawTextEx(fonte, TextFormat("%d", i + 1), (Vector2){x_posicao, y}, 18, 1, COR_TEXTO_CLARO);
+                    desenhar_previa_enunciado(fonte, registro->nome_jogador, (Vector2){x_nome, y}, x_acertos - x_nome - 16); // Preserva 16px antes de Acertos.
+                    DrawTextEx(fonte, TextFormat("%d", registro->progresso), (Vector2){x_acertos, y}, 18, 1, COR_TEXTO_CLARO);
+                    DrawTextEx(fonte, TextFormat("%d", registro->ovos_restantes), (Vector2){x_ovos, y}, 18, 1, COR_TEXTO_CLARO);
+                    DrawTextEx(fonte, TextFormat("%.2f s", registro->tempo_ativo), (Vector2){x_tempo, y}, 18, 1, COR_TEXTO_CLARO);
+                }
+            }
         }
         else if (tela_atual == TELA_CREDITOS) {
             const Rectangle painel_equipe = quiz;
