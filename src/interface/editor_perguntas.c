@@ -47,53 +47,6 @@ static Rectangle caixa_texto(int campo)
 }
 
 /**
- * @brief Lê caracteres para o campo ativo, mantendo sequências UTF-8 completas.
- * @param texto Conteúdo editável do campo.
- * @param capacidade Tamanho do vetor em bytes, incluindo o '\0'.
- * @param selecionar_tudo Indica se a próxima edição substitui todo o conteúdo.
- */
-static void editar_texto(char *texto, size_t capacidade, bool *selecionar_tudo)
-{
-    if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_A))
-        *selecionar_tudo = true;
-
-    size_t tamanho = strlen(texto);
-    if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) {
-        if (*selecionar_tudo) {
-            tamanho = 0;
-            *selecionar_tudo = false;
-        }
-        else if (tamanho > 0) {
-            // Volta pelos bytes de continuação (10xxxxxx) até o começo do caractere.
-            do {
-                tamanho--;
-            } while (tamanho > 0 && ((unsigned char)texto[tamanho] & 0xc0) == 0x80);
-        }
-        texto[tamanho] = '\0';
-    }
-
-    for (int codigo = GetCharPressed(); codigo != 0; codigo = GetCharPressed()) {
-        // A fonte da interface cobre ASCII e Latin-1, incluindo os acentos do português.
-        if (codigo < 32 || (codigo > 126 && codigo < 160) || codigo > 255)
-            continue;
-
-        int bytes;
-        const char *caractere = CodepointToUTF8(codigo, &bytes);
-        if (*selecionar_tudo) {
-            tamanho = 0;
-            *selecionar_tudo = false;
-        }
-        // Reserva espaço para todos os bytes da letra e para o '\0'.
-        if (tamanho + (size_t)bytes >= capacidade)
-            continue;
-
-        memcpy(texto + tamanho, caractere, (size_t)bytes);
-        tamanho += (size_t)bytes;
-        texto[tamanho] = '\0';
-    }
-}
-
-/**
  * @brief Aplica uma operação a uma cópia do banco e só a adota depois de gravá-la.
  * @param banco Banco em uso na listagem e no jogo.
  * @param editor Operação escolhida e pergunta de trabalho.
@@ -205,30 +158,6 @@ bool atualizar_editor_perguntas(EditorPerguntas *editor, Banco_perguntas *banco)
 
     editor->modo = EDITOR_FECHADO;
     return true;
-}
-
-/** @brief Mostra o final do texto quando ele fica maior que o campo. */
-static void desenhar_campo(Font fonte, Rectangle area, const char *texto, bool ativo, bool selecionado)
-{
-    desenhar_painel(area, ativo ? COR_FACE_SELECIONADA : COR_ESCURO);
-    if (ativo)
-        DrawRectangleLinesEx(area, 2, COR_BORDA_SELECIONADA);
-
-    const float recuo = 12;
-    const float tamanho = 20;
-    const char *visivel = texto;
-    // Avança só o início do trecho visível, para manter o fim da digitação dentro da caixa.
-    while (*visivel && MeasureTextEx(fonte, visivel, tamanho, 1).x > area.width - 2 * recuo) {
-        int bytes;
-        GetCodepointNext(visivel, &bytes);
-        visivel += bytes;
-    }
-    const float y = area.y + (area.height - tamanho) / 2;
-    if (selecionado) {
-        float largura = MeasureTextEx(fonte, visivel, tamanho, 1).x;
-        DrawRectangleRec((Rectangle){area.x + recuo, y, largura, tamanho}, COR_BORDA_SELECIONADA);
-    }
-    DrawTextEx(fonte, visivel, (Vector2){area.x + recuo, y}, tamanho, 1, selecionado ? COR_ESCURO : COR_TEXTO_CLARO);
 }
 
 void desenhar_editor_perguntas(const EditorPerguntas *editor, Font fonte, Font titulo)

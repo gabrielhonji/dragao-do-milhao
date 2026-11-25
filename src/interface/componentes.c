@@ -9,6 +9,7 @@
  *
  */
 
+#include <string.h>
 #include "componentes.h"
 #include "cores.h"
 
@@ -44,6 +45,8 @@ void desenhar_painel(Rectangle area, Color fundo)
     preencher_face(area, COR_MOLDURA_MAPA);
     preencher_face(interior, fundo);
 }
+
+/* Desenhar botões */
 
 /** @brief Desenha as camadas comuns aos botões de ação e às alternativas do quiz. */
 static void desenhar_corpo_botao(Font fonte, Rectangle area, const char *rotulo, EstiloBotao estilo, bool habilitado, bool alinhar_esquerda)
@@ -110,4 +113,69 @@ void desenhar_alternativa(Font fonte, Rectangle area, const char *rotulo, bool s
 void desenhar_botao(Font fonte, Rectangle area, const char *rotulo)
 {
     desenhar_botao_com_estado(fonte, area, rotulo, BOTAO_SECUNDARIO, true);
+}
+
+/* Campos de texto */
+void editar_texto(char *texto, size_t capacidade, bool *selecionar_tudo)
+{
+    if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_A))
+        *selecionar_tudo = true;
+
+    size_t tamanho = strlen(texto);
+    if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) {
+        if (*selecionar_tudo) {
+            tamanho = 0;
+            *selecionar_tudo = false;
+        }
+        else if (tamanho > 0) {
+            // Volta pelos bytes de continuação (10xxxxxx) até o começo do caractere.
+            do {
+                tamanho--;
+            } while (tamanho > 0 && ((unsigned char)texto[tamanho] & 0xc0) == 0x80);
+        }
+        texto[tamanho] = '\0';
+    }
+
+    for (int codigo = GetCharPressed(); codigo != 0; codigo = GetCharPressed()) {
+        // A fonte da interface cobre ASCII e Latin-1, incluindo os acentos do português.
+        if (codigo < 32 || (codigo > 126 && codigo < 160) || codigo > 255)
+            continue;
+
+        int bytes;
+        const char *caractere = CodepointToUTF8(codigo, &bytes);
+        if (*selecionar_tudo) {
+            tamanho = 0;
+            *selecionar_tudo = false;
+        }
+        // Reserva espaço para todos os bytes da letra e para o '\0'.
+        if (tamanho + (size_t)bytes >= capacidade)
+            continue;
+
+        memcpy(texto + tamanho, caractere, (size_t)bytes);
+        tamanho += (size_t)bytes;
+        texto[tamanho] = '\0';
+    }
+}
+
+void desenhar_campo(Font fonte, Rectangle area, const char *texto, bool ativo, bool selecionado)
+{
+    desenhar_painel(area, ativo ? COR_FACE_SELECIONADA : COR_ESCURO);
+    if (ativo)
+        DrawRectangleLinesEx(area, 2, COR_BORDA_SELECIONADA);
+
+    const float recuo = 12;
+    const float tamanho = 20;
+    const char *visivel = texto;
+    // Avança só o início do trecho visível, para manter o fim da digitação dentro da caixa.
+    while (*visivel && MeasureTextEx(fonte, visivel, tamanho, 1).x > area.width - 2 * recuo) {
+        int bytes;
+        GetCodepointNext(visivel, &bytes);
+        visivel += bytes;
+    }
+    const float y = area.y + (area.height - tamanho) / 2;
+    if (selecionado) {
+        float largura = MeasureTextEx(fonte, visivel, tamanho, 1).x;
+        DrawRectangleRec((Rectangle){area.x + recuo, y, largura, tamanho}, COR_BORDA_SELECIONADA);
+    }
+    DrawTextEx(fonte, visivel, (Vector2){area.x + recuo, y}, tamanho, 1, selecionado ? COR_ESCURO : COR_TEXTO_CLARO);
 }

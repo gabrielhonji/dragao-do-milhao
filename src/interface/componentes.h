@@ -12,6 +12,7 @@
 #ifndef COMPONENTES_H
 #define COMPONENTES_H
 
+#include <stddef.h> // Declara size_t, usado para a capacidade do campo.
 #include <raylib.h>
 
 /**
@@ -66,5 +67,24 @@ void desenhar_botao_com_estado(Font fonte, Rectangle area, const char *rotulo, E
  * @param habilitada Permite o destaque ao passar o mouse.
  */
 void desenhar_alternativa(Font fonte, Rectangle area, const char *rotulo, bool selecionada, bool habilitada);
+
+/**
+ * @brief Processa a digitação, o Backspace e o Ctrl+A do campo em foco.
+ * @param texto Vetor com o texto atual, terminado em '\0', que será editado.
+ * @param capacidade Tamanho do vetor em bytes, incluindo o espaço para '\0'.
+ * @param selecionar_tudo Estado da seleção, atualizado pela função. Se verdadeiro,
+ *        a próxima edição substitui ou apaga todo o conteúdo.
+ */
+void editar_texto(char *texto, size_t capacidade, bool *selecionar_tudo);
+
+/**
+ * @brief Desenha um campo de texto de uma linha e mostra o fim se o texto for comprido.
+ * @param fonte Fonte usada no texto.
+ * @param area Limites do campo na tela lógica.
+ * @param texto Conteúdo exibido, terminado em '\0'.
+ * @param ativo Indica se o campo tem foco e deve ganhar contorno.
+ * @param selecionado Indica se deve destacar a seleção de todo o texto.
+ */
+void desenhar_campo(Font fonte, Rectangle area, const char *texto, bool ativo, bool selecionado);
 
 #endif
