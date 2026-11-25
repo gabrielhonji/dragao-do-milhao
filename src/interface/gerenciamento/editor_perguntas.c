@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "editor_perguntas.h"
+#include "../comum/audio.h"
 #include "../comum/componentes.h"
 #include "../comum/cores.h"
 #include "../../perguntas/arquivos_perguntas.h"
@@ -105,6 +106,7 @@ bool atualizar_editor_perguntas(EditorPerguntas *editor, Banco_perguntas *banco)
         return false;
 
     if (botao_clicado(cancelar)) {
+        tocar_efeito(SOM_BOTAO);
         // A lista continua com os dados gravados porque a edição usa um rascunho.
         editor->modo = EDITOR_FECHADO;
         return false;
@@ -130,10 +132,14 @@ bool atualizar_editor_perguntas(EditorPerguntas *editor, Banco_perguntas *banco)
         size_t capacidade = campo == 0 ? sizeof pergunta->enunciado : sizeof pergunta->alternativa.A;
         editar_texto(textos[campo], capacidade, &editor->selecionar_texto);
 
-        if (botao_clicado(escolher_resposta))
+        if (botao_clicado(escolher_resposta)) {
             pergunta->resposta = pergunta->resposta == 'D' ? 'A' : pergunta->resposta + 1;
-        if (botao_clicado(escolher_dificuldade))
+            tocar_efeito(SOM_BOTAO);
+        }
+        if (botao_clicado(escolher_dificuldade)) {
             pergunta->dificuldade = pergunta->dificuldade == muito_dificil ? muito_facil : pergunta->dificuldade + 1;
+            tocar_efeito(SOM_BOTAO);
+        }
 
         if (!botao_clicado(confirmar))
             return false;
@@ -143,6 +149,7 @@ bool atualizar_editor_perguntas(EditorPerguntas *editor, Banco_perguntas *banco)
                 editor->erro = "Preencha o enunciado e as quatro alternativas.";
                 editor->campo_ativo = i;
                 editor->selecionar_texto = false;
+                tocar_efeito(SOM_ERRO);
                 return false;
             }
         }
@@ -153,6 +160,7 @@ bool atualizar_editor_perguntas(EditorPerguntas *editor, Banco_perguntas *banco)
     }
 
     editor->erro = gravar_mudanca(banco, editor);
+    tocar_efeito(editor->erro ? SOM_ERRO : SOM_BOTAO);
     if (editor->erro != NULL)
         return false;
 

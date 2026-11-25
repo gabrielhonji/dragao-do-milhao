@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "tela_gerenciamento.h"
+#include "../comum/audio.h"
 #include "../comum/componentes.h"
 #include "../comum/cores.h"
 
@@ -136,6 +137,7 @@ bool atualizar_gerenciamento(TelaGerenciamento *tela, Banco_perguntas *banco, bo
         tela->busca_em_foco = false;
         tela->retorno_edicao = NULL;
         abrir_editor_perguntas(&tela->editor, EDITOR_NOVA, NULL);
+        tocar_efeito(SOM_BOTAO);
     }
     else if (tela->id_selecionado >= 0 &&
              (botao_clicado(tela->editar_pergunta) || botao_clicado(tela->remover_pergunta))) {
@@ -146,6 +148,7 @@ bool atualizar_gerenciamento(TelaGerenciamento *tela, Banco_perguntas *banco, bo
             tela->busca_em_foco = false;
             tela->retorno_edicao = NULL;
             abrir_editor_perguntas(&tela->editor, modo, &banco->perguntas[indice]);
+            tocar_efeito(SOM_BOTAO);
         }
     }
     else {
@@ -157,8 +160,10 @@ bool atualizar_gerenciamento(TelaGerenciamento *tela, Banco_perguntas *banco, bo
         bool mudou_busca = tela->busca_em_foco && janela_em_foco && atualizar_busca_id(tela->busca_id, sizeof tela->busca_id);
         bool mudou_filtro = botao_clicado(tela->botao_dificuldade);
 
-        if (mudou_filtro)
+        if (mudou_filtro) {
             tela->filtro_dificuldade = tela->filtro_dificuldade == muito_dificil ? 0 : tela->filtro_dificuldade + 1;
+            tocar_efeito(SOM_BOTAO);
+        }
 
         if (mudou_busca || mudou_filtro) {
             tela->pagina_perguntas = 0;
@@ -172,10 +177,12 @@ bool atualizar_gerenciamento(TelaGerenciamento *tela, Banco_perguntas *banco, bo
         // Navegação das páginas.
         if (tela->pagina_perguntas > 0 && botao_clicado(tela->pagina_anterior)) {
             tela->pagina_perguntas--;
+            tocar_efeito(SOM_BOTAO);
             tela->id_selecionado = -1;
         }
         else if (inicio + PERGUNTAS_POR_PAGINA < total && botao_clicado(tela->pagina_seguinte)) {
             tela->pagina_perguntas++;
+            tocar_efeito(SOM_BOTAO);
             tela->id_selecionado = -1;
         }
         else {
@@ -183,6 +190,7 @@ bool atualizar_gerenciamento(TelaGerenciamento *tela, Banco_perguntas *banco, bo
                 if (botao_clicado(faixa_pergunta(tela->lista_perguntas, linha))) {
                     // A posição no vetor serve para ler a pergunta. O ID identifica o registro escolhido.
                     tela->id_selecionado = banco->perguntas[indices[linha]].identificador;
+                    tocar_efeito(SOM_BOTAO);
                     break;
                 }
             }

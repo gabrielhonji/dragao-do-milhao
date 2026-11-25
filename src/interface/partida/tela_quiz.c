@@ -4,6 +4,7 @@
  */
 
 #include "tela_quiz.h"
+#include "../comum/audio.h"
 #include "../comum/arte_cenas.h"
 #include "../comum/componentes.h"
 #include "../comum/cores.h"
@@ -198,6 +199,8 @@ AcaoQuiz atualizar_quiz(TelaQuiz *tela, const LayoutQuiz *layout, const Banco_pe
             tela->resultado_resposta = processa_resposta(&tela->partida, tela->pergunta_atual, resposta);
             tela->resposta_confirmada = true;
             bool acertou = resposta == tela->pergunta_atual->resposta;
+            // Os três caminhos de confirmação passam aqui e emitem o mesmo resultado uma só vez.
+            tocar_efeito(acertou ? SOM_ACERTO : SOM_ERRO);
             tela->tempo_efeito = acertou ? 0 : duracao_efeito;
             tela->dano_batalha = acertou && quiz_em_batalha(tela) ? pv_antes - calcula_pv_principe(&tela->partida) : 0;
         }
@@ -222,11 +225,13 @@ AcaoQuiz atualizar_quiz(TelaQuiz *tela, const LayoutQuiz *layout, const Banco_pe
                 if (estava_na_jornada && quiz_em_batalha(tela))
                     return QUIZ_CHEGOU_CASTELO;
             }
+            tocar_efeito(SOM_BOTAO); // Continuar na mesma tela também deve responder ao jogador.
         }
     }
     // Um clique válido muda a escolha. Nos demais quadros, a seleção continua guardada.
     else if (alternativa_clicada >= 0) {
         tela->alternativa_selecionada = alternativa_clicada;
+        tocar_efeito(SOM_ALTERNATIVA);
     }
 
     return QUIZ_SEM_ACAO;
