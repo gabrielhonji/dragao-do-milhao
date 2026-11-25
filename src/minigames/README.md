@@ -14,7 +14,7 @@ O campo `sopro.resultado` vale `0` durante a rodada, `1` na vitória e `-1` quan
 
 Clique na ajuda **Burro** durante uma pergunta para abrir um jogo da memória com seis cartas e três pares. Clique em duas cartas diferentes para revelar seus símbolos. O par fica visível por **0,8 segundo**. Cartas iguais saem do tabuleiro. Cartas diferentes viram de volta e descontam uma das **três chances**. Encontrar os três pares dá vitória. O terceiro erro encerra a rodada em derrota.
 
-O Burro tem **dois usos por partida**, com limite de um uso por pergunta. Cada rodada consome um uso ao abrir. O botão **Voltar à pergunta** aparece ao final e retoma a pergunta que estava aberta. Na vitória, o Burro aponta uma alternativa com **60% de chance de acertar**. Na derrota, a pergunta volta sem palpite.
+O Burro tem **dois usos por partida**, com limite de um uso por pergunta. Cada rodada consome um uso ao abrir. O botão **Voltar à pergunta** aparece ao final e retoma a pergunta que estava aberta. Na vitória, o Burro aponta uma alternativa com **70% de chance de acertar**. Na derrota, a pergunta volta sem palpite.
 
 A interface do Trote fica em `src/interface/minigames/tela_burro.c`. A rodada fica em `MinigameBurro`. `iniciarMinigameBurro` reinicia e embaralha o tabuleiro. `selecionar_Carta_Burro` recebe o índice de um clique. `atualizarMinigameBurro` acumula o tempo de revelação e resolve o par. O campo `resultado` vale `0` durante a rodada, `1` na vitória e `-1` na derrota.
 

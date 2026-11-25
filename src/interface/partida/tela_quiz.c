@@ -99,8 +99,8 @@ static void aplicar_ajuda(int ajuda, const Pergunta *pergunta, DicasPergunta *di
     if (total_incorretas == 0)
         return;
 
-    // Os valores de 1 a 60 representam os 60% de chance de o Burro acertar.
-    if (ajuda == AJUDA_BURRO && GetRandomValue(1, 100) <= 60) {
+    // Os valores de 1 a 70 representam os 70% de chance de o Burro acertar.
+    if (ajuda == AJUDA_BURRO && GetRandomValue(1, 100) <= 70) {
         dicas->palpite_burro = pergunta->resposta;
         return;
     }
