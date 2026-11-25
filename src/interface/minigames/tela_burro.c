@@ -4,6 +4,7 @@
  */
 
 #include "tela_burro.h"
+#include "../comum/audio.h"
 #include "../comum/arte_cenas.h"
 #include "../comum/componentes.h"
 #include "../comum/cores.h"
@@ -22,13 +23,22 @@ bool atualizar_tela_burro(MinigameBurro *burro)
         return botao_clicado(voltar_burro);
 
     if (burro->segunda_carta != -1) {
+        int pares_antes = burro->pares_encontrados;
         atualizarMinigameBurro(burro, GetFrameTime());
+        if (burro->pares_encontrados > pares_antes)
+            tocar_efeito(SOM_ACERTO);
+        else if (burro->resultado < 0)
+            tocar_efeito(SOM_ERRO);
         return false;
     }
 
     for (int i = 0; i < 6; i++) {
         if (botao_clicado(retangulo_carta(i))) {
+            int primeira_antes = burro->primeira_carta;
             selecionar_Carta_Burro(burro, i);
+            // A primeira carta mudou ou uma segunda foi revelada neste clique.
+            if (burro->primeira_carta != primeira_antes || burro->segunda_carta != -1)
+                tocar_efeito(SOM_CARTA);
             break;
         }
     }

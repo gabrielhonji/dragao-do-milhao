@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include "tela_registro.h"
+#include "../comum/audio.h"
 #include "../../quiz/arquivo_partidas.h"
 #include "../comum/componentes.h"
 #include "../comum/cores.h"
@@ -38,6 +39,7 @@ bool atualizar_registro(TelaRegistro *tela, const Partida *partida, bool janela_
                 return true;
             }
         }
+        tocar_efeito(SOM_ERRO); // O registro ficou aberto porque não foi possível salvar.
     }
     return false;
 }

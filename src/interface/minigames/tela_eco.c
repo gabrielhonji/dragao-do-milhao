@@ -4,6 +4,7 @@
  */
 
 #include "tela_eco.h"
+#include "../comum/audio.h"
 #include <math.h>
 #include "../comum/arte_cenas.h"
 #include "../comum/componentes.h"
@@ -20,7 +21,13 @@ bool atualizar_tela_eco(FlappyBird *jogo, bool janela_em_foco)
     if (janela_em_foco) {
         // Limita o avanço num quadro lento para a pomba não atravessar um obstáculo entre dois testes.
         float tempo_quadro = fminf(GetFrameTime(), 0.05f);
-        atualizaMinigame_flappybird(jogo, tempo_quadro, IsKeyPressed(KEY_SPACE));
+        bool bateu_asas = IsKeyPressed(KEY_SPACE);
+        atualizaMinigame_flappybird(jogo, tempo_quadro, bateu_asas);
+        // No último quadro, o resultado tem prioridade sobre o ruído das asas.
+        if (jogo->resultado != 0)
+            tocar_efeito(jogo->resultado > 0 ? SOM_ACERTO : SOM_ERRO);
+        else if (bateu_asas)
+            tocar_efeito(SOM_ASA);
     }
     return false;
 }

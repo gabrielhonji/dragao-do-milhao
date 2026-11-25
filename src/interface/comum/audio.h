@@ -1,6 +1,6 @@
 /**
  * @file audio.h
- * @brief Declara os controles das trilhas da interface.
+ * @brief Declara os controles das trilhas e dos efeitos da interface.
  */
 
 #ifndef AUDIO_H
@@ -17,7 +17,26 @@ typedef enum
     TOTAL_TRILHAS,
 } TrilhaAudio;
 
-/** @brief Abre o dispositivo de áudio e prepara as duas faixas para reprodução. */
+/** @brief Identifica o som curto associado a uma ação do jogador. */
+typedef enum
+{
+    SOM_BOTAO,
+    SOM_ALTERNATIVA,
+    SOM_ACERTO,
+    SOM_ERRO,
+    SOM_CARTA,
+    SOM_ASA,
+    SOM_SOPRO,
+    TOTAL_EFEITOS
+} EfeitoSonoro;
+
+/**
+ * @brief Reproduz um efeito uma vez quando o som está ligado.
+ * @param efeito Som da ação que a tela acabou de aceitar.
+ */
+void tocar_efeito(EfeitoSonoro efeito);
+
+/** @brief Abre o dispositivo e carrega as trilhas e os efeitos do jogo. */
 void iniciar_audio(void);
 
 /**
@@ -32,7 +51,7 @@ void alternar_som(void);
 /** @return Verdadeiro quando o jogador deixou o som ligado nesta execução. */
 bool som_esta_ligado(void);
 
-/** @brief Libera as faixas carregadas e fecha o dispositivo de áudio. */
+/** @brief Libera as trilhas e os efeitos antes de fechar o dispositivo de áudio. */
 void encerrar_audio(void);
 
 #endif

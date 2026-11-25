@@ -1,6 +1,6 @@
 /**
  * @file audio.c
- * @brief Carrega, troca e reproduz as trilhas da Jornada e da Batalha.
+ * @brief Controla as trilhas da partida e os efeitos das ações do jogador.
  */
 
 #include "audio.h"
@@ -10,6 +10,21 @@
 static Music trilhas[TOTAL_TRILHAS] = {0};
 static TrilhaAudio trilha_atual = TRILHA_SILENCIO;
 static bool som_ligado = true;
+static Sound efeitos[TOTAL_EFEITOS] = {0};
+
+/** @brief Carrega o efeito inteiro na memória para responder imediatamente ao jogador. */
+static void carregar_efeito(EfeitoSonoro efeito, const char *arquivo, float volume)
+{
+    efeitos[efeito] = LoadSound(arquivo);
+    if (IsSoundValid(efeitos[efeito]))
+        SetSoundVolume(efeitos[efeito], volume);
+}
+
+void tocar_efeito(EfeitoSonoro efeito)
+{
+    if (som_ligado && IsAudioDeviceReady() && IsSoundValid(efeitos[efeito]))
+        PlaySound(efeitos[efeito]);
+}
 
 /**
  * @brief Abre uma faixa para leitura em partes e configura o loop.
@@ -37,6 +52,14 @@ void iniciar_audio(void)
 
     trilhas[TRILHA_JORNADA] = carregar_trilha("assets/audio/menu_jornada.ogg", 0.28f);
     trilhas[TRILHA_BATALHA] = carregar_trilha("assets/audio/batalha.wav", 0.35f);
+
+    carregar_efeito(SOM_BOTAO, "assets/audio/efeitos/botao.ogg", 0.53f);
+    carregar_efeito(SOM_ALTERNATIVA, "assets/audio/efeitos/alternativa.ogg", 0.50f);
+    carregar_efeito(SOM_ACERTO, "assets/audio/efeitos/acerto.ogg", 0.50f);
+    carregar_efeito(SOM_ERRO, "assets/audio/efeitos/erro.ogg", 0.42f);
+    carregar_efeito(SOM_CARTA, "assets/audio/efeitos/virar_carta.ogg", 0.60f);
+    carregar_efeito(SOM_ASA, "assets/audio/efeitos/batida_de_asa.wav", 0.60f);
+    carregar_efeito(SOM_SOPRO, "assets/audio/efeitos/sopro_do_dragao.wav", 0.42f);
 }
 
 void atualizar_audio(TrilhaAudio trilha)
@@ -84,5 +107,10 @@ void encerrar_audio(void)
         trilhas[faixa] = (Music){0};
     }
     trilha_atual = TRILHA_SILENCIO;
+    for (int i = 0; i < TOTAL_EFEITOS; i++) {
+        if (IsSoundValid(efeitos[i]))
+            UnloadSound(efeitos[i]);
+        efeitos[i] = (Sound){0};
+    }
     CloseAudioDevice();
 }

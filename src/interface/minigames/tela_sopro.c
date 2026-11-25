@@ -4,6 +4,7 @@
  */
 
 #include "tela_sopro.h"
+#include "../comum/audio.h"
 #include "../comum/arte_cenas.h"
 #include "../comum/componentes.h"
 #include "../comum/cores.h"
@@ -15,6 +16,9 @@ bool atualizar_tela_sopro(MinigameSopro *sopro, bool janela_em_foco)
     if (sopro->resultado == 0) {
         // IsKeyPressed soma carga a cada novo aperto de Espaço.
         atualizarMinigame(sopro, GetFrameTime(), janela_em_foco && IsKeyPressed(KEY_SPACE));
+        // Esta atualização é a última da rodada se a carga ou o prazo chegou ao fim.
+        if (sopro->resultado != 0)
+            tocar_efeito(sopro->resultado > 0 ? SOM_SOPRO : SOM_ERRO);
         return false;
     }
     return botao_clicado(voltar_sopro);

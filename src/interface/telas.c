@@ -342,6 +342,7 @@ void executar_tela_teste(Banco_perguntas *banco)
 
         bool confirmou = janela_em_foco && IsKeyPressed(KEY_ENTER); // Aceita Enter enquanto o jogo está em foco.
         /* Bloco de validação de ações por telas */
+        Tela tela_anterior = tela_atual;
         if (tela_atual == TELA_MENU) {
             AcaoMenu acao = ler_acao_menu(&botoes_menu, janela_em_foco, confirmou);
             if (acao == MENU_PREVIA_GRUTA) {
@@ -350,8 +351,10 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
             else if (acao == MENU_CREDITOS)
                 tela_atual = TELA_CREDITOS;
-            else if (acao == MENU_ALTERNAR_SOM)
+            else if (acao == MENU_ALTERNAR_SOM) {
                 alternar_som();
+                tocar_efeito(SOM_BOTAO); // Ao religar o som, o clique já pode ser ouvido.
+            }
             else if (acao == MENU_RANKING) {
                 carregar_ranking(&tela_ranking);
                 tela_atual = TELA_RANKING;
@@ -369,6 +372,8 @@ void executar_tela_teste(Banco_perguntas *banco)
                 dificuldade_em_falta = verifica_banco_para_partida(banco);
                 if (dificuldade_em_falta == 0)
                     tela_atual = TELA_INTRODUCAO;
+                else
+                    tocar_efeito(SOM_ERRO);
             }
         }
         else if (tela_atual == TELA_INTRODUCAO) {
@@ -471,7 +476,10 @@ void executar_tela_teste(Banco_perguntas *banco)
                 atualizar_previa_gruta(&tela_gruta, janela_em_foco);
         }
 
-        // As ações já trocaram a tela e a pergunta. Usa a mesma etapa que será desenhada neste quadro.
+        // Um único clique acompanha a mudança de tela, inclusive quando o jogador usa Enter.
+        if (tela_atual != tela_anterior)
+            tocar_efeito(SOM_BOTAO);
+        // A nova tela determina qual música vai tocar neste quadro.
         atualizar_audio(trilha_da_tela(tela_atual, &tela_quiz));
 
         Color fundo = COR_FUNDO_MENU;
