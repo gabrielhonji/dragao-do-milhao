@@ -1,7 +1,7 @@
 /**
  * @file arquivos_perguntas.c
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief Estruturação dos arquivos de pergunta
+ * @brief Implementa a leitura do CSV inicial e o armazenamento do banco de perguntas.
  * @version 0.1
  * @date 2026-11-15
  * 
@@ -23,21 +23,21 @@
  #define LIMITE_PERGUNTAS 150
 
  /**
-  * @brief Função que carrega o arquivo CSV das perguntas, caso não consiga carregar, retorna -1. Além de carregar armazena as perguntas do arquivo no nosso vetor de perguntas
+  * @brief Carrega o CSV inicial no vetor do banco e calcula o próximo ID.
   * 
-  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
-  * @param arquivo_csv recebe o arquivo CSV de onde serão lido os dados
-  * @return int retorna -1 em erro, retorna a quantidade de perguntas lidas se bem sucedido
+  * @param banco_perguntas Banco inicializado para receber as perguntas da base inicial.
+  * @param arquivo_csv Endereço do ponteiro usado para abrir e fechar o CSV de origem.
+  * @return Quantidade de perguntas no banco ou -1 em caso de falha na abertura ou na leitura.
   */
  int carregar_csv(Banco_perguntas *banco_perguntas, FILE **arquivo_csv){
 
     char texto[101]; //variável usada para ler o cabeçalho do arquivo csv
     int contador_perguntas = 0;
-    char perguntas_lidas[LIMITE_PERGUNTAS][1201]; //as perguntas vão ser armazenadas nesse vetor de strings, somente depois vou transformar strings em dados das perguntas de fato
+    char perguntas_lidas[LIMITE_PERGUNTAS][1201]; // Armazena as linhas antes de separar os campos.
     Pergunta *perguntas_temp;
-    char *fim; //variável usada para armazenar o fim de cada leitura seccionada das perguntas
-    char *virgulas[8]; //vetor usado para armazenar a posição de cada vírgula e começar a leitura do próximo campo a partir desta posição
-    char *campos[9]; //vetor que armazena os campos de cada pergunta, sendo os campos: ID, enunciado, Alternativa A...
+    char *fim; // Recebe a posição em que a conversão numérica terminou.
+    char *virgulas[8]; // Guarda os separadores que delimitam os campos.
+    char *campos[9]; // Guarda o início de cada campo dentro da linha.
     int maior_id;
 
     *arquivo_csv = fopen("dados/perguntas_iniciais.csv", "r"); //abro o arquivo localizado na pasta dados com o modo de leitura
@@ -82,7 +82,7 @@
         banco_perguntas->perguntas[banco_perguntas->quant_perguntas].identificador = strtol(campos[0], &fim, 10); //transformando o texto de ID para número
 
         //ENUNCIADO
-        campos[1] = virgulas[0]+1; //o enunciado (campos[1]) começa uma casa à frente da posição da última vírgula, isso se repete
+        campos[1] = virgulas[0]+1; // Cada campo começa no primeiro caractere após a vírgula anterior.
         virgulas[1] = strchr(campos[1], ',');
         if(virgulas[1] == NULL){ //casos em que não acha uma vírgula
             continue; 
@@ -137,14 +137,14 @@
 
         //DIFICULDADE
         campos[7] = virgulas[6]+1;
-        campos[7][strcspn(campos[7], "\n")] = '\0'; //como é o fim da pergunta, preciso ver onde está o \n e não mais a linha
+        campos[7][strcspn(campos[7], "\n")] = '\0'; // O último campo termina na quebra de linha ou no fim da string.
         banco_perguntas->perguntas[banco_perguntas->quant_perguntas].dificuldade = strtol(campos[7], &fim, 10); //transformando o texto de dificuldade para número
         
         banco_perguntas->quant_perguntas++;
     }//for que percorre todas as perguntas do csv
 
-    //for que percorre as perguntas cadastradas do arquivo para identificar qual foi o maior ID - faço isso para que quando for cadastrar, cadastre com um ID diferente dos já existentes
-    if(banco_perguntas->quant_perguntas != 0){ //uso banco_perguntas->quant_perguntas pq já sei quantas válidas foram cadastradas e meu contador contador_perguntas pode contar linhas inválidas
+    // O primeiro ID novo deve ficar acima de todos os IDs importados.
+    if(banco_perguntas->quant_perguntas != 0){ // A quantidade importada pode ser menor que o total de linhas lidas.
         maior_id = banco_perguntas->perguntas[0].identificador;
         for(int i = 0; i<banco_perguntas->quant_perguntas; i++){
             if(banco_perguntas->perguntas[i].identificador > maior_id){
@@ -166,8 +166,8 @@
  /**
   * @brief Grava o banco em um arquivo temporário e o publica após concluir a gravação.
   * 
-  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
-  * @param arquivo_dat recebe o arquivo binário onde serão salvas as informações
+  * @param banco_perguntas Banco com as perguntas, o próximo ID e a fila de IDs disponíveis.
+  * @param arquivo_dat Endereço do ponteiro usado para escrever e fechar o arquivo temporário.
   * @param substituir Verdadeiro para atualizar um banco salvo, falso para criar o banco inicial.
   * @return 0 em sucesso, 1 se já existe um banco que deve ser preservado ou -1 em caso de erro.
   */
@@ -224,6 +224,12 @@
  }
 
 
+ /**
+  * @brief Atualiza o binário com o estado atual do banco.
+  * @param banco_perguntas Banco que será gravado.
+  * @param arquivo_dat Endereço do ponteiro usado para gravar o arquivo.
+  * @return 0 em sucesso ou -1 em caso de falha.
+  */
  int salvar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat)
  {
     return gravar_binario(banco_perguntas, arquivo_dat, true);
@@ -238,11 +244,13 @@
 
 
  /**
-  * @brief Função que carrega o arquivo binário e salva as informações presentes nele nos campos destinados. A primeira informação é a quant de perguntas, a segunda é o próximo ID, a terceira é a quantidade de ids disponíveis para cadastrar (ids fantasmas), a quarta são os ids fantasmas caso houver e por fim tenho os dados das perguntas em si. Caso de erro retorna -1 para a main, em caso de sucesso retorna 0. Se o arquivo não existir, retorna -2.
+  * @brief Lê o binário em um banco temporário e substitui o banco atual após concluir a leitura.
+  * O arquivo guarda a quantidade de perguntas, o próximo ID, a quantidade de IDs disponíveis,
+  * o vetor de IDs disponíveis e o vetor de perguntas, nessa ordem.
   * 
-  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
-  * @param arquivo_dat recebe o arquivo binário de onde serão lidas as informações
-  * @return int retorna -2 se o arquivo não existir, -1 se der erro e 0 se ocorrer tudo certo
+  * @param banco_perguntas Banco inicializado que recebe os dados do arquivo.
+  * @param arquivo_dat Endereço do ponteiro usado para abrir e fechar o binário.
+  * @return 0 em sucesso, -2 se o arquivo estiver ausente ou -1 em caso de outra falha.
   */
  int carregar_binario(Banco_perguntas *banco_perguntas, FILE **arquivo_dat){
 
@@ -284,7 +292,7 @@
     if(retorno_fread != 1){ //conferindo se as informações foram lidas do arquivo binário
         fclose(*arquivo_dat); //fecho antes de retornar o erro
         *arquivo_dat = NULL;
-        free(banco_perguntas_temp.perguntas); //libero oq foi alocado em caso de erro
+        free(banco_perguntas_temp.perguntas);
         return -1;
     }
 
@@ -313,29 +321,29 @@
         //caso em que a quantidade de ids lidas é negativa
     }
 
-    if(banco_perguntas_temp.quant_ids_disponiveis > 0){//só leio as perguntas caso eu tiver uma quantidade de perguntas maior do que 0
+    if(banco_perguntas_temp.quant_ids_disponiveis > 0){ // Lê a fila de IDs quando ela contém registros.
         retorno_fread = fread(banco_perguntas_temp.ids_disponiveis, sizeof(int), banco_perguntas_temp.quant_ids_disponiveis, *arquivo_dat); //por fim eu leio os IDs no arquivo binário
         if(retorno_fread != banco_perguntas_temp.quant_ids_disponiveis){ //conferindo se as informações foram lidas do arquivo binário
             fclose(*arquivo_dat); //fecho antes de retornar o erro
             *arquivo_dat = NULL;
-            free(banco_perguntas_temp.ids_disponiveis); //libero oq foi alocado em caso de erro
+            free(banco_perguntas_temp.ids_disponiveis);
             free(banco_perguntas_temp.perguntas);
             return -1;
         }
     }
 
-    if(banco_perguntas_temp.quant_perguntas > 0){//só leio as perguntas caso eu tiver uma quantidade de perguntas maior do que 0
+    if(banco_perguntas_temp.quant_perguntas > 0){ // Lê o vetor de perguntas quando a coleção contém registros.
         retorno_fread = fread(banco_perguntas_temp.perguntas, sizeof(Pergunta), banco_perguntas_temp.quant_perguntas, *arquivo_dat); //por fim eu leio as perguntas no arquivo binário
         if(retorno_fread != banco_perguntas_temp.quant_perguntas){ //conferindo se as informações foram lidas do arquivo binário
             fclose(*arquivo_dat); //fecho antes de retornar o erro
             *arquivo_dat = NULL;
-            free(banco_perguntas_temp.perguntas); //libero oq foi alocado em caso de erro
+            free(banco_perguntas_temp.perguntas);
             free(banco_perguntas_temp.ids_disponiveis); //libero o vetor caso dê erro
             return -1;
         }
     }
 
-    //primeiro salvo as informações em um banco de perguntas temporário, caso dê tudo certo passo as informações desse para o original
+    // Após a leitura completa, transfere a propriedade dos vetores para o banco definitivo.
     free(banco_perguntas->perguntas); //libero o endereço do vetor antigo antes de atribuir o novo
     free(banco_perguntas->ids_disponiveis); //libero o vetor
     *banco_perguntas = banco_perguntas_temp;
@@ -349,11 +357,11 @@
 
 
  /**
-  * @brief Função que exporta as perguntas para um arquivo CSV separado. Caso dê erro retorna -1 para a main, em caso de sucesso retorna 0
+  * @brief Escreve o banco atual em dados/perguntas_exportadas.csv, substituindo uma exportação anterior.
   * 
-  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
-  * @param arquivo_exportacao_csv recebe o arquivo CSV onde será armazenado as informações sobre as perguntas
-  * @return int retorna -1 em caso de erro e retorna 0 em caso de sucesso
+  * @param banco_perguntas Banco cujas perguntas serão consultadas.
+  * @param arquivo_exportacao_csv Endereço do ponteiro usado para abrir e fechar o arquivo de saída.
+  * @return -1 se a abertura ou um fprintf falhar. Retorna 0 após escrever as linhas e fechar o arquivo.
   */
  int exportar_csv(Banco_perguntas *banco_perguntas, FILE **arquivo_exportacao_csv){
 

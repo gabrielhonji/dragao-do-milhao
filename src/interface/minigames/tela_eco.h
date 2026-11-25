@@ -12,7 +12,7 @@
 /**
  * @brief Atualiza o voo ou lê o clique de retorno após o resultado.
  * @param jogo Estado da rodada.
- * @param janela_em_foco Indica se a janela está em condições de receber Espaço.
+ * @param janela_em_foco Permite avançar a simulação e receber Espaço enquanto a janela está em foco.
  * @return Verdadeiro quando o jogador pede para voltar à pergunta.
  */
 bool atualizar_tela_eco(FlappyBird *jogo, bool janela_em_foco);

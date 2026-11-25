@@ -1,7 +1,7 @@
 /**
  * @file quiz.c
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief Implementação das funções definidas no header quiz.h
+ * @brief Implementa o sorteio, as respostas e a progressão da partida.
  * @version 0.1
  * @date 2026-11-19
  * 
@@ -15,8 +15,8 @@
 #include "quiz.h"
 
 /**
-  * @brief Função usada para inicializar a estrutura partida
-  * @param partidas recebe o ponteiro para partida que será inicializado
+  * @brief Inicia uma partida antes do primeiro sorteio, com histórico e progresso vazios.
+  * @param partidas Ponteiro para a partida que será inicializada.
   */
 void inicializa_partida(Partida *partidas)
 {
@@ -31,13 +31,13 @@ void inicializa_partida(Partida *partidas)
     for (int i = 0; i < 25; i++)
         partidas->ids_sorteados[i] = -1; //um a um coloco os ids em -1
     for (int i = 0; i < 3; i++)
-        partidas->minigames_usados[i] = 0; //um a um indico que os minigames ainda não foram usados
+        partidas->minigames_usados[i] = 0;
 } //INICIALIZA PARTIDA
 
 /**
-  * @brief Função que recebe qual vai ser a próxima questão e retorna o nível de dificuldade dessa
-  * @param partidas Tentativa cuja a seleção de dificuldade irá se basear.
-  * @return Dificuldade da questão a ser escolhida.
+  * @brief Determina a dificuldade a partir do número da próxima questão.
+  * @param partidas Partida cujo progresso determina a próxima questão.
+  * @return Dificuldade da próxima questão ou 0 quando o número estiver fora do intervalo de 1 a 15.
   */
 Dificuldade determina_dificuldade(const Partida *partidas)
 {
@@ -57,10 +57,10 @@ Dificuldade determina_dificuldade(const Partida *partidas)
 } //DETERMINA DIFICULDADE
 
 /**
- * @brief Procura no meu vetor de ids já sorteados o id atual, para ver se pode apresentar essa pergunta ou se ela já foi apresentada
- * @param partida struct partida sendo passado por referência
- * @param id_pergunta id da pergunta atual que o programa irá verificar se já foi sorteada
- * @return Zero para a pergunta não sorteada e 1 para a que ja foi sorteada.
+ * @brief Consulta se o ID já apareceu em algum sorteio da partida.
+ * @param partida Partida que contém o histórico de sorteios.
+ * @param id_pergunta ID da pergunta procurada no histórico.
+ * @return 1 se o ID já apareceu e 0 nos demais casos.
  */
 int pergunta_ja_sorteada(const Partida *partida, int id_pergunta)
 {
@@ -123,7 +123,7 @@ const Pergunta *sorteia_pergunta(const Banco_perguntas *banco, Partida *partida)
 }
 
 /**
- * @brief Função que confere a quantidade mínima de perguntas por dificuldade antes de iniciar a partida.
+ * @brief Verifica se o banco tem perguntas suficientes para a partida e os renascimentos.
  *        São necessárias 2 muito fáceis, 2 fáceis, 7 médias, 8 difíceis e 9 muito difíceis.
  *
  * @param banco Ponteiro para o banco de perguntas carregado.
@@ -180,7 +180,7 @@ Dificuldade verifica_banco_para_partida(const Banco_perguntas *banco)
 }
 
 /**
- * @brief Função que compara a letra confirmada com a resposta correta e atualiza a partida.
+ * @brief Compara a letra confirmada com o gabarito e atualiza a partida.
  *        O primeiro acerto nas questões 5 e 10 registra o marco e concede um ovo.
  *        Ao errar com um ovo disponível, a função gasta um ovo e volta a questão e os acertos
  *        ao último marco. O próximo sorteio abre a questão 6 ou 11, preservando o histórico
@@ -232,7 +232,7 @@ Resultado_resposta processa_resposta(Partida *partida, const Pergunta *pergunta_
 } //PROCESSA RESPOSTA
 
 /**
- * @brief Função que confirma a Retirada Tática quando a partida está em andamento.
+ * @brief Confirma a Retirada Tática quando a partida está em andamento.
  *        Registra a situação como retirada e entrega o último marco à interface.
  *
  * @param partida Ponteiro para a partida que o jogador confirmou encerrar.
@@ -249,7 +249,7 @@ int confirma_retirada(Partida *partida)
 } //CONFIRMA RETIRADA
 
 /**
- * @brief Função que calcula os pontos de vida restantes do príncipe a partir dos acertos.
+ * @brief Calcula os pontos de vida restantes do príncipe a partir dos acertos.
  *        Com 8 acertos, a batalha começa com PV_MAX_PRINCIPE. Os acertos das questões 9 a 15
  *        reduzem os PV até zerar no golpe final. Após um renascimento, a função considera
  *        os acertos restaurados ao último marco.

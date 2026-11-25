@@ -14,9 +14,9 @@
  #include "banco_perguntas.h"
 
  /**
-  * @brief Função que inicializa o banco de perguntas como zerado
+  * @brief Inicializa um banco vazio, sem vetores alocados.
   * 
-  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
+  * @param banco_perguntas Ponteiro para o banco de perguntas.
   */
  void inicializa_banco (Banco_perguntas *banco_perguntas){
     banco_perguntas->perguntas = NULL; //inicializando as perguntas em NULL
@@ -77,9 +77,9 @@
 
 
  /**
-  * @brief Função que percorre de 0 até a quantidade de perguntas e lista uma por uma
+  * @brief Exibe no terminal todas as perguntas na ordem do vetor.
   * 
-  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
+  * @param banco_perguntas Ponteiro para o banco de perguntas.
   */
  void listar_perguntas(Banco_perguntas *banco_perguntas){
 
@@ -95,11 +95,11 @@
 
 
  /**
-  * @brief Função que recebe o ID da pergunta procurada e procura ela através de um for dentro das perguntas cadastradas
+  * @brief Localiza a posição de uma pergunta pelo seu ID.
   * 
-  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
-  * @param id_pergunta_procurada recebe o ID da pergunta que está procurando
-  * @return int indice encontrado ou -1
+  * @param banco_perguntas Ponteiro para o banco de perguntas.
+  * @param id_pergunta_procurada ID da pergunta procurada.
+  * @return Índice encontrado ou -1 se o ID não estiver cadastrado.
   */
  int pesquisar_pergunta(Banco_perguntas *banco_perguntas, int id_pergunta_procurada){
 
@@ -114,10 +114,10 @@
 
 
  /**
-  * @brief Função que recebe um indice e exibe a pergunta cadastrada naquele indice 
+  * @brief Exibe no terminal os dados da pergunta na posição indicada.
   * 
-  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
-  * @param indice recebe o indice da pergunta que vai exibir - posição válida da pergunta no vetor
+  * @param banco_perguntas Ponteiro para o banco de perguntas.
+  * @param indice Índice válido no vetor de perguntas.
   */
  void exibir_pergunta(Banco_perguntas *banco_perguntas, int indice){
     printf("\nPERGUNTA %d:\n", banco_perguntas->perguntas[indice].identificador);
@@ -223,10 +223,10 @@
 
 
  /**
-  * @brief Função que recebe a dificuldade procurada e exibe um menu que permite a navegação entre as perguntas dessa dificuldade
+  * @brief Permite avançar e voltar entre as perguntas da dificuldade escolhida no terminal.
   * 
-  * @param banco_perguntas struct banco_perguntas sendo passado por parâmetro
-  * @param dificuldade_procurada recebe a dificuldade das perguntas que está sendo levada em conta
+  * @param banco_perguntas Ponteiro para o banco de perguntas.
+  * @param dificuldade_procurada Nível de dificuldade usado como filtro.
   */
  void listar_por_dificuldade(Banco_perguntas *banco_perguntas, Dificuldade dificuldade_procurada){
     int indice_atual = -1; //variável que verifica se alguma pergunta foi encontrada ou não
@@ -245,7 +245,7 @@
     }
 
     do{
-        exibir_pergunta(banco_perguntas, indice_atual); //primeiro eu exibo a pergunta atual e dps mostro o menu de navegação
+        exibir_pergunta(banco_perguntas, indice_atual);
 
         printf("\nMENU DE NAVEGAÇÃO\n");
         printf("    1 - Próxima\n");
@@ -266,7 +266,7 @@
                     break; //ao encontrar essa primeira pergunta eu paro a procura
                 }
             }//for que percorre todas as perguntas
-            if(indice_atual == indice_anterior){ //fim das perguntas à direita do vetor, o meu indice vai ser o mesmo, logo vai ter acabado as perguntas
+            if(indice_atual == indice_anterior){ // O índice permanece igual quando não há outra pergunta adiante.
                 printf("Fim das perguntas cadastradas nessa dificuldade\n");
             }
             break;
@@ -278,7 +278,7 @@
                     break; //ao encontrar essa primeira pergunta eu paro a procura
                 }
             }//for que percorre todas as perguntas
-            if(indice_atual == indice_anterior){ //fim das perguntas à esquerda no vetor, o meu indice vai ser o mesmo, logo vai ter acabado as perguntas
+            if(indice_atual == indice_anterior){ // O índice permanece igual quando não há outra pergunta anterior.
                 printf("Não há perguntas anteriores à esta nessa dificuldade\n");
             }
             break;

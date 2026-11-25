@@ -1,7 +1,7 @@
 /**
  * @file telas.h
  * @author Gabriel Honji (gabrielhonji@alunos.utfpr.edu.br)
- * @brief Declara o ponto de entrada do modo visual de teste.
+ * @brief Declara o ponto de entrada da interface gráfica do jogo.
  * @version 0.1
  * @date 2026-11-15
  *
@@ -14,8 +14,8 @@
 #include "../perguntas/banco_perguntas.h"
 
 /**
- * @brief Abre a janela de teste usando o banco carregado.
- * @param banco Banco de perguntas mantido pela main.
+ * @brief Abre a interface gráfica e mantém a navegação até fechar a janela.
+ * @param banco Banco inicializado pela main, consultado durante o quiz e atualizado pelo gerenciador.
  */
 void executar_tela_teste(Banco_perguntas *banco);
 

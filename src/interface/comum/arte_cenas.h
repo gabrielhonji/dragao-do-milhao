@@ -71,7 +71,10 @@ void desenhar_arte_quiz(CenaQuiz cena, float passos);
  */
 void desenhar_impacto_batalha(float avanco, bool despertado);
 
-/** @brief Destaca o ovo conquistado no centro do cenário atual. */
+/**
+ * @brief Destaca o ovo conquistado no centro do cenário atual.
+ * @param cena Área do cenário que recebe o véu e o sprite do ovo.
+ */
 void desenhar_ovo_marco(Rectangle cena);
 
 /**

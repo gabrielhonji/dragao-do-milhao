@@ -21,7 +21,12 @@
 static int cadastro_pergunta(Pergunta *pergunta);
 static void descartar_linha(void);
 
-/** @brief Carrega o banco salvo ou importa e grava as perguntas iniciais se o binário estiver ausente. */
+/**
+ * @brief Carrega o banco salvo ou importa o CSV quando o binário ainda não existe.
+ * @param banco Banco inicializado que recebe as perguntas.
+ * @param arquivo_dat Endereço do ponteiro usado pelas operações do binário.
+ * @return Verdadeiro quando o banco está disponível para abrir o menu.
+ */
 static bool preparar_banco_perguntas(Banco_perguntas *banco, FILE **arquivo_dat)
 {
     int retorno = carregar_binario(banco, arquivo_dat);
@@ -57,6 +62,12 @@ static bool preparar_banco_perguntas(Banco_perguntas *banco, FILE **arquivo_dat)
     return true;
 }
 
+/**
+ * @brief Prepara o banco e inicia o modo de execução solicitado.
+ * @param quantidade_argumentos Quantidade de argumentos, incluindo o nome do programa.
+ * @param argumentos Argumentos de execução. --terminal abre o cadastro por texto.
+ * @return EXIT_FAILURE se os argumentos forem inválidos ou se o banco não puder ser preparado. Retorna 0 ao encerrar a sessão.
+ */
 int main(int quantidade_argumentos, char *argumentos[])
 {
     int modo_terminal = quantidade_argumentos == 2 && strcmp(argumentos[1], "--terminal") == 0;
@@ -139,7 +150,7 @@ int main(int quantidade_argumentos, char *argumentos[])
                 listar_perguntas(&banco_perguntas);
                 break;
 
-            //nos cases de 3 a 6 colocamos as instruções entre chaves, pois estamos declarando variáveis dentro dos cases, isso evita erros
+            // Os blocos delimitam o escopo das variáveis usadas em cada opção.
             case 3: {
                 int id_pergunta_procurada;
                 int retorno_pesquisa;
@@ -259,7 +270,11 @@ static void descartar_linha(void)
     } while (caractere != '\n' && caractere != EOF);
 }
 
-/** @brief Lê no terminal os campos da pergunta antes da operação no banco. */
+/**
+ * @brief Lê os campos da pergunta no terminal para cadastro ou alteração.
+ * @param pergunta Estrutura que recebe o enunciado, as alternativas, o gabarito e a dificuldade.
+ * @return 1 quando completa a leitura e 0 quando a entrada termina antes disso.
+ */
 static int cadastro_pergunta(Pergunta *pergunta)
 {
     const char *pedidos[] = {"Enunciado", "Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D"};

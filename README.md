@@ -1,116 +1,106 @@
 # Dragão do Milhão
 
-Projeto desenvolvido em linguagem C pela equipe **Sete Copas**, para a disciplina de Fundamentos de Programação 2 da UTFPR — Campus Apucarana.
+Um dragão parte para resgatar uma princesa aprisionada por um príncipe tirano. Para chegar ao castelo e vencer a batalha, o jogador responde a **15 perguntas sobre videogames**. Cada pergunta tem quatro alternativas. Três minigames oferecem ajuda durante a partida.
 
-A proposta é um Jogo do Milhão com temática de games e narrativa de fantasia medieval em pixel art. Um dragão parte para libertar uma princesa aprisionada por um príncipe tirano. A partida planejada terá 15 perguntas, progressão por dificuldade e ajudas associadas a minigames.
+Projeto desenvolvido em **C**, com interface gráfica em **raylib**, pela equipe **Sete Copas** para a disciplina de Fundamentos de Programação 2 da UTFPR — Campus Apucarana.
 
-A interface gráfica reúne o quiz e o gerenciamento das perguntas. O cadastro também está acessível pelo terminal.
+## Como compilar e executar
 
-- [Código do jogo](src/)
-- [Perguntas iniciais](dados/perguntas_iniciais.csv)
+Abra no VS Code a pasta `dragao-do-milhao`, onde está o `Makefile`. Execute os comandos no terminal dessa pasta para que o jogo encontre as perguntas, as imagens e as músicas.
 
-## Equipe
+| Ação                                       | Linux                           | Windows (PowerShell)                |
+| ------------------------------------------ | ------------------------------- | -------------------------------     |
+| Compilar                                   | `make`                          | `mingw32-make`                      |
+| Compilar e abrir o jogo                    | `make run`                      | `mingw32-make run`                  |
+| Abrir o cadastro no terminal após compilar | `./dragao-do-milhao --terminal` | `.\dragao-do-milhao.exe --terminal` |
+| Remover o executável principal             | `make clean`                    | `mingw32-make clean`                |
 
-- Enzo Andreassa Pizza;
-- Gabriel Yudi Honji;
-- Murilo Henrique Alves Martins.
+No **Linux**, são necessários GCC, GNU Make e as bibliotecas de desenvolvimento de OpenGL e X11. Os cabeçalhos da raylib e a biblioteca para Linux acompanham o projeto em `include/` e `lib/`.
 
-## Funcionalidades implementadas
+No **Windows**, a equipe utiliza GCC, Make e raylib do ambiente **MSYS2 UCRT64**, com a pasta `ucrt64\bin` no `Path`. O Makefile também procura a biblioteca em `libwin/` caso ela seja fornecida separadamente. As instruções de instalação estão no [guia de configuração](documentacao/configuracao.md#windows).
 
-- Cadastrar perguntas em um vetor dinâmico;
-- Listar todas as perguntas;
-- Pesquisar, alterar e excluir perguntas pelo ID;
-- Navegar pelas perguntas de uma dificuldade escolhida;
-- Importar as perguntas iniciais de um CSV;
-- Salvar e recuperar o banco em arquivo binário;
-- Exportar o banco atual para CSV.
+Para iniciar pela interface do VS Code, abra **Terminal → Executar Tarefa** e escolha **Abrir jogo no modo visual**.
 
-Cada pergunta possui identificador, enunciado, quatro alternativas, resposta correta e dificuldade. Os IDs são preservados durante alterações e deslocamentos no vetor.
+## Como jogar
 
-## Compilação e execução
+No menu inicial, escolha **Jogar**. Clique em uma alternativa e pressione **Enter** para confirmar. Clicar novamente na alternativa selecionada também confirma a resposta. Após ver o resultado, avance para a próxima pergunta. **F11** alterna a tela cheia.
 
-Para compilar no Linux, são necessários GCC, GNU Make e as bibliotecas de sistema usadas pelo Makefile, incluindo OpenGL e X11. Os cabeçalhos e a biblioteca da raylib fornecidos pelo professor estão nas pastas `include/` e `lib/`.
+O jogo sorteia uma pergunta do nível correspondente a cada etapa. O histórico mantém os IDs já sorteados durante toda a partida, inclusive após um renascimento.
 
-No Windows, o Makefile espera uma biblioteca raylib compatível na pasta `libwin/`, que precisa ser fornecida separadamente.
+| Questões | Dificuldade   | Etapa |
+| -------- | ------------- | ----------------------------------------------------------------------------|
+| 1 e 2    | Muito fácil   | Início da jornada até o castelo                                             |
+| 3 e 4    | Fácil         | Avanço pelo mapa                                                            |
+| 5 a 8    | Média         | Primeiro marco ao acertar a questão 5                                       |
+| 9 a 12   | Difícil       | Início da batalha contra o príncipe e segundo marco ao acertar a questão 10 |
+| 13 a 15  | Muito difícil | Despertar dracônico ao acertar a 13ª e resgate da princesa ao acertar a 15ª |
 
-Execute os comandos **na raiz do repositório**, onde está o Makefile:
+**Marcos e renascimento.** Cada marco conquistado concede um ovo. Se o jogador errar e tiver um ovo, ele é consumido e a partida recomeça a partir da pergunta seguinte ao último marco. Por exemplo, quem já alcançou o marco 10 volta à questão 11. Um erro sem ovos encerra a partida em derrota.
 
-| Comando      | Operação                           |
-| ------------ | ---------------------------------- |
-| `make`       | Compila o projeto                  |
-| `make run`   | Compila e abre a interface gráfica |
-| `make clean` | Remove o executável gerado         |
+**Retirada Tática e ranking.** O jogador pode confirmar a retirada em qualquer pergunta antes de responder. A retirada encerra a partida e leva o dragão à gruta. O jogo pede o nome para registrar uma vitória ou uma retirada a partir do primeiro marco. A tela de ranking exibe os oito primeiros resultados, ordenados por mais acertos, mais ovos restantes e, em caso de novo empate, menor tempo com uma pergunta aberta.
 
-Para abrir o cadastro no terminal, compile com `make` e execute `./dragao-do-milhao --terminal`. No Windows, depois de compilar com `mingw32-make`, execute `.\dragao-do-milhao.exe --terminal` no PowerShell.
+### Ajudas e minigames
 
-No terminal, escolha uma opção pelo número correspondente. A opção `0` encerra o programa e salva as alterações no banco binário. Na interface gráfica, as alterações são salvas ao confirmar uma operação em **Gerenciar perguntas**.
+Cada ajuda consome um uso ao abrir o minigame. Ao terminar, escolha **Voltar à pergunta**. A vitória libera o efeito na pergunta que estava aberta. Se perder o desafio, o jogador ainda pode responder à mesma pergunta.
 
-## Arquivos de dados
+| Ajuda                        | Como vencer                                                        | Efeito da vitória                                    | Usos por partida           |
+| ---------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------- | -------------------------- |
+| **Dragão · Sopro Ancestral** | Aperte **Espaço** repetidamente para encher a barra.               | Elimina duas alternativas incorretas.                | 1                          |
+| **Burro · Trote Certeiro**   | Clique nas cartas e encontre os três pares antes do terceiro erro. | Aponta uma alternativa com 70% de chance de acertar. | 2, em perguntas diferentes |
+| **Princesa · Eco da Torre**  | Aperte **Espaço** para bater as asas e guie a pomba por sete vãos. | Revela a alternativa correta.                        | 1                          |
 
-| Arquivo                          | Finalidade                         |
-| -------------------------------- | ---------------------------------- |
-| `dados/perguntas_iniciais.csv`   | Base inicial preparada pela equipe |
-| `dados/perguntas.dat`            | Banco atualizado pelos dois modos  |
-| `dados/perguntas_exportadas.csv` | Exportação solicitada pela opção 7 |
+Os parâmetros de cada desafio e a organização de suas funções estão no [guia dos minigames](src/minigames/README.md).
 
-Na primeira execução, quando o binário ainda não existe, o programa importa o CSV inicial e grava `dados/perguntas.dat` antes de abrir o menu. Nas execuções seguintes, carrega o banco direto do binário. Alterar o CSV inicial depois disso não atualiza automaticamente o banco salvo.
+## Gerenciamento das perguntas
 
-Para carregar um CSV inicial atualizado, feche o jogo e, se `dados/perguntas.dat` existir, mova o arquivo para fora do repositório. Depois, execute `make run`. O banco anterior preserva as alterações feitas no cadastro e pode ser guardado como cópia de segurança. Como o binário é gerado localmente e ignorado pelo Git, cada cópia do projeto pode ter seu próprio banco salvo.
+Escolha **Gerenciar perguntas** no menu gráfico para cadastrar, listar, buscar por ID, filtrar por dificuldade, editar ou excluir. A interface salva cada operação confirmada. No modo `--terminal`, o menu também permite navegar pelas perguntas de um nível. A opção **7** exporta o banco para CSV e a opção **0** encerra o cadastro e salva as alterações no binário.
 
-A exportação gera uma cópia do banco atual em texto e substitui uma exportação anterior.
+Cada pergunta possui um ID próprio, preservado ao editar a pergunta ou deslocá-la no vetor. Ao cadastrar, o banco reaproveita primeiro os IDs excluídos, na ordem das exclusões.
 
-## Formato do CSV
+### Arquivos de dados
 
-O CSV utiliza uma pergunta por linha, seguindo este cabeçalho:
+| Arquivo                          | Finalidade                                                                             |
+| -------------------------------- | -------------------------------------------------------------------------------------- |
+| `dados/perguntas_iniciais.csv`   | Base usada na primeira execução.                                                       |
+| `dados/perguntas_adicionais.csv` | Material auxiliar da equipe. A inicialização usa o CSV da linha anterior.              |
+| `dados/perguntas.dat`            | Banco local com as perguntas, o próximo ID e os IDs disponíveis para reaproveitamento. |
+| `dados/perguntas_exportadas.csv` | Cópia do banco atual gerada pela opção 7. Uma nova exportação substitui a anterior.    |
+| `dados/ranking.dat`              | Resultados registrados após vitórias ou retiradas a partir do primeiro marco.          |
+
+Na primeira execução, o jogo importa o CSV inicial e cria `dados/perguntas.dat` antes de abrir o menu. Nas execuções seguintes, carrega o DAT. Para usar uma nova versão do CSV inicial, feche o jogo, **mova o DAT atual para uma pasta de backup** e abra o jogo novamente. Isso preserva os cadastros anteriores na cópia de segurança. O ranking fica em um arquivo independente.
+
+### Formato e distribuição do CSV
+
+A base inicial contém **120 perguntas**, agrupadas em ordem crescente de dificuldade. Cada linha corresponde a uma pergunta e segue este cabeçalho:
 
 ```csv
 id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,dificuldade
 ```
 
-As respostas devem ser letras maiúsculas de `A` a `D`. Os níveis de dificuldade são:
+| Valor no CSV | Dificuldade   | Perguntas na base inicial |
+| ------------ | ------------- | ------------------------- |
+| 1            | Muito fácil   | 30                        |
+| 2            | Fácil         | 30                        |
+| 3            | Média         | 25                        |
+| 4            | Difícil       | 20                        |
+| 5            | Muito difícil | 15                        |
 
-| Valor | Dificuldade   |
-| ----- | ------------- |
-| 1     | Muito fácil   |
-| 2     | Fácil         |
-| 3     | Médio         |
-| 4     | Difícil       |
-| 5     | Muito difícil |
+Ao preparar o CSV, use IDs inteiros únicos, gabaritos de `A` a `D` em maiúsculas e textos sem vírgulas ou quebras de linha. Respeite os limites de **500 bytes** para o enunciado e **100 bytes** por alternativa. Letras acentuadas podem ocupar mais de um byte. O importador lê até **150 perguntas**. A mesma restrição de vírgulas vale para perguntas cadastradas que serão exportadas.
 
-A implementação atual utiliza CSV simples, com textos sem vírgulas ou quebras de linha dentro dos campos. A importação comporta até 150 perguntas. Os limites de texto são 500 bytes para o enunciado e 100 para cada alternativa
+## Organização do projeto
 
-Os campos numéricos da interface pressupõem a digitação de números. Valores fora dos intervalos permitidos são tratados pelo programa.
+| Caminho                          | Responsabilidade                                                                                            |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| [src/main.c](src/main.c)         | Carregamento inicial do banco, seleção do modo de execução e menu de terminal.                              |
+| [src/perguntas/](src/perguntas/) | Estrutura da pergunta, operações sobre o vetor dinâmico, importação, exportação e persistência.             |
+| [src/quiz/](src/quiz/)           | Sorteio, respostas, marcos, renascimento, retirada, PV do príncipe e classificação do ranking.              |
+| [src/minigames/](src/minigames/) | Regras e estado do Sopro Ancestral, do Trote Certeiro e do Eco da Torre.                                    |
+| [src/interface/](src/interface/) | Navegação entre telas, componentes gráficos, áudio e telas do menu, cadastro, partida, minigames e ranking. |
+| [assets/](assets/)               | Imagens, fontes e trilhas sonoras usadas na interface.                                                      |
+| [dados/](dados/)                 | Arquivos de perguntas e dados locais gerados pelo programa.                                                 |
 
-## Organização do código
+## Equipe e créditos
 
-A organização principal do código é:
+**Enzo Andreassa Pizza**, **Gabriel Yudi Honji** e **Murilo Henrique Alves Martins** — equipe Sete Copas.
 
-```text
-src/
-├── main.c
-└── perguntas/
-    ├── pergunta.h
-    ├── banco_perguntas.c
-    ├── banco_perguntas.h
-    ├── arquivos_perguntas.c
-    └── arquivos_perguntas.h
-```
-
-A `main` coordena a inicialização e o menu. No terminal, ela lê os dados, chama o banco e mostra a mensagem correspondente ao retorno da operação. O módulo `banco_perguntas` gerencia a coleção e faz as consultas. O módulo `arquivos_perguntas` cuida da importação, persistência e exportação.
-
-O terminal e a interface gráfica podem usar as mesmas funções de cadastro. `inserir_pergunta` recebe uma `Pergunta` preenchida e atribui um ID, reaproveitando os IDs excluídos na ordem das exclusões. `alterar_pergunta` recebe o ID e uma estrutura com os novos dados e mantém o identificador original. `excluir_pergunta` recebe o ID a excluir. A inserção e a alteração verificam a resposta e a dificuldade antes de modificar o banco.
-
-Essas operações atualizam a coleção em memória e devolvem um código para o chamador. Os parâmetros e os códigos de retorno de cada função estão documentados em [banco_perguntas.c](src/perguntas/banco_perguntas.c). No fluxo do terminal, o banco é salvo ao encerrar o programa.
-
-## Banco inicial de perguntas
-
-O arquivo `dados/perguntas_iniciais.csv` contém 120 perguntas da equipe, agrupadas em ordem crescente de dificuldade.
-
-| Dificuldade   | Quantidade |
-| ------------- | ---------: |
-| Muito fácil   |         30 |
-| Fácil         |         30 |
-| Médio         |         25 |
-| Difícil       |         20 |
-| Muito difícil |         15 |
-| **Total**     |    **120** |
+As atribuições das músicas estão nos [créditos das trilhas](assets/audio/creditos.md). A licença da Pixelify Sans acompanha o [arquivo da fonte](assets/fontes/OFL.txt).

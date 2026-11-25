@@ -15,16 +15,31 @@ typedef struct
     bool previa;
 } TelaGruta;
 
-/** @brief Prepara a gruta aberta pelo atalho F2 do menu. */
+/**
+ * @brief Prepara a gruta aberta pelo atalho F2 do menu.
+ * @param gruta Estado que será inicializado em modo de prévia.
+ */
 void abrir_previa_gruta(TelaGruta *gruta);
 
-/** @brief Permite escolher com 1 a 4 a composição da prévia. */
+/**
+ * @brief Permite escolher com 1 a 4 a composição da prévia.
+ * @param gruta Estado da composição que pode mudar neste quadro.
+ * @param janela_em_foco Indica se a janela pode receber o atalho.
+ */
 void atualizar_previa_gruta(TelaGruta *gruta, bool janela_em_foco);
 
-/** @brief Escolhe a pilha de ouro da retirada pelo último marco. */
+/**
+ * @brief Escolhe a pilha de ouro da retirada pelo último marco.
+ * @param gruta Estado que exibirá o resultado.
+ * @param marco Último marco da partida, com valores 0, 5 ou 10.
+ */
 void preparar_gruta_retirada(TelaGruta *gruta, int marco);
 
-/** @brief Define a composição de vitória ou de derrota. */
+/**
+ * @brief Define a composição de vitória ou de derrota.
+ * @param gruta Estado que exibirá o resultado.
+ * @param situacao Desfecho da partida.
+ */
 void preparar_gruta_final(TelaGruta *gruta, Situacao_partida situacao);
 
 /**

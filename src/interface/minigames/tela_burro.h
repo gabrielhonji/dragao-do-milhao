@@ -16,7 +16,14 @@
  */
 bool atualizar_tela_burro(MinigameBurro *burro);
 
-/** @brief Desenha o tabuleiro, os contadores e o resultado da rodada. */
+/**
+ * @brief Desenha o tabuleiro, os contadores e o resultado da rodada.
+ * @param burro Estado das cartas, chances e resultado da rodada.
+ * @param fonte Fonte das instruções e dos contadores.
+ * @param fonte_titulo Fonte do título.
+ * @param tamanho_corpo Tamanho lógico do texto comum.
+ * @param tamanho_titulo Tamanho lógico do título.
+ */
 void desenhar_burro(const MinigameBurro *burro, Font fonte, Font fonte_titulo, int tamanho_corpo, int tamanho_titulo);
 
 #endif

@@ -106,7 +106,11 @@ static Rectangle calcular_area_interna(void)
     return (Rectangle){margem, margem, largura_tela - 2 * margem, altura_tela - 2 * margem};
 }
 
-/** @brief Centraliza o jogo na área interna, preservando suas proporções. */
+/**
+ * @brief Centraliza o jogo na área interna, preservando suas proporções.
+ * @param area Área depois de aplicar as margens externas.
+ * @return Retângulo de exibição do quadro na janela.
+ */
 static Rectangle calcular_area_exibicao(Rectangle area)
 {
     float escala_x = area.width / LARGURA_BASE;
@@ -119,7 +123,11 @@ static Rectangle calcular_area_exibicao(Rectangle area)
                        area.y + (int)(area.height - altura) / 2, largura, altura};
 }
 
-/** @brief Prepara a textura em que o quadro inteiro será desenhado. */
+/**
+ * @brief Prepara a textura em que o quadro inteiro será desenhado.
+ * @param escala Fator inteiro aplicado à resolução lógica da interface.
+ * @return Textura de renderização. A validade deve ser verificada antes do uso.
+ */
 static RenderTexture2D carregar_quadro(int escala)
 {
     RenderTexture2D quadro = LoadRenderTexture(LARGURA_BASE * escala, ALTURA_BASE * escala);
@@ -128,7 +136,12 @@ static RenderTexture2D carregar_quadro(int escala)
     return quadro;
 }
 
-/** @brief Prolonga a vinheta do sopro pelas faixas internas do enquadramento. */
+/**
+ * @brief Prolonga a vinheta do sopro pelas faixas internas do enquadramento.
+ * @param textura Quadro renderizado com a vinheta.
+ * @param quadro Retângulo ocupado pelo jogo na janela.
+ * @param limite Área interna até onde a vinheta deve chegar.
+ */
 static void estender_bordas_sopro(Texture2D textura, Rectangle quadro, Rectangle limite)
 {
     const Vector2 origem = {0, 0};

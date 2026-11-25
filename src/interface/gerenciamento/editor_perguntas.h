@@ -42,7 +42,12 @@ void abrir_editor_perguntas(EditorPerguntas *editor, ModoEditorPerguntas modo, c
  */
 bool atualizar_editor_perguntas(EditorPerguntas *editor, Banco_perguntas *banco);
 
-/** @brief Desenha o formulário ou a confirmação conforme o modo atual. */
+/**
+ * @brief Desenha o formulário ou a confirmação conforme o modo atual.
+ * @param editor Estado do formulário, com o rascunho e a mensagem de erro.
+ * @param fonte Fonte dos campos, rótulos e botões.
+ * @param titulo Fonte do título do formulário.
+ */
 void desenhar_editor_perguntas(const EditorPerguntas *editor, Font fonte, Font titulo);
 
 #endif

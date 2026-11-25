@@ -23,21 +23,21 @@
         int quant_ids_disponiveis; //Quantidade de IDs disponíveis para reaproveitamento.
     } Banco_perguntas; //estrutura criada para a organização do código
 
-    void inicializa_banco(Banco_perguntas *banco_perguntas); //inicializacão da estrutura zerando ela
+    void inicializa_banco(Banco_perguntas *banco_perguntas); // Inicia um banco vazio.
 
     int inserir_pergunta(Banco_perguntas *banco_perguntas, Pergunta *pergunta); //Cadastra uma cópia da pergunta e atribui o ID.
 
-    void listar_perguntas(Banco_perguntas *banco_perguntas); //listo todas as perguntas armazenadas
+    void listar_perguntas(Banco_perguntas *banco_perguntas); // Lista as perguntas no terminal.
 
-    int pesquisar_pergunta(Banco_perguntas *banco_pergunta, int id_pergunta_procurada); //pesquiso uma pergunta pelo seu ID e retorno sua posição no vetor
+    int pesquisar_pergunta(Banco_perguntas *banco_pergunta, int id_pergunta_procurada); // Retorna o índice da pergunta localizada pelo ID.
 
-    void exibir_pergunta(Banco_perguntas *banco_perguntas, int indice); //exibo a pergunta a partir do indice recebido
+    void exibir_pergunta(Banco_perguntas *banco_perguntas, int indice); // Exibe a pergunta no índice recebido.
 
     int alterar_pergunta(Banco_perguntas *banco_perguntas, int id_pergunta_alteracao, Pergunta *pergunta_alterada); //Atualiza os dados da pergunta e mantém seu ID.
 
     int excluir_pergunta(Banco_perguntas *banco_perguntas, int id_pergunta_excluida); //Exclui pelo ID e o reserva para reaproveitamento.
 
-    void listar_por_dificuldade(Banco_perguntas *banco_perguntas, Dificuldade dificuldade_procurada); //recebe uma dificuldade por parâmetro e permite ao usuário navegar entre as perguntas que possuem essa dificuldade
+    void listar_por_dificuldade(Banco_perguntas *banco_perguntas, Dificuldade dificuldade_procurada); // Abre a navegação por dificuldade no terminal.
 
     int pergunta_valida(Pergunta *pergunta); //Verifica a resposta e a dificuldade da pergunta recebida.
 

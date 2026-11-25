@@ -1,7 +1,7 @@
 /**
  * @file arquivo_partidas.c
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief Definição das funções usadas para obter o ranking
+ * @brief Implementa a persistência e a classificação dos resultados do ranking.
  * @version 0.1
  * @date 2026-11-24
  *
@@ -66,7 +66,7 @@ int preenche_registro_partida(Registro_partida *registro_partida, const Partida 
  *
  * @param registro_partida Registro preenchido que será gravado.
  * @param arquivo_ranking Endereço do ponteiro usado para abrir e fechar o arquivo.
- * @return int Retorna 0 no sucesso e -1 em caso de falha na abertura ou na escrita.
+ * @return int Retorna 0 no sucesso e -1 em caso de falha na abertura, na escrita ou no fechamento.
  */
 int salvar_registro_partida(const Registro_partida *registro_partida, FILE **arquivo_ranking)
 {
@@ -131,7 +131,7 @@ int carregar_registro_partidas(Registro_partida **registros_partidas, FILE **arq
             }
         }
         else if (retorno_fread == 0) {
-            if (ferror(*arquivo_ranking) != 0) { //verifco se houve erro, caso não houve o arquivo só chegou ao fim
+            if (ferror(*arquivo_ranking) != 0) { // Distingue erro de leitura do fim normal do arquivo.
                 free(vetor);                     //libero o vetor
                 fclose(*arquivo_ranking);        //fecho o arquivo
                 *arquivo_ranking = NULL;
