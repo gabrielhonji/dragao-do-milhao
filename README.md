@@ -21,7 +21,7 @@ A interface gráfica reúne o quiz e o gerenciamento das perguntas. O cadastro t
 - Listar todas as perguntas;
 - Pesquisar, alterar e excluir perguntas pelo ID;
 - Navegar pelas perguntas de uma dificuldade escolhida;
-- Importar as perguntas iniciais de um CSV;              
+- Importar as perguntas iniciais de um CSV;
 - Salvar e recuperar o banco em arquivo binário;
 - Exportar o banco atual para CSV.
 
@@ -35,11 +35,11 @@ No Windows, o Makefile espera uma biblioteca raylib compatível na pasta `libwin
 
 Execute os comandos **na raiz do repositório**, onde está o Makefile:
 
-| Comando       | Operação                   |
-| ---           | ---                        |
-| `make`        | Compila o projeto          |
-| `make run`    | Compila e abre a interface gráfica |
-| `make clean`  | Remove o executável gerado |
+| Comando      | Operação                           |
+| ------------ | ---------------------------------- |
+| `make`       | Compila o projeto                  |
+| `make run`   | Compila e abre a interface gráfica |
+| `make clean` | Remove o executável gerado         |
 
 Para abrir o cadastro no terminal, compile com `make` e execute `./dragao-do-milhao --terminal`. No Windows, depois de compilar com `mingw32-make`, execute `.\dragao-do-milhao.exe --terminal` no PowerShell.
 
@@ -47,11 +47,11 @@ No terminal, escolha uma opção pelo número correspondente. A opção `0` ence
 
 ## Arquivos de dados
 
-| Arquivo                           | Finalidade                          |
-| ---                               | ---                                 |
-| `dados/perguntas_iniciais.csv`    | Base inicial preparada pela equipe  |
-| `dados/perguntas.dat`             | Banco atualizado pelos dois modos |
-| `dados/perguntas_exportadas.csv`  | Exportação solicitada pela opção 7  |
+| Arquivo                          | Finalidade                         |
+| -------------------------------- | ---------------------------------- |
+| `dados/perguntas_iniciais.csv`   | Base inicial preparada pela equipe |
+| `dados/perguntas.dat`            | Banco atualizado pelos dois modos  |
+| `dados/perguntas_exportadas.csv` | Exportação solicitada pela opção 7 |
 
 Na primeira execução, quando o binário ainda não existe, o programa importa o CSV inicial. Nas execuções seguintes, recupera o banco pelo binário. Alterar o CSV inicial depois disso não atualiza automaticamente o banco salvo.
 
@@ -68,7 +68,7 @@ id,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,resposta,di
 As respostas devem ser letras maiúsculas de `A` a `D`. Os níveis de dificuldade são:
 
 | Valor | Dificuldade   |
-| ---   | ---           |
+| ----- | ------------- |
 | 1     | Muito fácil   |
 | 2     | Fácil         |
 | 3     | Médio         |
@@ -101,10 +101,10 @@ A `main` coordena o menu e a inicialização. O módulo `banco_perguntas` gerenc
 O arquivo `dados/perguntas_iniciais.csv` contém as 80 perguntas iniciais do projeto, distribuídas entre os cinco níveis de dificuldade:
 
 | Dificuldade   | Quantidade |
-| ---           | ---:       |
-| Muito fácil   | 20         |
-| Fácil         | 20         |
-| Médio         | 15         |
-| Difícil       | 15         |
-| Muito difícil | 10         |
-| **Total**     | **80**     |
+| ------------- | ---------: |
+| Muito fácil   |         20 |
+| Fácil         |         20 |
+| Médio         |         15 |
+| Difícil       |         15 |
+| Muito difícil |         10 |
+| **Total**     |     **80** |
