@@ -5,8 +5,13 @@
 
 #include "tela_retirada.h"
 #include "../comum/componentes.h"
+#include "../comum/cores.h"
 
-AcaoRetirada ler_acao_retirada(Rectangle cancelar, Rectangle confirmar)
+// O clique usa os mesmos retângulos que o desenho.
+static const Rectangle cancelar = {270, 318, 200, 44};
+static const Rectangle confirmar = {490, 318, 200, 44};
+
+AcaoRetirada ler_acao_retirada(void)
 {
     if (botao_clicado(cancelar))
         return RETIRADA_CANCELAR;
@@ -15,11 +20,12 @@ AcaoRetirada ler_acao_retirada(Rectangle cancelar, Rectangle confirmar)
     return RETIRADA_SEM_ACAO;
 }
 
-void desenhar_retirada(Font fonte, Font fonte_titulo, int tamanho_corpo, int tamanho_titulo,
-                      Rectangle cancelar, Rectangle confirmar)
+void desenhar_retirada(Font fonte, Font fonte_titulo, int tamanho_corpo)
 {
-    DrawTextEx(fonte_titulo, "Retirada Tática", (Vector2){48, 96}, tamanho_titulo, 1, BLACK);
-    DrawTextEx(fonte, "Encerrar a tentativa e voltar à gruta?", (Vector2){48, 184}, tamanho_corpo, 1, BLACK);
+    desenhar_painel((Rectangle){242, 152, 476, 240}, COR_ESCURO);
+    DrawTextEx(fonte_titulo, "Retirada Tática", (Vector2){270, 182}, 36, 1, COR_TEXTO_CLARO);
+    Rectangle mensagem = {270, 247, 420, 48}; // A pergunta ocupa o espaço acima dos dois botões.
+    desenhar_texto_ajustado(fonte, mensagem, "Encerrar a tentativa e voltar à gruta?", tamanho_corpo, COR_TEXTO_CLARO, false);
     desenhar_botao(fonte, cancelar, "Cancelar");
-    desenhar_botao(fonte, confirmar, "Retirar");
+    desenhar_botao_com_estado(fonte, confirmar, "Retirar", BOTAO_SAIDA, true);
 }

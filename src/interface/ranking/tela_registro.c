@@ -9,8 +9,10 @@
 #include "../comum/componentes.h"
 #include "../comum/cores.h"
 
-bool atualizar_registro(TelaRegistro *tela, const Partida *partida, Rectangle salvar,
-                       bool janela_em_foco, bool confirmou)
+// O botão fica no fim do pergaminho e usa a mesma área no clique e no desenho.
+static const Rectangle salvar = {380, 351, 200, 48};
+
+bool atualizar_registro(TelaRegistro *tela, const Partida *partida, bool janela_em_foco, bool confirmou)
 {
     // Lê a digitação, o Backspace e o Ctrl+A do campo de nome.
     if (janela_em_foco)
@@ -40,18 +42,30 @@ bool atualizar_registro(TelaRegistro *tela, const Partida *partida, Rectangle sa
     return false;
 }
 
-void desenhar_registro(const TelaRegistro *tela, Font fonte, Font fonte_titulo, Rectangle salvar)
+/** @brief Desenha a folha e as bordas enroladas em coordenadas inteiras. */
+static void desenhar_pergaminho(void)
 {
-    const Rectangle campo_nome = {160, 180, 640, 48};
+    const Rectangle folha = {138, 100, 684, 332};
+    DrawRectangle(144, 106, 684, 332, Fade(BLACK, 0.60f)); // A sombra fica 6 px para baixo e para a direita.
+    DrawRectangleRec(folha, COR_BORDA_PERGAMINHO);
+    DrawRectangle(144, 110, 672, 312, COR_PERGAMINHO); // Recua 6 px nos lados e 10 px nas pontas.
+    DrawRectangle(124, 100, 712, 12, COR_FACE_PRIMARIA); // As duas bordas enroladas avançam além da folha.
+    DrawRectangle(124, 420, 712, 12, COR_FACE_PRIMARIA);
+}
+
+void desenhar_registro(const TelaRegistro *tela, Font fonte, Font fonte_titulo)
+{
+    const Rectangle campo_nome = {182, 229, 596, 48};
     const Vector2 posicao_rotulo = {campo_nome.x, campo_nome.y - 40}; // Deixa o rótulo acima da caixa de texto.
 
-    DrawTextEx(fonte_titulo, "Registrar resultado", (Vector2){24, 24}, 34, 1, COR_TEXTO_CLARO);
-    DrawTextEx(fonte, "A lenda vai se lembrar de você como...", posicao_rotulo, 24, 1, COR_TEXTO_CLARO);
+    desenhar_pergaminho();
+    DrawTextEx(fonte_titulo, "Registrar resultado", (Vector2){182, 130}, 34, 1, COR_ESCURO);
+    DrawTextEx(fonte, "A lenda vai se lembrar de você como...", posicao_rotulo, 24, 1, COR_ESCURO);
     desenhar_campo(fonte, campo_nome, tela->nome, true, tela->selecionar_nome);
     desenhar_botao_com_estado(fonte, salvar, "Salvar", BOTAO_PRIMARIO, true);
 
     if (tela->erro != NULL) {
         const Vector2 posicao_erro = {campo_nome.x, campo_nome.y + campo_nome.height + 12}; // Deixa 12 px abaixo do campo.
-        DrawTextEx(fonte, tela->erro, posicao_erro, 20, 1, COR_AVISO);
+        DrawTextEx(fonte, tela->erro, posicao_erro, 20, 1, COR_FACE_ERRO);
     }
 }

@@ -262,7 +262,7 @@ void desenhar_gerenciamento(const TelaGerenciamento *tela, const Banco_perguntas
         DrawTextEx(fonte, tela->retorno_edicao, (Vector2){180, y_pagina}, 18, 1, COR_TEXTO_CLARO);
     desenhar_botao(fonte, tela->voltar, "Voltar");
     desenhar_botao_com_estado(fonte, tela->editar_pergunta, "Editar", BOTAO_SECUNDARIO, tela->id_selecionado >= 0);
-    desenhar_botao_com_estado(fonte, tela->remover_pergunta, "Excluir", BOTAO_SECUNDARIO, tela->id_selecionado >= 0);
+    desenhar_botao_com_estado(fonte, tela->remover_pergunta, "Excluir", BOTAO_SAIDA, tela->id_selecionado >= 0);
     desenhar_botao_com_estado(fonte, tela->pagina_anterior, "Anterior", BOTAO_SECUNDARIO, tem_anterior);
     desenhar_botao_com_estado(fonte, tela->pagina_seguinte, "Próxima", BOTAO_SECUNDARIO, tem_proxima);
 }

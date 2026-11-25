@@ -64,8 +64,9 @@ void desenhar_menu(const BotoesMenu *botoes, Font fonte, Font fonte_titulo,
     desenhar_botao(fonte, botoes->ranking, "Ranking");
     desenhar_botao(fonte, botoes->gerenciar, "Gerenciar perguntas");
     desenhar_botao(fonte, botoes->creditos, "Créditos");
-    desenhar_botao(fonte, botoes->sair, "Sair");
-    desenhar_botao(fonte, botoes->som, som_ligado ? "Som ligado" : "Som desligado");
+    desenhar_botao_com_estado(fonte, botoes->sair, "Sair", BOTAO_SAIDA, true);
+    desenhar_botao_com_estado(fonte, botoes->som, som_ligado ? "Som ligado" : "Som desligado",
+                             som_ligado ? BOTAO_SECUNDARIO : BOTAO_SAIDA, true);
 
     const Vector2 posicao_aviso = {botoes->jogar.x, botoes->som.y + botoes->som.height + 18}; // Espaço de 18 px abaixo do botão de som.
     if (dificuldade_em_falta != NULL) {

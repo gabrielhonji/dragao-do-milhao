@@ -5,6 +5,7 @@
 
 #include "arte_cenas.h"
 #include "cores.h"
+#include <math.h>
 
 /**
  * @brief Cenas do jogo.
@@ -45,6 +46,21 @@ typedef enum
     TROTE_CARTA_SELADA,
     ECO_CEU,
     ECO_POMBA,
+    ECO_PEDRA,
+    ECO_TELHADO,
+    HUD_OVO,
+    HUD_BURRO,
+    HUD_DRAGAO,
+    HUD_PRINCESA,
+    OVO_MARCO,
+    FUNDO_RENASCIMENTO,
+    ECLOSAO,
+    CARTA_ABERTURA,
+    DRAGAO_CHEGADA,
+    FAISCA_BATALHA,
+    FAISCA_DESPERTAR,
+    DRAGAO_DESPERTADO,
+    PRINCIPE_DESPERTAR,
     TOTAL_ARTES,
 } Arte;
 
@@ -90,6 +106,21 @@ static ArteCena artes[TOTAL_ARTES] = {
     [TROTE_CARTA_SELADA] = {"assets/visual/cenas/12/carta_selada.png"},
     [ECO_CEU] = {"assets/visual/fundos/ceu_povoado.png"},
     [ECO_POMBA] = {"assets/visual/cenas/12/pomba.png"},
+    [ECO_PEDRA] = {"assets/visual/cenas/12/passagem_pedra.png"},
+    [ECO_TELHADO] = {"assets/visual/cenas/12/eco_telhado_chamine.png"},
+    [HUD_OVO] = {"assets/visual/icones/ovo_hud.png"},
+    [HUD_BURRO] = {"assets/visual/icones/ajuda_trote.png"},
+    [HUD_DRAGAO] = {"assets/visual/icones/ajuda_sopro.png"},
+    [HUD_PRINCESA] = {"assets/visual/icones/ajuda_eco.png"},
+    [OVO_MARCO] = {"assets/visual/cenas/07/ovo_marco.png"},
+    [FUNDO_RENASCIMENTO] = {"assets/visual/fundos/gruta_renascimento.png"},
+    [ECLOSAO] = {"assets/visual/cenas/08/eclosao.png"},
+    [CARTA_ABERTURA] = {"assets/visual/cenas/04/carta_selada.png"},
+    [DRAGAO_CHEGADA] = {"assets/visual/cenas/25/dragao_voo.png"},
+    [FAISCA_BATALHA] = {"assets/visual/cenas/06/faisca_48x54.png"},
+    [FAISCA_DESPERTAR] = {"assets/visual/cenas/09/faisca_44x50.png"},
+    [DRAGAO_DESPERTADO] = {"assets/visual/cenas/09/dragao_despertado.png"},
+    [PRINCIPE_DESPERTAR] = {"assets/visual/cenas/09/principe.png"},
 };
 
 // A cor multiplica o RGB do sprite durante o desenho. O alfa 255 preserva a transparência do PNG.
@@ -164,15 +195,69 @@ void desenhar_fundo_eco(Vector2 origem)
     desenhar_png(ECO_CEU, (int)origem.x, (int)origem.y);
 }
 
-void desenhar_pomba_eco(Vector2 centro)
+void desenhar_pomba_eco(Vector2 centro, Rectangle campo)
 {
     Texture2D textura = artes[ECO_POMBA].textura;
     if (!IsTextureValid(textura))
         return;
 
-    // 24 por 20 preserva a proporção do PNG e deixa as asas ligeiramente além do corpo.
-    Rectangle destino = {centro.x - 12, centro.y - 10, 24, 20}; // Metade do tamanho centraliza o sprite.
-    DrawTexturePro(textura, (Rectangle){0, 0, textura.width, textura.height}, destino, (Vector2){0}, 0.0f, WHITE);
+    // A posição física continua no peito. Os offsets localizam esse pivô no PNG de 60 × 50.
+    Rectangle destino = {floorf(centro.x) - 33, floorf(centro.y) - 29, textura.width, textura.height};
+    Rectangle visivel = GetCollisionRec(destino, campo);
+    if (visivel.width > 0 && visivel.height > 0) {
+        Rectangle fonte = {visivel.x - destino.x, visivel.y - destino.y, visivel.width, visivel.height};
+        DrawTexturePro(textura, fonte, visivel, (Vector2){0}, 0.0f, WHITE);
+    }
+}
+
+void desenhar_obstaculo_eco(Rectangle obstaculo, Rectangle campo, bool tem_telhado)
+{
+    Rectangle visivel = GetCollisionRec(obstaculo, campo);
+    if (visivel.width <= 0 || visivel.height <= 0)
+        return;
+
+    DrawRectangleRec(visivel, COR_FACE_BOTAO);
+    Texture2D pedra = artes[ECO_PEDRA].textura;
+    if (IsTextureValid(pedra)) {
+        const float altura_faixa = 28; // Recorte opaco das primeiras fileiras do sprite da passagem.
+        float margem_x = visivel.x - obstaculo.x;
+        for (float y = visivel.y; y < visivel.y + visivel.height; y += altura_faixa) {
+            float altura = fminf(altura_faixa, visivel.y + visivel.height - y);
+            Rectangle fonte = {2 + margem_x, 22, visivel.width, altura}; // Posição da alvenaria dentro do PNG.
+            DrawTexturePro(pedra, fonte, (Rectangle){visivel.x, y, visivel.width, altura}, (Vector2){0}, 0, WHITE);
+        }
+    }
+
+    Texture2D telhado = artes[ECO_TELHADO].textura;
+    if (tem_telhado && IsTextureValid(telhado)) {
+        // O telhado cabe na área sólida e acompanha o recorte horizontal da entrada e saída.
+        float escala = obstaculo.width / telhado.width;
+        Rectangle topo = {obstaculo.x, obstaculo.y, obstaculo.width, telhado.height * escala};
+        Rectangle recorte = GetCollisionRec(topo, visivel);
+        if (recorte.width > 0 && recorte.height > 0) {
+            Rectangle fonte = {(recorte.x - topo.x) / escala, (recorte.y - topo.y) / escala,
+                               recorte.width / escala, recorte.height / escala};
+            DrawTexturePro(telhado, fonte, recorte, (Vector2){0}, 0, WHITE);
+        }
+    }
+}
+
+void desenhar_icone_quiz(IconeQuiz icone, Rectangle area, Color cor)
+{
+    const Arte icones[] = {HUD_OVO, HUD_BURRO, HUD_DRAGAO, HUD_PRINCESA};
+    Texture2D textura = artes[icones[icone]].textura;
+    if (IsTextureValid(textura)) {
+        Vector2 posicao = {floorf(area.x + (area.width - textura.width) / 2),
+                           floorf(area.y + (area.height - textura.height) / 2)};
+        DrawTextureV(textura, posicao, cor);
+    }
+}
+
+void desenhar_ovo_marco(Rectangle cena)
+{
+    DrawRectangleRec(cena, Fade(COR_ESCURO, 0.48f));
+    Rectangle centro = {cena.x + (cena.width - 105) / 2, cena.y + (cena.height - 105) / 2, 105, 105}; // Medidas do sprite.
+    desenhar_png(OVO_MARCO, (int)centro.x, (int)centro.y);
 }
 
 // As coordenadas abaixo são as da coluna destino do manifesto de sprites v2.
@@ -191,17 +276,67 @@ void desenhar_arte_creditos(void)
     desenhar_png_com_luz(DRAGAO_CREDITOS, 171, 162, luz_creditos);
 }
 
+/** @brief Interpola o voo entre pontos da estrada, em coordenadas do mapa. */
+static void desenhar_rota_jornada(float passos)
+{
+    static const Vector2 rota[] = {
+        {44, 253}, {96, 228}, {158, 213}, {207, 185}, {243, 147},
+        {288, 116}, {334, 98}, {387, 78}, {438, 62},
+    };
+    const int ultimo = (int)(sizeof rota / sizeof rota[0]) - 1;
+    int inicio = (int)passos;
+    if (inicio >= ultimo)
+        inicio = ultimo - 1;
+    float fracao = passos - inicio;
+    // A curva desacelera perto dos pontos de parada.
+    fracao = fracao * fracao * (3.0f - 2.0f * fracao);
+    Vector2 posicao = {
+        rota[inicio].x + (rota[inicio + 1].x - rota[inicio].x) * fracao,
+        rota[inicio].y + (rota[inicio + 1].y - rota[inicio].y) * fracao,
+    };
+
+    desenhar_png(MAPA_JORNADA, 28, 92);
+    desenhar_png(BRILHO_JORNADA, 73, 353);
+    desenhar_png(BRILHO_JORNADA, 203, 319);
+    desenhar_png(BRILHO_JORNADA, 326, 224);
+    desenhar_png(BRILHO_JORNADA, 456, 176);
+    // Soma a origem do mapa e desconta o centro da silhueta dentro do PNG.
+    desenhar_png_com_luz(DRAGAO_JORNADA, 28 + (int)posicao.x - 44, 92 + (int)posicao.y - 32, luz_vale);
+}
+
+void desenhar_impacto_batalha(float avanco, bool despertado)
+{
+    Color brilho = Fade(WHITE, 1.0f - avanco);
+    desenhar_png_com_luz(despertado ? FAISCA_DESPERTAR : FAISCA_BATALHA, 328, 266, brilho);
+}
+
 // Escolhe pelo estado do quiz quais imagens desenhar, começando pelo fundo de cada cena.
-void desenhar_arte_quiz(CenaQuiz cena)
+void desenhar_arte_quiz(CenaQuiz cena, float passos)
 {
     switch (cena) {
+        case CENA_RENASCIMENTO:
+            desenhar_png(FUNDO_RENASCIMENTO, 28, 92); // Mesmo encaixe do mapa no painel.
+            desenhar_png(ECLOSAO, 119, 151); // Centraliza o recorte de 301 × 224 no cenário.
+            break;
         case CENA_JORNADA:
-            desenhar_png(MAPA_JORNADA, 28, 92);
-            desenhar_png(BRILHO_JORNADA, 73, 348);
-            desenhar_png(BRILHO_JORNADA, 203, 319);
-            desenhar_png(BRILHO_JORNADA, 326, 224);
-            desenhar_png(BRILHO_JORNADA, 456, 176);
-            desenhar_png_com_luz(DRAGAO_JORNADA, 124, 256, luz_vale);
+            desenhar_rota_jornada(passos);
+            break;
+        case CENA_ABERTURA:
+            desenhar_png(PATIO, 28, 92);
+            desenhar_png_com_luz(PRINCESA_BATALHA, 388, 152, luz_torre);
+            desenhar_png(CARTA_ABERTURA, 92, 248);
+            break;
+        case CENA_CHEGADA:
+            desenhar_png(PATIO, 28, 92);
+            desenhar_png_com_luz(DRAGAO_CHEGADA, 42, 161, luz_patio);
+            desenhar_png_com_luz(PRINCIPE_BATALHA, 345, 238, luz_patio);
+            desenhar_png_com_luz(PRINCESA_BATALHA, 388, 152, luz_torre);
+            break;
+        case CENA_DESPERTAR:
+            desenhar_png(PATIO, 28, 92);
+            desenhar_png_com_luz(DRAGAO_DESPERTADO, 38, 134, luz_patio);
+            desenhar_png_com_luz(PRINCIPE_DESPERTAR, 364, 256, luz_patio);
+            desenhar_png_com_luz(PRINCESA_BATALHA, 388, 152, luz_torre);
             break;
         case CENA_BATALHA:
             desenhar_png(PATIO, 28, 92);

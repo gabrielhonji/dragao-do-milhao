@@ -16,10 +16,9 @@ typedef enum
 } AcaoRetirada;
 
 /** @brief Lê o clique de cancelar ou de confirmar a retirada. */
-AcaoRetirada ler_acao_retirada(Rectangle cancelar, Rectangle confirmar);
+AcaoRetirada ler_acao_retirada(void);
 
 /** @brief Mostra o aviso de encerramento e os botões Cancelar e Retirar. */
-void desenhar_retirada(Font fonte, Font fonte_titulo, int tamanho_corpo, int tamanho_titulo,
-                      Rectangle cancelar, Rectangle confirmar);
+void desenhar_retirada(Font fonte, Font fonte_titulo, int tamanho_corpo);
 
 #endif

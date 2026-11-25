@@ -15,7 +15,20 @@ typedef enum
     CENA_VITORIA,
     CENA_DERROTA,
     CENA_DERROTA_JORNADA,
+    CENA_RENASCIMENTO,
+    CENA_ABERTURA,
+    CENA_CHEGADA,
+    CENA_DESPERTAR,
 } CenaQuiz;
+
+/** @brief Sprites pequenos usados na interface da partida. */
+typedef enum
+{
+    ICONE_OVO,
+    ICONE_BURRO,
+    ICONE_DRAGAO,
+    ICONE_PRINCESA,
+} IconeQuiz;
 
 typedef enum
 {
@@ -47,8 +60,27 @@ void desenhar_arte_carta_burro(Rectangle area, int simbolo);
 /**
  * @brief Desenha o fundo e os personagens do trecho atual do quiz.
  * @param cena Composição correspondente ao progresso ou ao resultado da partida.
+ * @param passos Progresso da Jornada, com a fração do passo em curso.
  */
-void desenhar_arte_quiz(CenaQuiz cena);
+void desenhar_arte_quiz(CenaQuiz cena, float passos);
+
+/**
+ * @brief Mostra o impacto de um acerto da Batalha sobre o príncipe.
+ * @param avanco Fração de 0 a 1 da duração do impacto.
+ * @param despertado Escolhe a faísca usada no Despertar Dracônico.
+ */
+void desenhar_impacto_batalha(float avanco, bool despertado);
+
+/** @brief Destaca o ovo conquistado no centro do cenário atual. */
+void desenhar_ovo_marco(Rectangle cena);
+
+/**
+ * @brief Centraliza o sprite do HUD na área reservada.
+ * @param icone Sprite a exibir.
+ * @param area Espaço reservado, em coordenadas da interface.
+ * @param cor Cor e opacidade do sprite.
+ */
+void desenhar_icone_quiz(IconeQuiz icone, Rectangle area, Color cor);
 
 /**
  * @brief Desenha o cenário da gruta conforme o resultado da partida.
@@ -70,7 +102,16 @@ void desenhar_fundo_eco(Vector2 origem);
 /**
  * @brief Desenha o sprite da pomba sobre sua posição no campo.
  * @param centro Centro do corpo da pomba na tela.
+ * @param campo Limites onde o sprite pode aparecer.
  */
-void desenhar_pomba_eco(Vector2 centro);
+void desenhar_pomba_eco(Vector2 centro, Rectangle campo);
+
+/**
+ * @brief Reveste a área sólida do Eco com pedra e, na parte inferior, um telhado.
+ * @param obstaculo Área sólida usada pela colisão.
+ * @param campo Região visível do percurso.
+ * @param tem_telhado Indica a parte de baixo do vão.
+ */
+void desenhar_obstaculo_eco(Rectangle obstaculo, Rectangle campo, bool tem_telhado);
 
 #endif

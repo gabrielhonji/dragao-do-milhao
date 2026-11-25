@@ -45,18 +45,18 @@ void desenhar_sopro(const MinigameSopro *sopro, Font fonte, Font fonte_titulo,
     DrawRectangleGradientH(largura - espessura, 0, espessura, altura, transparente, borda);
     DrawRectangleGradientV(0, altura - espessura, largura, espessura, transparente, borda);
 
-    DrawTextEx(fonte, TextFormat("%.1f s", tempo_restante), (Vector2){720, 30}, tamanho_corpo, 1, BLACK);
-    DrawTextEx(fonte_titulo, "Sopro Ancestral", (Vector2){160, 12}, tamanho_titulo, 1, BLACK);
-    DrawTextEx(fonte, "Aperte Espaço repetidamente para carregar o sopro.", (Vector2){160, 75}, tamanho_corpo, 1, BLACK);
+    DrawTextEx(fonte, TextFormat("%.1f s", tempo_restante), (Vector2){720, 30}, tamanho_corpo, 1, COR_TEXTO_CLARO);
+    DrawTextEx(fonte_titulo, "Sopro Ancestral", (Vector2){160, 12}, tamanho_titulo, 1, COR_TEXTO_CLARO);
+    DrawTextEx(fonte, "Aperte Espaço repetidamente para carregar o sopro.", (Vector2){160, 75}, tamanho_corpo, 1, COR_TEXTO_CLARO);
 
     DrawRectangleRec(barra, COR_FACE_BLOQUEADA);
     DrawRectangleRec(preenchimento, COR_FACE_PRIMARIA);
 
     if (sopro->resultado != 0) {
         if (sopro->resultado == 1)
-            DrawTextEx(fonte, "Sopro carregado!", (Vector2){160, 494}, tamanho_corpo, 1, BLACK);
+            DrawTextEx(fonte, "Sopro carregado!", (Vector2){160, 494}, tamanho_corpo, 1, COR_BORDA_ACERTO);
         else
-            DrawTextEx(fonte, "Tempo esgotado!", (Vector2){160, 494}, tamanho_corpo, 1, BLACK);
+            DrawTextEx(fonte, "Tempo esgotado!", (Vector2){160, 494}, tamanho_corpo, 1, COR_BORDA_ERRO);
         desenhar_botao(fonte, voltar_sopro, "Voltar à pergunta");
     }
 }

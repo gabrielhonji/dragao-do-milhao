@@ -5,6 +5,7 @@
 
 #include "tela_gruta.h"
 #include "../comum/componentes.h"
+#include "../comum/cores.h"
 
 void abrir_previa_gruta(TelaGruta *gruta)
 {
@@ -53,7 +54,7 @@ void preparar_gruta_final(TelaGruta *gruta, Situacao_partida situacao)
  */
 static void desenhar_gruta(Font fonte, EstadoGruta estado, int ovos_restantes, bool mostrar_dragao)
 {
-    DrawTextEx(fonte, "Gruta", (Vector2){24, 24}, 24, 1, BLACK);
+    DrawTextEx(fonte, "Gruta", (Vector2){24, 24}, 24, 1, COR_TEXTO_CLARO);
     desenhar_arte_gruta(estado, ovos_restantes, mostrar_dragao);
     if (!mostrar_dragao)
         DrawTextEx(fonte, "A gruta está vazia.", (Vector2){48, 104}, 24, 1, RAYWHITE);
@@ -83,5 +84,5 @@ void desenhar_tela_gruta(const TelaGruta *gruta, const Partida *partida, Font fo
     }
     // Divide o espaço vertical livre para alinhar o texto ao botão Voltar.
     const Vector2 posicao_texto = {x_mensagem, voltar.y + (voltar.height - tamanho_corpo) / 2.0f};
-    DrawTextEx(fonte, texto_gruta, posicao_texto, tamanho_corpo, 1, BLACK);
+    DrawTextEx(fonte, texto_gruta, posicao_texto, tamanho_corpo, 1, COR_TEXTO_CLARO);
 }

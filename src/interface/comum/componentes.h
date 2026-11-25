@@ -23,6 +23,12 @@ typedef enum
     BOTAO_SECUNDARIO,
     BOTAO_SELECIONADO,
     BOTAO_PRIMARIO,
+    BOTAO_ACERTO,
+    BOTAO_ERRO,
+    BOTAO_SAIDA,
+    BOTAO_DICA_BURRO,
+    BOTAO_DICA_FOGO,
+    BOTAO_DICA_CARTA,
 } EstiloBotao;
 
 /**
@@ -53,7 +59,7 @@ void desenhar_botao(Font fonte, Rectangle area, const char *rotulo);
  * @param fonte Fonte do rótulo.
  * @param area Retângulo do botão.
  * @param rotulo Texto exibido.
- * @param estilo Aparência secundária, selecionada ou primária.
+ * @param estilo Aparência adequada à ação ou ao estado do botão.
  * @param habilitado Controla o tom do botão e o destaque ao passar o mouse.
  */
 void desenhar_botao_com_estado(Font fonte, Rectangle area, const char *rotulo, EstiloBotao estilo, bool habilitado);
@@ -63,10 +69,22 @@ void desenhar_botao_com_estado(Font fonte, Rectangle area, const char *rotulo, E
  * @param fonte Fonte usada para a resposta.
  * @param area Retângulo da alternativa na tela lógica.
  * @param rotulo Texto da resposta.
- * @param selecionada Mantém a opção marcada mesmo depois da confirmação.
+ * @param estilo Aparência da opção conforme a seleção e o resultado.
  * @param habilitada Permite o destaque ao passar o mouse.
+ * @param reserva_direita Largura extra para o selo de uma ajuda, ou zero sem selo.
  */
-void desenhar_alternativa(Font fonte, Rectangle area, const char *rotulo, bool selecionada, bool habilitada);
+void desenhar_alternativa(Font fonte, Rectangle area, const char *rotulo, EstiloBotao estilo, bool habilitada, float reserva_direita);
+
+/**
+ * @brief Quebra linhas e reduz a fonte quando necessário para caber no retângulo.
+ * @param fonte Fonte usada na medição e no desenho.
+ * @param area Limite de largura e altura do texto.
+ * @param texto Texto UTF-8 terminado em '\0'.
+ * @param tamanho Tamanho de fonte preferido.
+ * @param cor Cor do texto.
+ * @param centralizar_verticalmente Centraliza na altura disponível quando verdadeiro.
+ */
+void desenhar_texto_ajustado(Font fonte, Rectangle area, const char *texto, int tamanho, Color cor, bool centralizar_verticalmente);
 
 /**
  * @brief Processa a digitação, o Backspace e o Ctrl+A do campo em foco.
