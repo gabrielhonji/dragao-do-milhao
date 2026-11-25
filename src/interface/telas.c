@@ -955,7 +955,7 @@ void executar_tela_teste(Banco_perguntas *banco)
                 DrawTextEx(fonte, progresso, posicao_progresso, 20, 1, BLACK);
 
                 // A fração do valor que resta define a largura colorida da barra.
-                const float espaco_progresso = 164; // Reserva a coluna do rótulo à esquerda da barra.
+                const float espaco_progresso = 164;                                                                 // Reserva a coluna do rótulo à esquerda da barra.
                 Rectangle fundo_vida = {mapa.x + espaco_progresso, mapa.y - 33, mapa.width - espaco_progresso, 16}; // Centraliza a barra no rótulo.
                 Rectangle preenchimento_vida = fundo_vida;
                 preenchimento_vida.width *= (float)valor / limite;

@@ -9,7 +9,8 @@
 /**
  * @brief Cenas do jogo.
  */
-typedef enum {
+typedef enum
+{
     MAPA_MENU,
     DRAGAO_MENU,
     MAPA_JORNADA,
@@ -39,7 +40,8 @@ typedef enum {
     TOTAL_ARTES,
 } Arte;
 
-typedef struct {
+typedef struct
+{
     const char *arquivo;
     Texture2D textura;
 } ArteCena;
@@ -92,10 +94,9 @@ void carregar_arte_cenas(void)
 
 void descarregar_arte_cenas(void)
 {
-    for (int i = 0; i < TOTAL_ARTES; i++) {
+    for (int i = 0; i < TOTAL_ARTES; i++)
         if (IsTextureValid(artes[i].textura))
             UnloadTexture(artes[i].textura);
-    }
 }
 
 /**
@@ -138,39 +139,39 @@ void desenhar_arte_creditos(void)
 void desenhar_arte_quiz(CenaQuiz cena)
 {
     switch (cena) {
-    case CENA_JORNADA:
-        desenhar_png(MAPA_JORNADA, 28, 92);
-        desenhar_png(BRILHO_JORNADA, 73, 348);
-        desenhar_png(BRILHO_JORNADA, 203, 319);
-        desenhar_png(BRILHO_JORNADA, 326, 224);
-        desenhar_png(BRILHO_JORNADA, 456, 176);
-        desenhar_png_com_luz(DRAGAO_JORNADA, 124, 256, luz_vale);
-        break;
-    case CENA_BATALHA:
-        desenhar_png(PATIO, 28, 92);
-        desenhar_png_com_luz(DRAGAO_BATALHA, 38, 180, luz_patio);
-        desenhar_png_com_luz(PRINCIPE_BATALHA, 345, 238, luz_patio);
-        desenhar_png_com_luz(PRINCESA_BATALHA, 388, 152, luz_torre);
-        break;
-    case CENA_VITORIA:
-        desenhar_png(PATIO, 28, 92);
-        desenhar_png_com_luz(DRAGAO_VITORIA, 36, 180, luz_patio);
-        desenhar_png_com_luz(PRINCESA_VITORIA, 289, 244, luz_patio);
-        desenhar_png_com_luz(PRINCIPE_VITORIA, 363, 328, luz_patio);
-        desenhar_png(BRILHO_VITORIA, 391, 256);
-        desenhar_png(BRILHO_JORNADA, 315, 280);
-        break;
-    case CENA_DERROTA:
-        desenhar_png(PATIO, 28, 92);
-        desenhar_png_com_luz(PRINCESA_DERROTA, 388, 152, luz_torre);
-        desenhar_png_com_luz(DRAGAO_DERROTA, 41, 260, luz_patio);
-        desenhar_png_com_luz(PRINCIPE_DERROTA, 368, 238, luz_patio);
-        DrawRectangle(28, 92, 484, 316, Fade(BLACK, 0.24f)); // Na derrota, escurece toda a cena.
-        break;
-    case CENA_DERROTA_JORNADA:
-        desenhar_png(FUNDO_DERROTA_JORNADA, 28, 92);
-        desenhar_png_com_luz(DRAGAO_CAIDO_JORNADA, 109, 240, luz_vale);
-        break;
+        case CENA_JORNADA:
+            desenhar_png(MAPA_JORNADA, 28, 92);
+            desenhar_png(BRILHO_JORNADA, 73, 348);
+            desenhar_png(BRILHO_JORNADA, 203, 319);
+            desenhar_png(BRILHO_JORNADA, 326, 224);
+            desenhar_png(BRILHO_JORNADA, 456, 176);
+            desenhar_png_com_luz(DRAGAO_JORNADA, 124, 256, luz_vale);
+            break;
+        case CENA_BATALHA:
+            desenhar_png(PATIO, 28, 92);
+            desenhar_png_com_luz(DRAGAO_BATALHA, 38, 180, luz_patio);
+            desenhar_png_com_luz(PRINCIPE_BATALHA, 345, 238, luz_patio);
+            desenhar_png_com_luz(PRINCESA_BATALHA, 388, 152, luz_torre);
+            break;
+        case CENA_VITORIA:
+            desenhar_png(PATIO, 28, 92);
+            desenhar_png_com_luz(DRAGAO_VITORIA, 36, 180, luz_patio);
+            desenhar_png_com_luz(PRINCESA_VITORIA, 289, 244, luz_patio);
+            desenhar_png_com_luz(PRINCIPE_VITORIA, 363, 328, luz_patio);
+            desenhar_png(BRILHO_VITORIA, 391, 256);
+            desenhar_png(BRILHO_JORNADA, 315, 280);
+            break;
+        case CENA_DERROTA:
+            desenhar_png(PATIO, 28, 92);
+            desenhar_png_com_luz(PRINCESA_DERROTA, 388, 152, luz_torre);
+            desenhar_png_com_luz(DRAGAO_DERROTA, 41, 260, luz_patio);
+            desenhar_png_com_luz(PRINCIPE_DERROTA, 368, 238, luz_patio);
+            DrawRectangle(28, 92, 484, 316, Fade(BLACK, 0.24f)); // Na derrota, escurece toda a cena.
+            break;
+        case CENA_DERROTA_JORNADA:
+            desenhar_png(FUNDO_DERROTA_JORNADA, 28, 92);
+            desenhar_png_com_luz(DRAGAO_CAIDO_JORNADA, 109, 240, luz_vale);
+            break;
     }
 }
 
@@ -181,31 +182,31 @@ void desenhar_arte_gruta(EstadoGruta estado, int filhotes, bool mostrar_dragao)
         return;
 
     switch (estado) {
-    case GRUTA_VAZIA:
-        // A retirada antes do primeiro marco reutiliza o dragão em pé, centralizado no chão.
-        desenhar_png_com_luz(DRAGAO_BATALHA, 339, 195, luz_gruta);
-        break;
-    case GRUTA_OURO_BAIXO:
-        desenhar_png_com_luz(OURO_BAIXO, 311, 242, luz_gruta);
-        if (filhotes >= 1)
-            desenhar_png_com_luz(FILHOTE_ESQUERDA, 260, 318, luz_gruta); // Ao lado da pilha pequena.
-        if (filhotes >= 2)
-            desenhar_png_com_luz(FILHOTE_DIREITA, 610, 318, luz_gruta);
-        break;
-    case GRUTA_OURO_MEDIO:
-        desenhar_png_com_luz(OURO_MEDIO, 287, 222, luz_gruta);
-        if (filhotes >= 1)
-            desenhar_png_com_luz(FILHOTE_MEDIO, 239, 318, luz_gruta);
-        if (filhotes >= 2)
-            desenhar_png_com_luz(FILHOTE_DIREITA, 650, 318, luz_gruta); // À direita da pilha média.
-        break;
-    case GRUTA_OURO_ALTO:
-        desenhar_png_com_luz(OURO_ALTO, 259, 196, luz_gruta);
-        // Os recortes já vêm voltados para o centro sem precisar espelhar.
-        if (filhotes >= 1)
-            desenhar_png_com_luz(FILHOTE_ESQUERDA, 213, 318, luz_gruta);
-        if (filhotes >= 2)
-            desenhar_png_com_luz(FILHOTE_DIREITA, 685, 318, luz_gruta);
-        break;
+        case GRUTA_VAZIA:
+            // A retirada antes do primeiro marco reutiliza o dragão em pé, centralizado no chão.
+            desenhar_png_com_luz(DRAGAO_BATALHA, 339, 195, luz_gruta);
+            break;
+        case GRUTA_OURO_BAIXO:
+            desenhar_png_com_luz(OURO_BAIXO, 311, 242, luz_gruta);
+            if (filhotes >= 1)
+                desenhar_png_com_luz(FILHOTE_ESQUERDA, 260, 318, luz_gruta); // Ao lado da pilha pequena.
+            if (filhotes >= 2)
+                desenhar_png_com_luz(FILHOTE_DIREITA, 610, 318, luz_gruta);
+            break;
+        case GRUTA_OURO_MEDIO:
+            desenhar_png_com_luz(OURO_MEDIO, 287, 222, luz_gruta);
+            if (filhotes >= 1)
+                desenhar_png_com_luz(FILHOTE_MEDIO, 239, 318, luz_gruta);
+            if (filhotes >= 2)
+                desenhar_png_com_luz(FILHOTE_DIREITA, 650, 318, luz_gruta); // À direita da pilha média.
+            break;
+        case GRUTA_OURO_ALTO:
+            desenhar_png_com_luz(OURO_ALTO, 259, 196, luz_gruta);
+            // Os recortes já vêm voltados para o centro sem precisar espelhar.
+            if (filhotes >= 1)
+                desenhar_png_com_luz(FILHOTE_ESQUERDA, 213, 318, luz_gruta);
+            if (filhotes >= 2)
+                desenhar_png_com_luz(FILHOTE_DIREITA, 685, 318, luz_gruta);
+            break;
     }
 }

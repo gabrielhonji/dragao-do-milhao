@@ -17,7 +17,8 @@
 /**
  * @brief Define a aparência do botão. A disponibilidade ainda é controlada pelo parâmetro 'habilitado'.
  */
-typedef enum {
+typedef enum
+{
     BOTAO_SECUNDARIO,
     BOTAO_SELECIONADO,
     BOTAO_PRIMARIO,

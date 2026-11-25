@@ -9,19 +9,21 @@
 #include <raylib.h>
 #include "../perguntas/banco_perguntas.h"
 
-typedef enum {
+typedef enum
+{
     EDITOR_FECHADO,
     EDITOR_NOVA,
     EDITOR_ALTERAR,
     EDITOR_EXCLUIR,
 } ModoEditorPerguntas;
 
-typedef struct {
+typedef struct
+{
     ModoEditorPerguntas modo; // Diz qual formulário ou confirmação está aberta.
-    Pergunta pergunta;       // Rascunho independente da pergunta no banco.
+    Pergunta pergunta;        // Rascunho independente da pergunta no banco.
     int campo_ativo;          // 0 é o enunciado. De 1 a 4 são as alternativas A a D.
     bool selecionar_texto;    // Após Ctrl+A, a próxima digitação substitui o campo.
-    const char *erro;          // Mensagem exibida no formulário, ou NULL.
+    const char *erro;         // Mensagem exibida no formulário, ou NULL.
 } EditorPerguntas;
 
 /**

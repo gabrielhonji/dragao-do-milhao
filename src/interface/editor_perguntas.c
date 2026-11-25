@@ -11,7 +11,10 @@
 #include "cores.h"
 #include "../perguntas/arquivos_perguntas.h"
 
-enum { TOTAL_CAMPOS_TEXTO = 5 };
+enum
+{
+    TOTAL_CAMPOS_TEXTO = 5
+};
 
 static const Rectangle cancelar = {24, 464, 200, 52};
 static const Rectangle confirmar = {736, 464, 200, 52};
@@ -261,5 +264,5 @@ void desenhar_editor_perguntas(const EditorPerguntas *editor, Font fonte, Font t
         DrawTextEx(fonte, editor->erro, (Vector2){24, 425}, 20, 1, COR_TEXTO_CLARO);
     desenhar_botao(fonte, cancelar, "Cancelar");
     desenhar_botao_com_estado(fonte, confirmar, editor->modo == EDITOR_EXCLUIR ? "Excluir" : "Salvar",
-                             BOTAO_PRIMARIO, true);
+                              BOTAO_PRIMARIO, true);
 }

@@ -8,7 +8,8 @@
 
 #include <raylib.h>
 
-typedef enum {
+typedef enum
+{
     CENA_JORNADA,
     CENA_BATALHA,
     CENA_VITORIA,
@@ -16,7 +17,8 @@ typedef enum {
     CENA_DERROTA_JORNADA,
 } CenaQuiz;
 
-typedef enum {
+typedef enum
+{
     GRUTA_VAZIA,
     GRUTA_OURO_BAIXO,
     GRUTA_OURO_MEDIO,

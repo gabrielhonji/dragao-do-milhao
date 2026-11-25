@@ -48,10 +48,10 @@ void desenhar_painel(Rectangle area, Color fundo)
 /** @brief Desenha as camadas comuns aos botões de ação e às alternativas do quiz. */
 static void desenhar_corpo_botao(Font fonte, Rectangle area, const char *rotulo, EstiloBotao estilo, bool habilitado, bool alinhar_esquerda)
 {
-    Color cor_face = COR_FACE_BOTAO;    // Superfície onde aparece o texto.
+    Color cor_face = COR_FACE_BOTAO;     // Superfície onde aparece o texto.
     Color cor_aresta = COR_ARESTA_BOTAO; // Faixa inferior que dá espessura ao botão.
-    Color cor_borda = COR_BORDA_BOTAO;  // Contorno externo, visível em volta da face.
-    Color cor_texto = COR_TEXTO_CLARO;  // Cor das letras sobre a face.
+    Color cor_borda = COR_BORDA_BOTAO;   // Contorno externo, visível em volta da face.
+    Color cor_texto = COR_TEXTO_CLARO;   // Cor das letras sobre a face.
 
     // Mantem a escolha visível mesmo depois de confirmar a resposta.
     if (estilo == BOTAO_SELECIONADO) {
@@ -87,7 +87,7 @@ static void desenhar_corpo_botao(Font fonte, Rectangle area, const char *rotulo,
     // O limite inferior é interior.y + interior.height. Subir uma espessura mantém a faixa dentro da face.
     DrawRectangleRec((Rectangle){area.x + recuo_aresta, interior.y + interior.height - espessura, area.width - 2 * recuo_aresta, espessura}, cor_aresta);
 
-    const float tamanho = 20; // Altura de fonte escolhida para os rótulos dos botões.
+    const float tamanho = 20;     // Altura de fonte escolhida para os rótulos dos botões.
     const float recuo_texto = 12; // Margem esquerda comum às quatro respostas.
     Vector2 medida = MeasureTextEx(fonte, rotulo, tamanho, 1);
     Vector2 posicao = {area.x + (area.width - medida.x) / 2, area.y + (area.height - medida.y) / 2};
