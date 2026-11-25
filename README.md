@@ -4,7 +4,7 @@ Projeto desenvolvido em linguagem C pela equipe **Sete Copas**, para a disciplin
 
 A proposta é um Jogo do Milhão com temática de games e narrativa de fantasia medieval em pixel art. Um dragão parte para libertar uma princesa aprisionada por um príncipe tirano. A partida planejada terá 15 perguntas, progressão por dificuldade e ajudas associadas a minigames.
 
-Atualmente, o projeto conta com a parte básica de gerenciamento das perguntas, executada pelo terminal. A partida e os recursos gráficos serão desenvolvidos na etapa criativa.
+A interface gráfica reúne o quiz e o gerenciamento das perguntas. O cadastro também está acessível pelo terminal.
 
 - [Código do jogo](src/)
 - [Perguntas iniciais](dados/perguntas_iniciais.csv)
@@ -38,17 +38,19 @@ Execute os comandos **na raiz do repositório**, onde está o Makefile:
 | Comando       | Operação                   |
 | ---           | ---                        |
 | `make`        | Compila o projeto          |
-| `make run`    | Compila e executa          |
+| `make run`    | Compila e abre a interface gráfica |
 | `make clean`  | Remove o executável gerado |
 
-Durante a execução, escolha uma opção do menu pelo número correspondente. A opção `0` encerra o programa e salva o banco em binário.
+Para abrir o cadastro no terminal, compile com `make` e execute `./dragao-do-milhao --terminal`. No Windows, depois de compilar com `mingw32-make`, execute `.\dragao-do-milhao.exe --terminal` no PowerShell.
+
+No terminal, escolha uma opção pelo número correspondente. A opção `0` encerra o programa e salva o banco em binário. Na interface gráfica, o banco é salvo ao confirmar uma alteração em **Gerenciar perguntas**.
 
 ## Arquivos de dados
 
 | Arquivo                           | Finalidade                          |
 | ---                               | ---                                 |
 | `dados/perguntas_iniciais.csv`    | Base inicial preparada pela equipe  |
-| `dados/perguntas.dat`             | Banco atualizado, salvo ao encerrar |
+| `dados/perguntas.dat`             | Banco atualizado pelos dois modos |
 | `dados/perguntas_exportadas.csv`  | Exportação solicitada pela opção 7  |
 
 Na primeira execução, quando o binário ainda não existe, o programa importa o CSV inicial. Nas execuções seguintes, recupera o banco pelo binário. Alterar o CSV inicial depois disso não atualiza automaticamente o banco salvo.

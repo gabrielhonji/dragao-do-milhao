@@ -21,8 +21,10 @@ static const char *nomes_dificuldade[] = {"", "Muito fácil", "Fácil", "Média"
 
 void abrir_editor_perguntas(EditorPerguntas *editor, ModoEditorPerguntas modo, const Pergunta *pergunta)
 {
+    // Reinicia foco, seleção e mensagem a cada abertura do editor.
     *editor = (EditorPerguntas){.modo = modo};
     if (pergunta != NULL) {
+        // A cópia mantém o ID para localizar a mesma pergunta ao salvar ou excluir.
         editor->pergunta = *pergunta;
         if (editor->pergunta.dificuldade < muito_facil || editor->pergunta.dificuldade > muito_dificil)
             editor->pergunta.dificuldade = muito_facil;
@@ -43,6 +45,8 @@ static Rectangle caixa_texto(int campo)
 
 /**
  * @brief Lê caracteres para o campo ativo, mantendo sequências UTF-8 completas.
+ * @param texto Conteúdo editável do campo.
+ * @param capacidade Tamanho do vetor em bytes, incluindo o '\0'.
  * @param selecionar_tudo Indica se a próxima edição substitui todo o conteúdo.
  */
 static void editar_texto(char *texto, size_t capacidade, bool *selecionar_tudo)
@@ -57,7 +61,7 @@ static void editar_texto(char *texto, size_t capacidade, bool *selecionar_tudo)
             *selecionar_tudo = false;
         }
         else if (tamanho > 0) {
-            // Um caractere acentuado pode ocupar mais de um byte.
+            // Volta pelos bytes de continuação (10xxxxxx) até o começo do caractere.
             do {
                 tamanho--;
             } while (tamanho > 0 && ((unsigned char)texto[tamanho] & 0xc0) == 0x80);
@@ -76,6 +80,7 @@ static void editar_texto(char *texto, size_t capacidade, bool *selecionar_tudo)
             tamanho = 0;
             *selecionar_tudo = false;
         }
+        // Reserva espaço para todos os bytes da letra e para o '\0'.
         if (tamanho + (size_t)bytes >= capacidade)
             continue;
 
@@ -87,12 +92,15 @@ static void editar_texto(char *texto, size_t capacidade, bool *selecionar_tudo)
 
 /**
  * @brief Aplica uma operação a uma cópia do banco e só a adota depois de gravá-la.
+ * @param banco Banco em uso na listagem e no jogo.
+ * @param editor Operação escolhida e pergunta de trabalho.
  * @return Texto do erro ou NULL em caso de sucesso.
  */
 static const char *gravar_mudanca(Banco_perguntas *banco, EditorPerguntas *editor)
 {
     Banco_perguntas copia = *banco;
-    // Copia os vetores, pois a API pode realocar os dados ao inserir ou excluir.
+    // A atribuição acima copia os ponteiros. Alocamos os vetores da cópia para que
+    // a API trabalhe em memória própria, inclusive quando precisa realocar.
     copia.capacidade_reservada = banco->quant_perguntas;
     size_t bytes_perguntas = (size_t)banco->quant_perguntas * sizeof *copia.perguntas;
     size_t bytes_ids = (size_t)banco->quant_ids_disponiveis * sizeof *copia.ids_disponiveis;
@@ -119,6 +127,7 @@ static const char *gravar_mudanca(Banco_perguntas *banco, EditorPerguntas *edito
         if (resultado == 0) {
             FILE *arquivo = NULL;
             erro = "Não foi possível gravar o banco de perguntas.";
+            // Depois de salvar, o banco passa a ser dono dos vetores da cópia.
             if (salvar_binario(&copia, &arquivo) == 0) {
                 free(banco->perguntas);
                 free(banco->ids_disponiveis);
@@ -128,6 +137,7 @@ static const char *gravar_mudanca(Banco_perguntas *banco, EditorPerguntas *edito
         }
     }
 
+    // Em caso de falha, libera a cópia e deixa o rascunho aberto para tentar novamente.
     free(copia.perguntas);
     free(copia.ids_disponiveis);
     return erro;
@@ -139,6 +149,7 @@ bool atualizar_editor_perguntas(EditorPerguntas *editor, Banco_perguntas *banco)
         return false;
 
     if (botao_clicado(cancelar)) {
+        // A lista continua com os dados gravados porque a edição usa um rascunho.
         editor->modo = EDITOR_FECHADO;
         return false;
     }
@@ -154,6 +165,7 @@ bool atualizar_editor_perguntas(EditorPerguntas *editor, Banco_perguntas *banco)
             }
         }
         if (IsKeyPressed(KEY_TAB)) {
+            // O resto da divisão volta ao enunciado depois da alternativa D.
             editor->campo_ativo = (editor->campo_ativo + 1) % TOTAL_CAMPOS_TEXTO;
             editor->selecionar_texto = false;
         }
@@ -170,6 +182,7 @@ bool atualizar_editor_perguntas(EditorPerguntas *editor, Banco_perguntas *banco)
         if (!botao_clicado(confirmar))
             return false;
         for (int i = 0; i < TOTAL_CAMPOS_TEXTO; i++) {
+            // strspn pula os espaços iniciais. Chegar ao '\0' aqui indica um campo em branco.
             if (textos[i][strspn(textos[i], " \t\r\n")] == '\0') {
                 editor->erro = "Preencha o enunciado e as quatro alternativas.";
                 editor->campo_ativo = i;
@@ -178,6 +191,7 @@ bool atualizar_editor_perguntas(EditorPerguntas *editor, Banco_perguntas *banco)
             }
         }
     }
+    // Na exclusão, aguarda o clique de confirmação antes de chamar o banco.
     else if (!botao_clicado(confirmar)) {
         return false;
     }
@@ -200,6 +214,7 @@ static void desenhar_campo(Font fonte, Rectangle area, const char *texto, bool a
     const float recuo = 12;
     const float tamanho = 20;
     const char *visivel = texto;
+    // Avança só o início do trecho visível, para manter o fim da digitação dentro da caixa.
     while (*visivel && MeasureTextEx(fonte, visivel, tamanho, 1).x > area.width - 2 * recuo) {
         int bytes;
         GetCodepointNext(visivel, &bytes);

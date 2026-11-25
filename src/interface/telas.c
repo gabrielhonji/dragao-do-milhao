@@ -217,9 +217,9 @@ static int coletar_pagina_perguntas(const Banco_perguntas *banco, const char *bu
  */
 static Rectangle faixa_pergunta(Rectangle painel, int linha)
 {
-    const float recuo = 12;   // Margem esquerda e direita das faixas.
-    const float topo = 49;    // Espaço entre o topo do painel e a primeira faixa.
-    const float altura = 43;  // Altura de uma faixa.
+    const float recuo = 12;    // Margem esquerda e direita das faixas.
+    const float topo = 49;     // Espaço entre o topo do painel e a primeira faixa.
+    const float altura = 43;   // Altura de uma faixa.
     const float intervalo = 6; // Espaço livre entre duas faixas.
 
     return (Rectangle){painel.x + recuo, painel.y + topo + linha * (altura + intervalo),
@@ -248,7 +248,7 @@ static bool atualizar_busca_id(char *busca, size_t capacidade)
             continue;
 
         busca[tamanho] = (char)tecla;
-        tamanho++; // Avança para a posição onde vai ficar o terminador.
+        tamanho++;             // Avança para a posição onde vai ficar o terminador.
         busca[tamanho] = '\0'; // Mantém a string terminada após cada dígito.
         mudou = true;
     }
@@ -362,6 +362,8 @@ void executar_tela_teste(Banco_perguntas *banco)
     const int ovos_teste[] = {0, 0, 1, 2};                              // Filhotes para cada teste.
     Partida partida;
     const Pergunta *pergunta_atual = NULL;
+    int questao_exibida = 0; // Mantém o número na tela até o próximo sorteio, mesmo após o renascimento.
+    Dificuldade dificuldade_em_falta = 0;
     bool faltam_perguntas = false;
 
     // Botões.
@@ -379,6 +381,14 @@ void executar_tela_teste(Banco_perguntas *banco)
     int pagina_perguntas = 0;
     int id_selecionado = -1;    // -1 indica que nenhuma pergunta foi selecionada.
     int filtro_dificuldade = 0; // 0 mostra todas. As dificuldades válidas vão de 1 a 5.
+    const char *nomes_dificuldade[] = {
+        "Desconhecida",
+        "Muito fácil",
+        "Fácil",
+        "Média",
+        "Difícil",
+        "Muito difícil",
+    };
     char busca_id[5] = "";      // Quatro dígitos do ID e o '\0' no final.
     bool busca_em_foco = false; // O campo só recebe texto depois de um clique nele.
 
@@ -401,7 +411,7 @@ void executar_tela_teste(Banco_perguntas *banco)
     const Rectangle acao_quiz = {quiz.x, voltar.y, 200, voltar.height}; // Botão de confirmar.
     int alternativa_selecionada = -1;
     bool resposta_confirmada = false;
-    bool resposta_correta = false;
+    Resultado_resposta resultado_resposta = 0; // Só é consultado depois de confirmar.
 
     // A linha de ajudas começa 5 px abaixo da borda inferior da cena.
     const float y_ajudas = mapa.y + mapa.height + 5;
@@ -545,6 +555,8 @@ void executar_tela_teste(Banco_perguntas *banco)
             else if (botao_clicado(creditos))
                 tela_atual = TELA_CREDITOS;
             else if (botao_clicado(gerenciar)) {
+                dificuldade_em_falta = 0;
+                faltam_perguntas = false;
                 pagina_perguntas = 0;
                 id_selecionado = -1;
                 filtro_dificuldade = 0;
@@ -556,19 +568,23 @@ void executar_tela_teste(Banco_perguntas *banco)
             else if (botao_clicado(sair)) // Encerra o while principal.
                 break;
             else if (confirmou || botao_clicado(jogar)) { // Inicia um novo jogo.
-                inicializa_partida(&partida);
-                pergunta_atual = sorteia_pergunta(banco, &partida);
-                faltam_perguntas = pergunta_atual == NULL;
+                // A reserva de perguntas de cada dificuldade cobre também os renascimentos.
+                dificuldade_em_falta = verifica_banco_para_partida(banco);
+                if (dificuldade_em_falta == 0) {
+                    inicializa_partida(&partida);
+                    pergunta_atual = sorteia_pergunta(banco, &partida);
+                    faltam_perguntas = pergunta_atual == NULL;
 
-                // Define a quantidade de ajudas disponiveis para cada tipo de ajuda.
-                if (!faltam_perguntas) {
-                    usos_ajuda[AJUDA_BURRO] = 2;
-                    usos_ajuda[AJUDA_DRAGAO] = 1;
-                    usos_ajuda[AJUDA_PRINCESA] = 1;
-                    dicas = (DicasPergunta){0};
-                    alternativa_selecionada = -1;
-                    resposta_confirmada = false;
-                    tela_atual = TELA_JORNADA;
+                    if (!faltam_perguntas) {
+                        questao_exibida = partida.questao_atual;
+                        usos_ajuda[AJUDA_BURRO] = 2;
+                        usos_ajuda[AJUDA_DRAGAO] = 1;
+                        usos_ajuda[AJUDA_PRINCESA] = 1;
+                        dicas = (DicasPergunta){0};
+                        alternativa_selecionada = -1;
+                        resposta_confirmada = false;
+                        tela_atual = TELA_JORNADA;
+                    }
                 }
             }
         }
@@ -577,15 +593,18 @@ void executar_tela_teste(Banco_perguntas *banco)
             if (botao_clicado(voltar)) // Voltar nessa tela tem ação de cancelar
                 tela_atual = TELA_JORNADA;
             else if (botao_clicado(acao_quiz)) { // Confirma a retirada
-                partida.situacao = retirada;
-                previa_gruta = false;
-                if (partida.acertos >= 10)
-                    estado_gruta = GRUTA_OURO_MEDIO;
-                else if (partida.acertos >= 5)
-                    estado_gruta = GRUTA_OURO_BAIXO;
-                else
-                    estado_gruta = GRUTA_VAZIA;
-                tela_atual = TELA_GRUTA;
+                int marco = confirma_retirada(&partida);
+                if (marco >= 0) {
+                    // O ouro corresponde ao último marco conquistado na partida.
+                    if (marco == 10)
+                        estado_gruta = GRUTA_OURO_MEDIO;
+                    else if (marco == 5)
+                        estado_gruta = GRUTA_OURO_BAIXO;
+                    else
+                        estado_gruta = GRUTA_VAZIA;
+                    previa_gruta = false;
+                    tela_atual = TELA_GRUTA;
+                }
             }
         }
         else if (tela_atual == TELA_CREDITOS) {
@@ -593,13 +612,16 @@ void executar_tela_teste(Banco_perguntas *banco)
                 tela_atual = TELA_MENU;
         }
         else if (tela_atual == TELA_GERENCIAMENTO) {
+            // Enquanto o formulário estiver aberto, ele recebe os cliques e o teclado da tela.
             if (editor.modo != EDITOR_FECHADO) {
                 ModoEditorPerguntas modo = editor.modo;
                 if (atualizar_editor_perguntas(&editor, banco)) {
+                    // A gravação pode mudar a quantidade e a ordem das linhas. Recomeça a lista.
                     pagina_perguntas = 0;
                     id_selecionado = -1;
                     retorno_edicao = modo == EDITOR_EXCLUIR ? "Pergunta excluída." : "Pergunta salva.";
                     if (modo == EDITOR_NOVA) {
+                        // Limpa os filtros da busca para incluir a nova pergunta nos resultados.
                         busca_id[0] = '\0';
                         filtro_dificuldade = 0;
                     }
@@ -615,6 +637,7 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
             else if (id_selecionado >= 0 &&
                      (botao_clicado(editar_pergunta) || botao_clicado(remover_pergunta))) {
+                // Busca pelo ID selecionado. O índice do vetor pode mudar após outra operação.
                 int indice = pesquisar_pergunta(banco, id_selecionado);
                 if (indice >= 0) {
                     ModoEditorPerguntas modo = botao_clicado(editar_pergunta) ? EDITOR_ALTERAR : EDITOR_EXCLUIR;
@@ -698,33 +721,23 @@ void executar_tela_teste(Banco_perguntas *banco)
                 alternativa_selecionada = -1;
         }
         // Enter, o botão de ação ou repetir o clique na alternativa confirmam a escolha.
-        else if (alternativa_selecionada >= 0 && (confirmou || botao_clicado(acao_quiz) || repetiu_alternativa)) {
-            // Confirma a resposta.
+        else if (!faltam_perguntas && alternativa_selecionada >= 0 &&
+                 (confirmou || botao_clicado(acao_quiz) || repetiu_alternativa)) {
             if (!resposta_confirmada) {
-                char resposta = 'A' + alternativa_selecionada;           // Transforma o índice das alternativas em letras.
-                resposta_correta = resposta == pergunta_atual->resposta; // Valida se a resposta ta certa.
+                char resposta = 'A' + alternativa_selecionada;
+                // O quiz aplica as regras da partida. A tela guarda o resultado para dar o retorno ao jogador.
+                resultado_resposta = processa_resposta(&partida, pergunta_atual, resposta);
                 resposta_confirmada = true;
-
-                if (resposta_correta) {
-                    partida.acertos++;
-
-                    // A ultima resposta correta significa que o jogador venceu o jogo.
-                    if (partida.questao_atual == 15)
-                        partida.situacao = vitoria;
-                }
-                else {
-                    // Até integrar o renascimento por ovos, o primeiro erro encerra a tentativa.
-                    partida.situacao = derrota;
-                }
             }
-            // Só avança em uma nova ação, depois de mostrar o resultado da resposta.
-            else if (resposta_correta && partida.questao_atual < 15 && !faltam_perguntas) {
+            // Acertos, marcos e renascimentos deixam a partida em andamento.
+            else if (partida.situacao == andamento) {
                 const Pergunta *proxima = sorteia_pergunta(banco, &partida);
                 if (proxima == NULL)
                     faltam_perguntas = true;
                 else {
                     // Troca a pergunta só depois de um sorteio bem sucedido.
                     pergunta_atual = proxima;
+                    questao_exibida = partida.questao_atual;
                     alternativa_selecionada = -1;
                     resposta_confirmada = false;
                     // Efeitos somem ao trocar a pergunta. Os usos restantes resetam por partida.
@@ -746,8 +759,8 @@ void executar_tela_teste(Banco_perguntas *banco)
         BeginScissorMode((int)area_exibida.x, (int)area_exibida.y, (int)area_exibida.width, (int)area_exibida.height);
         BeginMode2D(camera); // Daqui até EndMode2D, podemos desenhar nas coordenadas de 960 × 540.
         bool usa_fundo_escuro = tela_atual == TELA_MENU ||
-                               tela_atual == TELA_CREDITOS ||
-                               tela_atual == TELA_GERENCIAMENTO;
+                                tela_atual == TELA_CREDITOS ||
+                                tela_atual == TELA_GERENCIAMENTO;
         Color fundo = usa_fundo_escuro ? COR_FUNDO_MENU : RAYWHITE;
         DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, fundo);
 
@@ -775,8 +788,14 @@ void executar_tela_teste(Banco_perguntas *banco)
             desenhar_botao(fonte, creditos, "Créditos");
             desenhar_botao(fonte, sair, "Sair");
 
-            if (faltam_perguntas)
-                DrawTextEx(fonte, "Sem perguntas para iniciar.", (Vector2){586, 436}, 20, 1, COR_AVISO);
+            const Vector2 posicao_aviso = {jogar.x, sair.y + sair.height + 18}; // Espaço de 18 px abaixo dos botões.
+            if (dificuldade_em_falta != 0) {
+                DrawTextEx(fonte, "Faltam perguntas no banco.", posicao_aviso, 20, 1, COR_AVISO);
+                const char *nivel = TextFormat("Nível: %s", nomes_dificuldade[dificuldade_em_falta]);
+                DrawTextEx(fonte, nivel, (Vector2){posicao_aviso.x, posicao_aviso.y + 24}, 20, 1, COR_AVISO); // Distância à linha anterior.
+            }
+            else if (faltam_perguntas)
+                DrawTextEx(fonte, "Sem perguntas para iniciar.", posicao_aviso, 20, 1, COR_AVISO);
         }
         else if (tela_atual == TELA_CREDITOS) {
             const Rectangle painel_equipe = quiz;
@@ -833,15 +852,6 @@ void executar_tela_teste(Banco_perguntas *banco)
             const float y_cabecalho = lista_perguntas.y + 18;
             const float largura_enunciado = x_dificuldade - x_enunciado - 16; // Deixa 16 px antes da dificuldade.
 
-            const char *nomes_dificuldade[] = {
-                "Desconhecida",
-                "Muito fácil",
-                "Fácil",
-                "Média",
-                "Difícil",
-                "Muito difícil",
-            };
-
             DrawTextEx(fonte_titulo, "Gerenciar perguntas", (Vector2){lista_perguntas.x, 13}, 34, 1, COR_TEXTO_CLARO);
             Color fundo_busca = busca_em_foco ? COR_FACE_SELECIONADA : COR_ESCURO;
             desenhar_painel(campo_busca, fundo_busca);
@@ -886,11 +896,8 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
 
             if (total == 0) {
-                const char *mensagem_lista = banco->quant_perguntas == 0
-                    ? "Nenhuma pergunta cadastrada."
-                    : "Nenhuma pergunta encontrada.";
-                DrawTextEx(fonte, mensagem_lista, (Vector2){x_id, faixa_pergunta(lista_perguntas, 0).y},
-                           18, 1, COR_TEXTO_CLARO);
+                const char *mensagem_lista = banco->quant_perguntas == 0 ? "Nenhuma pergunta cadastrada." : "Nenhuma pergunta encontrada.";
+                DrawTextEx(fonte, mensagem_lista, (Vector2){x_id, faixa_pergunta(lista_perguntas, 0).y}, 18, 1, COR_TEXTO_CLARO);
             }
 
             bool tem_anterior = pagina_perguntas > 0;
@@ -909,11 +916,17 @@ void executar_tela_teste(Banco_perguntas *banco)
         else if (tela_atual == TELA_JORNADA) {
             const int questoes_jornada = 8;
             const int total_questoes = 15;
-            bool em_batalha = partida.questao_atual > questoes_jornada;
+            bool em_batalha = questao_exibida > questoes_jornada;
+            bool renascendo = resposta_confirmada && resultado_resposta == resposta_renascimento;
 
             const char *nome_etapa = em_batalha ? "Batalha" : "Jornada";
-            const char *titulo_quiz = TextFormat("%s - Questão %d de %d", nome_etapa, partida.questao_atual, total_questoes);
+            const char *titulo_quiz = TextFormat("%s - Questão %d de %d", nome_etapa, questao_exibida, total_questoes);
             DrawTextEx(fonte, titulo_quiz, (Vector2){24, 24}, tamanho_corpo, 1, BLACK);
+
+            // Alinha o contador de ovos à direita da cena, na mesma linha do título.
+            const char *ovos = TextFormat("Ovos: %d", partida.ovos_restantes);
+            float largura_ovos = MeasureTextEx(fonte, ovos, 20, 1).x;
+            DrawTextEx(fonte, ovos, (Vector2){mapa.x + mapa.width - largura_ovos, 24}, 20, 1, BLACK);
 
             CenaQuiz cena = em_batalha ? CENA_BATALHA : CENA_JORNADA;
             if (partida.situacao == derrota)
@@ -929,23 +942,28 @@ void executar_tela_teste(Banco_perguntas *banco)
                 titulo_cenario = "Estrada para o castelo";
             DrawTextEx(fonte, titulo_cenario, (Vector2){quiz.x, 24}, tamanho_corpo, 1, BLACK);
 
-            // Na batalha, desconta os 8 acertos ja feitos na jornada.
-            int acertos_etapa = em_batalha ? partida.acertos - questoes_jornada : partida.acertos;
-            int total_etapa = em_batalha ? total_questoes - questoes_jornada : questoes_jornada;
-            const char *progresso = TextFormat("%s: %d/%d", em_batalha ? "Golpes" : "Etapas", acertos_etapa, total_etapa);
             const Vector2 posicao_progresso = {mapa.x, mapa.y - 39}; // Rótulo na segunda linha acima da cena.
-            DrawTextEx(fonte, progresso, posicao_progresso, 20, 1, BLACK);
+            if (renascendo) {
+                // Enquanto a pergunta anterior aparece, o progresso da partida já está no marco.
+                const char *marco = TextFormat("Marco: %d", partida.checkpoint);
+                DrawTextEx(fonte, marco, posicao_progresso, 20, 1, BLACK);
+            }
+            else {
+                int valor = em_batalha ? calcula_pv_principe(&partida) : partida.acertos;
+                int limite = em_batalha ? PV_MAX_PRINCIPE : questoes_jornada;
+                const char *progresso = TextFormat("%s: %d/%d", em_batalha ? "PV" : "Etapas", valor, limite);
+                DrawTextEx(fonte, progresso, posicao_progresso, 20, 1, BLACK);
 
-            // Copia a posição e altura da barra e reduz apenas a largura do preenchimento dela.
-            const float espaco_progresso = 164; // Reserva a coluna do rótulo à esquerda da barra.
-            Rectangle fundo_vida = {mapa.x + espaco_progresso, mapa.y - 33, mapa.width - espaco_progresso, 16};
-            Rectangle preenchimento_vida = fundo_vida;
-            preenchimento_vida.width *= (float)acertos_etapa / total_etapa;
+                // A fração do valor que resta define a largura colorida da barra.
+                const float espaco_progresso = 164; // Reserva a coluna do rótulo à esquerda da barra.
+                Rectangle fundo_vida = {mapa.x + espaco_progresso, mapa.y - 33, mapa.width - espaco_progresso, 16}; // Centraliza a barra no rótulo.
+                Rectangle preenchimento_vida = fundo_vida;
+                preenchimento_vida.width *= (float)valor / limite;
 
-            // Barra de vida do boss ou progressão
-            DrawRectangleRec(fundo_vida, RAYWHITE);
-            DrawRectangleRec(preenchimento_vida, em_batalha ? MAROON : DARKGREEN);
-            DrawRectangleLinesEx(fundo_vida, 2, DARKGRAY);
+                DrawRectangleRec(fundo_vida, RAYWHITE);
+                DrawRectangleRec(preenchimento_vida, em_batalha ? MAROON : DARKGREEN);
+                DrawRectangleLinesEx(fundo_vida, 2, DARKGRAY);
+            }
 
             // Mostra os usos restantes e apaga os botões indisponíveis.
             for (int i = 0; i < TOTAL_AJUDAS; i++) {
@@ -991,10 +1009,14 @@ void executar_tela_teste(Banco_perguntas *banco)
                 mensagem = "Sem perguntas para avançar.";
             // Define a mensagem dependendo se errou, acertou ou ganhou;
             else if (resposta_confirmada) {
-                if (!resposta_correta)
+                if (renascendo)
+                    mensagem = TextFormat("Ovo usado. Próxima: questão %d.", partida.checkpoint + 1);
+                else if (resultado_resposta == resposta_marco)
+                    mensagem = "Marco alcançado! Você ganhou um ovo.";
+                else if (resultado_resposta == resposta_derrota)
                     mensagem = "Resposta incorreta.";
-                else if (partida.questao_atual == 15)
-                    mensagem = "Quiz concluído, a princesa foi salva.";
+                else if (resultado_resposta == resposta_vitoria)
+                    mensagem = "Vitória! A princesa foi salva.";
                 else
                     mensagem = "Resposta correta!";
             }
@@ -1006,8 +1028,7 @@ void executar_tela_teste(Banco_perguntas *banco)
                 DrawTextEx(fonte, mensagem, posicao, 20, 1.0f, BLACK);
             }
 
-            bool pode_continuar = resposta_confirmada && resposta_correta && partida.questao_atual < 15;
-            if (alternativa_selecionada >= 0 && !faltam_perguntas && (!resposta_confirmada || pode_continuar)) {
+            if (alternativa_selecionada >= 0 && !faltam_perguntas && partida.situacao == andamento) {
                 const char *rotulo = resposta_confirmada ? "Continuar" : "Confirmar";
                 desenhar_botao(fonte, acao_quiz, rotulo);
             }
@@ -1027,7 +1048,7 @@ void executar_tela_teste(Banco_perguntas *banco)
             desenhar_botao(fonte, acao_quiz, "Retirar");
         }
         else if (tela_atual == TELA_GRUTA) {
-            int filhotes = previa_gruta ? ovos_teste[estado_gruta] : 0;
+            int filhotes = previa_gruta ? ovos_teste[estado_gruta] : partida.ovos_restantes;
             // Uma retirada antes do primeiro marco deixa o dragão vivo no chão, sem pilha.
             bool mostrar_dragao = estado_gruta != GRUTA_VAZIA || (!previa_gruta && partida.situacao == retirada);
             desenhar_gruta(fonte, estado_gruta, filhotes, mostrar_dragao);
@@ -1039,8 +1060,10 @@ void executar_tela_teste(Banco_perguntas *banco)
                     texto_gruta = "Vitória! A princesa foi salva.";
                 else if (partida.situacao == derrota)
                     texto_gruta = "Derrota! A gruta está vazia.";
+                else if (partida.checkpoint > 0)
+                    texto_gruta = TextFormat("Retirada no marco %d.", partida.checkpoint);
                 else
-                    texto_gruta = TextFormat("Retirada: %d acertos", partida.acertos);
+                    texto_gruta = "Retirada antes do primeiro marco.";
             }
             // Divide o espaço vertical livre para alinhar o texto ao botão Voltar.
             const Vector2 posicao_texto = {quiz.x, voltar.y + (voltar.height - tamanho_corpo) / 2.0f};

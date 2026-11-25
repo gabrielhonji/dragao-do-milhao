@@ -17,11 +17,11 @@ typedef enum {
 } ModoEditorPerguntas;
 
 typedef struct {
-    ModoEditorPerguntas modo;
-    Pergunta pergunta;          // Rascunho independente da pergunta no banco.
-    int campo_ativo;
-    bool selecionar_texto;
-    const char *erro;
+    ModoEditorPerguntas modo; // Diz qual formulário ou confirmação está aberta.
+    Pergunta pergunta;       // Rascunho independente da pergunta no banco.
+    int campo_ativo;          // 0 é o enunciado. De 1 a 4 são as alternativas A a D.
+    bool selecionar_texto;    // Após Ctrl+A, a próxima digitação substitui o campo.
+    const char *erro;          // Mensagem exibida no formulário, ou NULL.
 } EditorPerguntas;
 
 /**
@@ -34,6 +34,8 @@ void abrir_editor_perguntas(EditorPerguntas *editor, ModoEditorPerguntas modo, c
 
 /**
  * @brief Processa o teclado e os botões da tela de edição.
+ * @param editor Formulário aberto e seus dados em edição.
+ * @param banco Banco atualizado após uma gravação bem-sucedida.
  * @return true quando uma operação foi gravada e a listagem precisa ser atualizada.
  */
 bool atualizar_editor_perguntas(EditorPerguntas *editor, Banco_perguntas *banco);

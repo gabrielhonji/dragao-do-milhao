@@ -1,7 +1,7 @@
 /**
  * @file main.c
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief Inicia o modo visual de teste ou chama o menu de cadastro inicial e as funções correspondentes a este, a main também é responsável pela carga e salvamento dos dados nos respectivos arquivos.
+ * @brief Carrega o banco de perguntas e abre a interface gráfica ou o cadastro pelo terminal.
  * @version 0.1
  * @date 2026-11-10
  * 
@@ -22,6 +22,14 @@ static void descartar_linha(void);
 
 int main(int quantidade_argumentos, char *argumentos[])
 {
+    int modo_terminal = quantidade_argumentos == 2 && strcmp(argumentos[1], "--terminal") == 0;
+    int modo_visual = quantidade_argumentos == 1 ||
+                      (quantidade_argumentos == 2 && strcmp(argumentos[1], "--visual") == 0);
+    if (!modo_terminal && !modo_visual) {
+        fprintf(stderr, "Uso: %s [--terminal]\n", argumentos[0]);
+        return EXIT_FAILURE;
+    }
+
     Banco_perguntas banco_perguntas;
     FILE *arquivos_csv = NULL;
     int retorno_carregar_csv;
@@ -55,7 +63,7 @@ int main(int quantidade_argumentos, char *argumentos[])
         printf("Arquivo binário carregado\n");
     }
 
-    if (quantidade_argumentos > 1 && strcmp(argumentos[1], "--visual") == 0) {
+    if (modo_visual) {
         srand((unsigned int)time(NULL));
         executar_tela_teste(&banco_perguntas);
 
