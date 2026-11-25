@@ -11,12 +11,14 @@
 
 #ifndef TELAS_H
 #define TELAS_H
+#include <stdbool.h>
 #include "../perguntas/banco_perguntas.h"
 
 /**
  * @brief Abre a interface gráfica e mantém a navegação até fechar a janela.
  * @param banco Banco inicializado pela main, consultado durante o quiz e atualizado pelo gerenciador.
+ * @param iniciar_em_tela_cheia Abre no monitor inteiro quando solicitado na linha de comando.
  */
-void executar_tela_teste(Banco_perguntas *banco);
+void executar_tela_teste(Banco_perguntas *banco, bool iniciar_em_tela_cheia);
 
 #endif

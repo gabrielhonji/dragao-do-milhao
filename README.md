@@ -23,7 +23,7 @@ Para iniciar pela interface do VS Code, abra **Terminal → Executar Tarefa** e 
 
 ## Como jogar
 
-No menu inicial, escolha **Jogar**. Clique em uma alternativa e pressione **Enter** para confirmar. Clicar novamente na alternativa selecionada também confirma a resposta. Após ver o resultado, avance para a próxima pergunta. **F11** alterna a tela cheia.
+No menu inicial, escolha **Jogar**. Clique em uma alternativa e pressione **Enter** para confirmar. Clicar novamente na alternativa selecionada também confirma a resposta. Após ver o resultado, avance para a próxima pergunta. Use o botão **Tela cheia** no menu ou alterne com **F11** ou **Alt+Enter** durante a partida. Para iniciar em tela cheia, execute `./dragao-do-milhao --tela-cheia` no Linux ou `.\dragao-do-milhao.exe --tela-cheia` no PowerShell.
 
 O jogo sorteia uma pergunta do nível correspondente a cada etapa. O histórico mantém os IDs já sorteados durante toda a partida, inclusive após um renascimento.
 

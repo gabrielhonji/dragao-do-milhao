@@ -17,9 +17,11 @@ BotoesMenu montar_botoes_menu(void)
     const Rectangle gerenciar = {jogar.x, ranking.y + passo, jogar.width, jogar.height};
     const Rectangle creditos = {jogar.x, gerenciar.y + passo, 151, jogar.height};
     const Rectangle sair = {creditos.x + creditos.width + 9, creditos.y, 158, jogar.height}; // Intervalo de 9 px entre os botões.
-    const Rectangle som = {jogar.x, creditos.y + passo, jogar.width, jogar.height};
+    // A última linha repete as duas colunas de Créditos e Sair.
+    const Rectangle som = {creditos.x, creditos.y + passo, creditos.width, jogar.height};
+    const Rectangle tela_cheia = {sair.x, som.y, sair.width, jogar.height};
 
-    return (BotoesMenu){jogar, ranking, gerenciar, creditos, sair, som};
+    return (BotoesMenu){jogar, ranking, gerenciar, creditos, sair, som, tela_cheia};
 }
 
 AcaoMenu ler_acao_menu(const BotoesMenu *botoes, bool janela_em_foco, bool confirmou)
@@ -34,6 +36,8 @@ AcaoMenu ler_acao_menu(const BotoesMenu *botoes, bool janela_em_foco, bool confi
         return MENU_GERENCIAR;
     if (botao_clicado(botoes->som))
         return MENU_ALTERNAR_SOM;
+    if (botao_clicado(botoes->tela_cheia))
+        return MENU_ALTERNAR_TELA;
     if (botao_clicado(botoes->sair))
         return MENU_SAIR;
     if (confirmou || botao_clicado(botoes->jogar))
@@ -67,6 +71,7 @@ void desenhar_menu(const BotoesMenu *botoes, Font fonte, Font fonte_titulo,
     desenhar_botao_com_estado(fonte, botoes->sair, "Sair", BOTAO_SAIDA, true);
     desenhar_botao_com_estado(fonte, botoes->som, som_ligado ? "Som ligado" : "Som desligado",
                              som_ligado ? BOTAO_SECUNDARIO : BOTAO_SAIDA, true);
+    desenhar_botao(fonte, botoes->tela_cheia, "Tela cheia");
 
     const Vector2 posicao_aviso = {botoes->jogar.x, botoes->som.y + botoes->som.height + 18}; // Espaço de 18 px abaixo do botão de som.
     if (dificuldade_em_falta != NULL) {

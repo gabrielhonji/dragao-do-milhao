@@ -16,6 +16,7 @@ typedef struct
     Rectangle creditos;
     Rectangle sair;
     Rectangle som;
+    Rectangle tela_cheia;
 } BotoesMenu;
 
 typedef enum
@@ -26,6 +27,7 @@ typedef enum
     MENU_RANKING,
     MENU_GERENCIAR,
     MENU_ALTERNAR_SOM,
+    MENU_ALTERNAR_TELA,
     MENU_SAIR,
     MENU_JOGAR,
 } AcaoMenu;

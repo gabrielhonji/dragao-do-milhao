@@ -71,10 +71,11 @@ static bool preparar_banco_perguntas(Banco_perguntas *banco, FILE **arquivo_dat)
 int main(int quantidade_argumentos, char *argumentos[])
 {
     int modo_terminal = quantidade_argumentos == 2 && strcmp(argumentos[1], "--terminal") == 0;
-    int modo_visual = quantidade_argumentos == 1 ||
+    bool iniciar_em_tela_cheia = quantidade_argumentos == 2 && strcmp(argumentos[1], "--tela-cheia") == 0;
+    int modo_visual = quantidade_argumentos == 1 || iniciar_em_tela_cheia ||
                       (quantidade_argumentos == 2 && strcmp(argumentos[1], "--visual") == 0);
     if (!modo_terminal && !modo_visual) {
-        fprintf(stderr, "Uso: %s [--terminal]\n", argumentos[0]);
+        fprintf(stderr, "Uso: %s [--visual | --tela-cheia | --terminal]\n", argumentos[0]);
         return EXIT_FAILURE;
     }
 
@@ -94,7 +95,7 @@ int main(int quantidade_argumentos, char *argumentos[])
 
     if (modo_visual) {
         srand((unsigned int)time(NULL));
-        executar_tela_teste(&banco_perguntas);
+        executar_tela_teste(&banco_perguntas, iniciar_em_tela_cheia);
 
         free(banco_perguntas.perguntas);
         free(banco_perguntas.ids_disponiveis);

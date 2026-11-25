@@ -210,7 +210,7 @@ static TrilhaAudio trilha_da_tela(Tela tela, const TelaQuiz *quiz)
     return TRILHA_JORNADA;
 }
 
-void executar_tela_teste(Banco_perguntas *banco)
+void executar_tela_teste(Banco_perguntas *banco, bool iniciar_em_tela_cheia)
 {
     // Navegação e botão compartilhado pelas telas.
     Tela tela_atual = TELA_MENU;
@@ -295,9 +295,15 @@ void executar_tela_teste(Banco_perguntas *banco)
     int escala_do_quadro = 1;
     int ultima_escala_solicitada = 1;
 
+    if (iniciar_em_tela_cheia)
+        alternar_tela_cheia();
+
     while (!WindowShouldClose()) {
         bool janela_em_foco = IsWindowFocused();
-        if (janela_em_foco && IsKeyPressed(KEY_F11))
+        bool enter = janela_em_foco && IsKeyPressed(KEY_ENTER);
+        bool alt_enter = enter && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT));
+        bool atalho_tela = janela_em_foco && (IsKeyPressed(KEY_F11) || alt_enter);
+        if (atalho_tela)
             alternar_tela_cheia();
 
         // Sem uma área útil, avança o quadro sem desenhar a interface.
@@ -353,7 +359,7 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
         }
 
-        bool confirmou = janela_em_foco && IsKeyPressed(KEY_ENTER); // Aceita Enter enquanto o jogo está em foco.
+        bool confirmou = enter && !atalho_tela; // Alt+Enter troca a janela sem confirmar a resposta.
         /* Bloco de validação de ações por telas */
         Tela tela_anterior = tela_atual;
         if (tela_atual == TELA_MENU) {
@@ -364,6 +370,11 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
             else if (acao == MENU_CREDITOS)
                 tela_atual = TELA_CREDITOS;
+            else if (acao == MENU_ALTERNAR_TELA) {
+                if (!atalho_tela)
+                    alternar_tela_cheia();
+                tocar_efeito(SOM_BOTAO);
+            }
             else if (acao == MENU_ALTERNAR_SOM) {
                 alternar_som();
                 tocar_efeito(SOM_BOTAO); // Ao religar o som, o clique já pode ser ouvido.
