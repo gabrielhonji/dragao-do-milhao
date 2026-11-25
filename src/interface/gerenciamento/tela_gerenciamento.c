@@ -205,7 +205,7 @@ void desenhar_gerenciamento(const TelaGerenciamento *tela, const Banco_perguntas
     const float y_cabecalho = tela->lista_perguntas.y + 18;
     const float largura_enunciado = x_dificuldade - x_enunciado - 16; // Deixa 16 px antes da dificuldade.
 
-    DrawTextEx(fonte_titulo, "Gerenciar perguntas", (Vector2){tela->lista_perguntas.x, 13}, 34, 1, COR_TEXTO_CLARO);
+    DrawTextEx(fonte_titulo, "Gerenciar perguntas", (Vector2){tela->lista_perguntas.x, 16}, 34, 1, COR_TEXTO_CLARO);
     Color fundo_busca = tela->busca_em_foco ? COR_FACE_SELECIONADA : COR_ESCURO;
     desenhar_painel(tela->campo_busca, fundo_busca);
     const char *rotulo_busca = tela->busca_id[0] == '\0' ? "Buscar por ID" : tela->busca_id;

@@ -57,6 +57,7 @@ enum
 {
     LARGURA_BASE = 960,
     ALTURA_BASE = 540,
+    MARGEM_BASE = 12,
 };
 
 /** @brief Alterna a tela cheia pelo gerenciador de janelas quando a sessão oferece esse recurso. */
@@ -90,25 +91,58 @@ static void alternar_tela_cheia(void)
 }
 
 /**
- * @brief Calcula onde exibir a tela na janela.
- * @return Retângulo centralizado, na maior escala inteira que cabe quando possível.
+ * @brief Calcula a área da janela após reservar a mesma margem nas quatro bordas.
  */
-static Rectangle calcular_area_exibicao(void)
+static Rectangle calcular_area_interna(void)
 {
     int largura_tela = GetScreenWidth();
     int altura_tela = GetScreenHeight();
     float escala_x = (float)largura_tela / LARGURA_BASE;
     float escala_y = (float)altura_tela / ALTURA_BASE;
+    int margem = (int)(MARGEM_BASE * (escala_x < escala_y ? escala_x : escala_y));
+    return (Rectangle){margem, margem, largura_tela - 2 * margem, altura_tela - 2 * margem};
+}
+
+/** @brief Centraliza o jogo na área interna, preservando suas proporções. */
+static Rectangle calcular_area_exibicao(Rectangle area)
+{
+    float escala_x = area.width / LARGURA_BASE;
+    float escala_y = area.height / ALTURA_BASE;
     float escala = escala_x < escala_y ? escala_x : escala_y;
 
-    // Uma escala inteira mantém todos os pixels do mesmo tamanho.
-    if (escala >= 1.0f)
-        escala = (int)escala;
+    int largura = (int)(LARGURA_BASE * escala + 0.5f);
+    int altura = (int)(ALTURA_BASE * escala + 0.5f);
+    return (Rectangle){area.x + (int)(area.width - largura) / 2,
+                       area.y + (int)(area.height - altura) / 2, largura, altura};
+}
 
-    int largura_exibida = (int)(LARGURA_BASE * escala);
-    int altura_exibida = (int)(ALTURA_BASE * escala);
-    return (Rectangle){(largura_tela - largura_exibida) / 2, (altura_tela - altura_exibida) / 2,
-                       largura_exibida, altura_exibida};
+/** @brief Prepara a textura em que o quadro inteiro será desenhado. */
+static RenderTexture2D carregar_quadro(int escala)
+{
+    RenderTexture2D quadro = LoadRenderTexture(LARGURA_BASE * escala, ALTURA_BASE * escala);
+    if (IsRenderTextureValid(quadro))
+        SetTextureFilter(quadro.texture, TEXTURE_FILTER_POINT);
+    return quadro;
+}
+
+/** @brief Prolonga a vinheta do sopro pelas faixas internas do enquadramento. */
+static void estender_bordas_sopro(Texture2D textura, Rectangle quadro, Rectangle limite)
+{
+    const Vector2 origem = {0, 0};
+    if (quadro.width < limite.width) {
+        Rectangle esquerda = {limite.x, quadro.y, quadro.x - limite.x, quadro.height};
+        float fim = quadro.x + quadro.width;
+        Rectangle direita = {fim, quadro.y, limite.x + limite.width - fim, quadro.height};
+        DrawTexturePro(textura, (Rectangle){0, 0, 1, -textura.height}, esquerda, origem, 0, WHITE);
+        DrawTexturePro(textura, (Rectangle){textura.width - 1, 0, 1, -textura.height}, direita, origem, 0, WHITE);
+    }
+    else if (quadro.height < limite.height) {
+        Rectangle topo = {quadro.x, limite.y, quadro.width, quadro.y - limite.y};
+        float fim = quadro.y + quadro.height;
+        Rectangle base = {quadro.x, fim, quadro.width, limite.y + limite.height - fim};
+        DrawTexturePro(textura, (Rectangle){0, textura.height - 1, textura.width, 1}, topo, origem, 0, WHITE);
+        DrawTexturePro(textura, (Rectangle){0, 0, textura.width, 1}, base, origem, 0, WHITE);
+    }
 }
 
 /**
@@ -224,10 +258,21 @@ void executar_tela_teste(Banco_perguntas *banco)
         return;
     }
 
+    RenderTexture2D quadro = carregar_quadro(1);
+    if (!IsRenderTextureValid(quadro)) {
+        TraceLog(LOG_ERROR, "Falha ao preparar a textura da interface");
+        if (quadro.id != 0)
+            UnloadRenderTexture(quadro);
+        UnloadFont(fonte_titulo);
+        UnloadFont(fonte);
+        CloseWindow();
+        return;
+    }
+
     carregar_arte_cenas();
     iniciar_audio();
 
-    int escala_da_fonte = 1;
+    int escala_do_quadro = 1;
     int ultima_escala_solicitada = 1;
 
     while (!WindowShouldClose()) {
@@ -236,7 +281,8 @@ void executar_tela_teste(Banco_perguntas *banco)
             alternar_tela_cheia();
 
         // Sem uma área útil, avança o quadro sem desenhar a interface.
-        Rectangle area_exibida = calcular_area_exibicao();
+        Rectangle area_interna = calcular_area_interna();
+        Rectangle area_exibida = calcular_area_exibicao(area_interna);
         if (area_exibida.width <= 0 || area_exibida.height <= 0) {
             // Mesmo quando pulamos o desenho do quadro, a música precisa receber mais amostras.
             atualizar_audio(trilha_da_tela(tela_atual, &tela_quiz));
@@ -255,29 +301,34 @@ void executar_tela_teste(Banco_perguntas *banco)
         if (escala_dos_pixels < 1)
             escala_dos_pixels = 1;
 
-        // Rasteriza novas letras só quando muda o tamanho em pixels na tela.
+        // Atualiza a textura e rasteriza as fontes na escala em pixels do quadro.
         if (escala_dos_pixels != ultima_escala_solicitada) {
             ultima_escala_solicitada = escala_dos_pixels;
 
-            if (escala_dos_pixels != escala_da_fonte) {
+            if (escala_dos_pixels != escala_do_quadro) {
+                RenderTexture2D novo_quadro = carregar_quadro(escala_dos_pixels);
                 Font novo_texto = carregar_fonte_interface(tamanho_corpo * escala_dos_pixels);
                 Font novo_titulo = carregar_fonte_interface(tamanho_titulo * escala_dos_pixels);
 
-                if (fonte_carregada(novo_texto) && fonte_carregada(novo_titulo)) {
+                if (IsRenderTextureValid(novo_quadro) && fonte_carregada(novo_texto) && fonte_carregada(novo_titulo)) {
+                    UnloadRenderTexture(quadro);
                     UnloadFont(fonte);
                     UnloadFont(fonte_titulo);
+                    quadro = novo_quadro;
                     fonte = novo_texto;
                     fonte_titulo = novo_titulo;
-                    escala_da_fonte = escala_dos_pixels;
+                    escala_do_quadro = escala_dos_pixels;
                     TraceLog(LOG_INFO, "Fontes atualizadas: texto %d px, titulo %d px",
                              fonte.baseSize, fonte_titulo.baseSize);
                 }
                 else {
+                    if (novo_quadro.id != 0)
+                        UnloadRenderTexture(novo_quadro);
                     if (fonte_carregada(novo_texto))
                         UnloadFont(novo_texto);
                     if (fonte_carregada(novo_titulo))
                         UnloadFont(novo_titulo);
-                    TraceLog(LOG_WARNING, "Mantendo as fontes da escala anterior");
+                    TraceLog(LOG_WARNING, "Mantendo a textura e as fontes da escala anterior");
                 }
             }
         }
@@ -404,21 +455,16 @@ void executar_tela_teste(Banco_perguntas *banco)
         // As ações já trocaram a tela e a pergunta. Usa a mesma etapa que será desenhada neste quadro.
         atualizar_audio(trilha_da_tela(tela_atual, &tela_quiz));
 
-        // Para desenhar, a câmera faz o caminho jogo → janela: amplia pelo zoom e soma a margem.
-        Camera2D camera = {.offset = {area_exibida.x, area_exibida.y}, .zoom = escala};
-        BeginDrawing();
-
-        ClearBackground(BLACK); // Limpa a janela inteira, inclusive as barras que sobram ao redor do jogo.
-        // O recorte usa coordenadas da janela. Tudo que cair fora dessa área deixa as barras intactas.
-        BeginScissorMode((int)area_exibida.x, (int)area_exibida.y, (int)area_exibida.width, (int)area_exibida.height);
-        BeginMode2D(camera); // Daqui até EndMode2D, podemos desenhar nas coordenadas de 960 × 540.
         bool usa_fundo_escuro = tela_atual == TELA_MENU ||
                                 tela_atual == TELA_CREDITOS ||
                                 tela_atual == TELA_GERENCIAMENTO ||
                                 tela_atual == TELA_RANKING ||
                                 tela_atual == TELA_REGISTRAR_RESULTADO;
         Color fundo = usa_fundo_escuro ? COR_FUNDO_MENU : RAYWHITE;
-        DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, fundo);
+        // As bordas da textura limitam o desenho nas coordenadas de 960 × 540.
+        BeginTextureMode(quadro);
+        ClearBackground(fundo);
+        BeginMode2D((Camera2D){.zoom = escala_do_quadro});
 
         /* Desenha as telas e seus elementos. */
         if (tela_atual == TELA_MENU) {
@@ -456,9 +502,17 @@ void executar_tela_teste(Banco_perguntas *banco)
             desenhar_tela_gruta(&tela_gruta, &tela_quiz.partida, fonte, voltar, quiz.x, tamanho_corpo);
         }
 
-        // Sai das coordenadas do jogo, libera o recorte e apresenta o quadro pronto.
         EndMode2D();
-        EndScissorMode();
+        EndTextureMode();
+
+        BeginDrawing();
+        ClearBackground(BLACK);
+        DrawRectangleRec(area_interna, fundo);
+        if (tela_atual == TELA_SOPRO)
+            estender_bordas_sopro(quadro.texture, area_exibida, area_interna);
+        // A textura renderizada no OpenGL tem a origem na parte de baixo.
+        Rectangle origem = {0, 0, quadro.texture.width, -quadro.texture.height};
+        DrawTexturePro(quadro.texture, origem, area_exibida, (Vector2){0, 0}, 0, WHITE);
         EndDrawing();
     }
 
@@ -466,7 +520,8 @@ void executar_tela_teste(Banco_perguntas *banco)
     descarregar_arte_cenas();
     encerrar_audio();
 
-    // Descarrega as fontes.
+    // Libera a textura do quadro e as fontes antes de fechar a janela.
+    UnloadRenderTexture(quadro);
     UnloadFont(fonte_titulo);
     UnloadFont(fonte);
     CloseWindow();
