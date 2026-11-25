@@ -179,3 +179,38 @@ void desenhar_campo(Font fonte, Rectangle area, const char *texto, bool ativo, b
     }
     DrawTextEx(fonte, visivel, (Vector2){area.x + recuo, y}, tamanho, 1, selecionado ? COR_ESCURO : COR_TEXTO_CLARO);
 }
+
+void desenhar_previa_texto(Font fonte, const char *texto, Vector2 posicao, float largura)
+{
+    const float tamanho = 18;
+    const float espacamento = 1;
+    // strpbrk procura em texto o primeiro '\r' ou '\n' e retorna seu endereço, ou NULL se não encontrar.
+    // '\r' representa o retorno ao início da linha e aparece antes de '\n' em quebras CRLF.
+    if (strpbrk(texto, "\r\n") == NULL && MeasureTextEx(fonte, texto, tamanho, espacamento).x <= largura) {
+        DrawTextEx(fonte, texto, posicao, tamanho, espacamento, COR_TEXTO_CLARO);
+        return;
+    }
+
+    const char *fim_previa = texto;
+
+    // Como na quebra de linha do quiz, só mede nos separadores entre palavras.
+    for (const char *fim_palavra = texto; *fim_palavra != '\0'; fim_palavra++) {
+        char separador = *fim_palavra;
+        bool quebra_linha = separador == '\n' || separador == '\r';
+        if (separador != ' ' && !quebra_linha)
+            continue;
+
+        // Em %.*s, % abre a conversão, . indica um limite, * lê esse limite de um int e s indica uma string.
+        // A diferença entre os ponteiros dá o limite em bytes. Os três pontos finais são texto literal.
+        const char *trecho = TextFormat("%.*s...", (int)(fim_palavra - texto), texto);
+        if (MeasureTextEx(fonte, trecho, tamanho, espacamento).x > largura)
+            break;
+
+        fim_previa = fim_palavra;
+        if (quebra_linha)
+            break; // A prévia termina antes da quebra já presente no enunciado.
+    }
+
+    const char *previa = TextFormat("%.*s...", (int)(fim_previa - texto), texto);
+    DrawTextEx(fonte, previa, posicao, tamanho, espacamento, COR_TEXTO_CLARO);
+}
