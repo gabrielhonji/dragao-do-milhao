@@ -19,6 +19,7 @@
 #include "editor_perguntas.h"
 #include "../quiz/quiz.h"
 #include "../quiz/arquivo_partidas.h"
+#include "tela_menu.h"
 
 typedef enum
 {
@@ -414,14 +415,8 @@ void executar_tela_teste(Banco_perguntas *banco)
     Tela tela_atual = TELA_MENU;
     const Rectangle voltar = {24, 464, 200, 52};
 
-    // Menu principal e aviso de banco insuficiente.
     Dificuldade dificuldade_em_falta = 0;
-    const Rectangle jogar = {586, 205, 318, 44}; // Primeira linha da coluna.
-    const float passo = jogar.height + 12;       // A altura do botão mais 12 px de espaço até o próximo.
-    const Rectangle ranking = {jogar.x, jogar.y + passo, jogar.width, jogar.height};
-    const Rectangle gerenciar = {jogar.x, ranking.y + passo, jogar.width, jogar.height};
-    const Rectangle creditos = {jogar.x, gerenciar.y + passo, 151, jogar.height};
-    const Rectangle sair = {creditos.x + creditos.width + 9, creditos.y, 158, jogar.height}; // Intervalo de 9 px entre os botões.
+    const BotoesMenu botoes_menu = montar_botoes_menu();
 
     // Nomes usados no menu e na lista de perguntas.
     const char *nomes_dificuldade[] = {
@@ -616,16 +611,16 @@ void executar_tela_teste(Banco_perguntas *banco)
         bool repetiu_alternativa = alternativa_clicada >= 0 && alternativa_clicada == alternativa_selecionada;
 
         /* Bloco de validação de ações por telas */
-        // Verifica ações na tela do MENU.
         if (tela_atual == TELA_MENU) {
-            if (janela_em_foco && IsKeyPressed(KEY_F2)) { // Abre a prévia da gruta.
+            AcaoMenu acao = ler_acao_menu(&botoes_menu, janela_em_foco, confirmou);
+            if (acao == MENU_PREVIA_GRUTA) {
                 previa_gruta = true;
                 estado_gruta = GRUTA_VAZIA;
                 tela_atual = TELA_GRUTA;
             }
-            else if (botao_clicado(creditos))
+            else if (acao == MENU_CREDITOS)
                 tela_atual = TELA_CREDITOS;
-            else if (botao_clicado(ranking)) {
+            else if (acao == MENU_RANKING) {
                 FILE *arquivo_ranking = NULL; // O leitor recebe seu endereço e abre o arquivo.
                 total_ranking = carregar_registro_partidas(&registos_ranking, &arquivo_ranking);
 
@@ -635,7 +630,7 @@ void executar_tela_teste(Banco_perguntas *banco)
 
                 tela_atual = TELA_RANKING;
             }
-            else if (botao_clicado(gerenciar)) {
+            else if (acao == MENU_GERENCIAR) {
                 dificuldade_em_falta = 0;
                 faltam_perguntas = false;
                 pagina_perguntas = 0;
@@ -646,9 +641,9 @@ void executar_tela_teste(Banco_perguntas *banco)
                 retorno_edicao = NULL;
                 tela_atual = TELA_GERENCIAMENTO;
             }
-            else if (botao_clicado(sair)) // Encerra o while principal.
+            else if (acao == MENU_SAIR) // Encerra o while principal.
                 break;
-            else if (confirmou || botao_clicado(jogar)) { // Inicia um novo jogo.
+            else if (acao == MENU_JOGAR) {
                 // A reserva de perguntas de cada dificuldade cobre também os renascimentos.
                 dificuldade_em_falta = verifica_banco_para_partida(banco);
                 if (dificuldade_em_falta == 0) {
@@ -888,36 +883,8 @@ void executar_tela_teste(Banco_perguntas *banco)
 
         /* Desenha as telas e seus elementos. */
         if (tela_atual == TELA_MENU) {
-            desenhar_painel((Rectangle){24, 24, 524, 492}, COR_ESCURO);
-
-            desenhar_arte_menu();
-
-            const char *linhas[] = {"Dragão do", "Milhão"};
-            const int passo_titulo = 70; // Distância entre o topo da primeira linha e o da segunda.
-            const int sombra = 2;        // Desenha a cópia escura 2 pixels à direita e abaixo na base 960 × 540 (4 em escala 2×).
-
-            for (int i = 0; i < 2; i++) {
-                Vector2 posicao = {582, 39 + i * passo_titulo}; // A primeira linha começa em (582, 39) no menu.
-                Vector2 posicao_sombra = {posicao.x + sombra, posicao.y + sombra};
-
-                DrawTextEx(fonte_titulo, linhas[i], posicao_sombra, tamanho_titulo, 1, BLACK);
-                DrawTextEx(fonte_titulo, linhas[i], posicao, tamanho_titulo, 1, COR_TEXTO_CLARO);
-            }
-
-            desenhar_botao_com_estado(fonte, jogar, "Jogar", BOTAO_PRIMARIO, true);
-            desenhar_botao(fonte, ranking, "Ranking");
-            desenhar_botao(fonte, gerenciar, "Gerenciar perguntas");
-            desenhar_botao(fonte, creditos, "Créditos");
-            desenhar_botao(fonte, sair, "Sair");
-
-            const Vector2 posicao_aviso = {jogar.x, sair.y + sair.height + 18}; // Espaço de 18 px abaixo dos botões.
-            if (dificuldade_em_falta != 0) {
-                DrawTextEx(fonte, "Faltam perguntas no banco.", posicao_aviso, 20, 1, COR_AVISO);
-                const char *nivel = TextFormat("Nível: %s", nomes_dificuldade[dificuldade_em_falta]);
-                DrawTextEx(fonte, nivel, (Vector2){posicao_aviso.x, posicao_aviso.y + 24}, 20, 1, COR_AVISO); // Distância à linha anterior.
-            }
-            else if (faltam_perguntas)
-                DrawTextEx(fonte, "Sem perguntas para iniciar.", posicao_aviso, 20, 1, COR_AVISO);
+            const char *nivel = dificuldade_em_falta == 0 ? NULL : nomes_dificuldade[dificuldade_em_falta];
+            desenhar_menu(&botoes_menu, fonte, fonte_titulo, tamanho_titulo, nivel, faltam_perguntas);
         }
         else if (tela_atual == TELA_RANKING) {
             desenhar_ranking(fonte, fonte_titulo, voltar, registos_ranking, total_ranking);
