@@ -1,7 +1,7 @@
 /**
  * @file main.c
  * @author Murilo Henrique Alves Martins (murilomartins.2007@alunos.utfpr.edu.br)
- * @brief Inicia o modo visual de teste ou chama o menu de cadastro inicial e as funções correspondentes a este, a main também é responsável pela carga e salvamento dos dados nos respectivos arquivos.
+ * @brief Carrega o banco de perguntas e abre a interface gráfica ou o cadastro pelo terminal.
  * @version 0.1
  * @date 2026-11-10
  * 
@@ -17,8 +17,19 @@
 #include "perguntas/arquivos_perguntas.h"
 #include "interface/telas.h"
 
+static int cadastro_pergunta(Pergunta *pergunta);
+static void descartar_linha(void);
+
 int main(int quantidade_argumentos, char *argumentos[])
 {
+    int modo_terminal = quantidade_argumentos == 2 && strcmp(argumentos[1], "--terminal") == 0;
+    int modo_visual = quantidade_argumentos == 1 ||
+                      (quantidade_argumentos == 2 && strcmp(argumentos[1], "--visual") == 0);
+    if (!modo_terminal && !modo_visual) {
+        fprintf(stderr, "Uso: %s [--terminal]\n", argumentos[0]);
+        return EXIT_FAILURE;
+    }
+
     Banco_perguntas banco_perguntas;
     FILE *arquivos_csv = NULL;
     int retorno_carregar_csv;
@@ -52,7 +63,7 @@ int main(int quantidade_argumentos, char *argumentos[])
         printf("Arquivo binário carregado\n");
     }
 
-    if (quantidade_argumentos > 1 && strcmp(argumentos[1], "--visual") == 0) {
+    if (modo_visual) {
         srand((unsigned int)time(NULL));
         executar_tela_teste(&banco_perguntas);
 
@@ -73,7 +84,15 @@ int main(int quantidade_argumentos, char *argumentos[])
         printf("    0 - Encerrar Cadastro\n");
         do {
             printf("Digite sua opção: ");
-            scanf("%d", &opcao);
+            int leu = scanf("%d", &opcao);
+            if (leu == EOF) {
+                opcao = 0;
+                break;
+            }
+            if (leu != 1) {
+                opcao = -1;
+                descartar_linha();
+            }
             printf("\n");
             if (opcao != 0 && opcao != 1 && opcao != 2 && opcao != 3 && opcao != 4 && opcao != 5 && opcao != 6 && opcao != 7) {
                 printf("Opção Inválida\n");
@@ -86,9 +105,14 @@ int main(int quantidade_argumentos, char *argumentos[])
                 printf("Cadastro Encerrado\n");
                 break;
 
-            case 1:
-                inserir_pergunta(&banco_perguntas);
+            case 1: {
+                Pergunta pergunta = {0};
+                if (!cadastro_pergunta(&pergunta))
+                    break;
+                int resultado = inserir_pergunta(&banco_perguntas, &pergunta);
+                puts(resultado == 0 ? "Pergunta cadastrada com sucesso." : "Não foi possível cadastrar a pergunta.");
                 break;
+            }
 
             case 2:
                 listar_perguntas(&banco_perguntas);
@@ -124,7 +148,15 @@ int main(int quantidade_argumentos, char *argumentos[])
                         printf("ID inválido\n");
                     }
                 } while (id_pergunta_alteracao < 0);
-                alterar_pergunta(&banco_perguntas, id_pergunta_alteracao);
+                if (pesquisar_pergunta(&banco_perguntas, id_pergunta_alteracao) < 0) {
+                    puts("Pergunta não encontrada.");
+                    break;
+                }
+                Pergunta pergunta = {0};
+                if (!cadastro_pergunta(&pergunta))
+                    break;
+                int resultado = alterar_pergunta(&banco_perguntas, id_pergunta_alteracao, &pergunta);
+                puts(resultado == 0 ? "Pergunta alterada com sucesso." : "Não foi possível alterar a pergunta.");
                 break;
             }
 
@@ -137,7 +169,8 @@ int main(int quantidade_argumentos, char *argumentos[])
                         printf("ID inválido\n");
                     }
                 } while (id_pergunta_excluida < 0);
-                excluir_pergunta(&banco_perguntas, id_pergunta_excluida);
+                int resultado = excluir_pergunta(&banco_perguntas, id_pergunta_excluida);
+                puts(resultado == 0 ? "Pergunta excluída com sucesso." : "Não foi possível excluir a pergunta.");
                 break;
             }
 
@@ -190,4 +223,53 @@ int main(int quantidade_argumentos, char *argumentos[])
     free(banco_perguntas.ids_disponiveis);
 
     return 0;
+}
+
+
+/** @brief Descarta o restante da linha após uma leitura no terminal. */
+static void descartar_linha(void)
+{
+    int caractere;
+    do {
+        caractere = getchar();
+    } while (caractere != '\n' && caractere != EOF);
+}
+
+/** @brief Lê no terminal os campos da pergunta antes da operação no banco. */
+static int cadastro_pergunta(Pergunta *pergunta)
+{
+    const char *pedidos[] = {"Enunciado", "Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D"};
+    char *campos[] = {pergunta->enunciado, pergunta->alternativa.A, pergunta->alternativa.B,
+                      pergunta->alternativa.C, pergunta->alternativa.D};
+
+    descartar_linha(); // O scanf do menu deixa a quebra de linha pendente.
+    for (int i = 0; i < 5; i++) {
+        int tamanho = i == 0 ? sizeof pergunta->enunciado : sizeof pergunta->alternativa.A;
+        printf("%s: ", pedidos[i]);
+        if (fgets(campos[i], tamanho, stdin) == NULL)
+            return 0;
+        if (strchr(campos[i], '\n') == NULL)
+            descartar_linha();
+        campos[i][strcspn(campos[i], "\r\n")] = '\0';
+    }
+
+    do {
+        printf("Alternativa correta (A a D): ");
+        if (scanf(" %c", &pergunta->resposta) != 1)
+            return 0;
+        descartar_linha();
+    } while (pergunta->resposta < 'A' || pergunta->resposta > 'D');
+
+    for (;;) {
+        int dificuldade;
+        printf("Dificuldade (1 a 5): ");
+        int leu = scanf("%d", &dificuldade);
+        if (leu == EOF)
+            return 0;
+        descartar_linha();
+        if (leu == 1 && dificuldade >= muito_facil && dificuldade <= muito_dificil) {
+            pergunta->dificuldade = dificuldade;
+            return 1;
+        }
+    }
 }

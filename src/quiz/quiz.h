@@ -29,6 +29,8 @@ typedef enum
     resposta_derrota
 } Resultado_resposta; //enum para definir quais são as diferentes situações possíveis para as respostas
 
+enum {PV_MAX_PRINCIPE = 1000};
+
 typedef struct
 {
     char nome_jogador[100];
@@ -40,7 +42,7 @@ typedef struct
     int minigames_usados[3];    //indicará quais minigames já foram utilizados - valor 0 se ainda não foi usado e valor 1 se já foi usado
     int ovos_restantes;
     int checkpoint;
-    double tempo_ativo; //guarda o tempo da partida em segundos
+    double tempo_ativo; // Tempo em segundos com uma pergunta aberta.
 } Partida;
 
 void inicializa_partida(Partida *partidas);
@@ -72,5 +74,7 @@ Dificuldade verifica_banco_para_partida(const Banco_perguntas *banco);
 Resultado_resposta processa_resposta(Partida *partida, const Pergunta *pergunta_atual, char resposta_escolhida);
 
 int confirma_retirada(Partida *partida);
+
+int calcula_pv_principe(const Partida *partida);
 
 #endif /*QUIZ_H*/

@@ -10,8 +10,12 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
 #include "telas.h"
+#include "arte_cenas.h"
 #include "componentes.h"
+#include "cores.h"
+#include "editor_perguntas.h"
 #include "../quiz/quiz.h"
 
 typedef enum
@@ -20,18 +24,14 @@ typedef enum
     TELA_JORNADA,
     TELA_CONFIRMAR_RETIRADA,
     TELA_GRUTA,
+    TELA_CREDITOS,
+    TELA_GERENCIAMENTO,
 } Tela;
-typedef enum
-{
-    GRUTA_VAZIA,
-    GRUTA_OURO_BAIXO,
-    GRUTA_OURO_MEDIO,
-    GRUTA_OURO_ALTO,
-} EstadoGruta;
 enum
 {
     LARGURA_BASE = 960,
-    ALTURA_BASE = 540
+    ALTURA_BASE = 540,
+    PERGUNTAS_POR_PAGINA = 4,
 };
 
 /**
@@ -129,6 +129,133 @@ static void desenhar_enunciado(Font fonte, Rectangle area, const Pergunta *pergu
     DrawTextEx(fonte, texto, (Vector2){area.x, area.y}, tamanho, espacamento, BLACK);
 }
 
+/**
+ * @brief Desenha o enunciado em uma linha e corta em um fim de palavra se passar da largura.
+ *
+ * @param fonte Fonte utilizada no enunciado.
+ * @param texto Enunciado da questão a ser desenhada.
+ * @param posicao Canto superior esquerdo da prévia.
+ * @param largura Largura disponível até a próxima coluna.
+ */
+static void desenhar_previa_enunciado(Font fonte, const char *texto, Vector2 posicao, float largura)
+{
+    const float tamanho = 18;
+    const float espacamento = 1;
+    // strpbrk procura em texto o primeiro '\r' ou '\n' e retorna seu endereço, ou NULL se não encontrar.
+    // '\r' representa o retorno ao início da linha e aparece antes de '\n' em quebras CRLF.
+    if (strpbrk(texto, "\r\n") == NULL && MeasureTextEx(fonte, texto, tamanho, espacamento).x <= largura) {
+        DrawTextEx(fonte, texto, posicao, tamanho, espacamento, COR_TEXTO_CLARO);
+        return;
+    }
+
+    const char *fim_previa = texto;
+
+    // Como na quebra de linha do quiz, só mede nos separadores entre palavras.
+    for (const char *fim_palavra = texto; *fim_palavra != '\0'; fim_palavra++) {
+        char separador = *fim_palavra;
+        bool quebra_linha = separador == '\n' || separador == '\r';
+        if (separador != ' ' && !quebra_linha)
+            continue;
+
+        // Em %.*s, % abre a conversão, . indica um limite, * lê esse limite de um int e s indica uma string.
+        // A diferença entre os ponteiros dá o limite em bytes. Os três pontos finais são texto literal.
+        const char *trecho = TextFormat("%.*s...", (int)(fim_palavra - texto), texto);
+        if (MeasureTextEx(fonte, trecho, tamanho, espacamento).x > largura)
+            break;
+
+        fim_previa = fim_palavra;
+        if (quebra_linha)
+            break; // A prévia termina antes da quebra já presente no enunciado.
+    }
+
+    const char *previa = TextFormat("%.*s...", (int)(fim_previa - texto), texto);
+    DrawTextEx(fonte, previa, posicao, tamanho, espacamento, COR_TEXTO_CLARO);
+}
+
+/**
+ * @brief Reúne os índices das perguntas que aparecem na página filtrada.
+ *
+ * @param banco Banco de perguntas consultado.
+ * @param busca ID digitado, ou string vazia para exibir qualquer ID.
+ * @param dificuldade Dificuldade desejada, ou 0 para exibir todas.
+ * @param pagina Índice da página, começando em zero.
+ * @param indices Vetor preenchido com os índices das perguntas visíveis.
+ * @return Total de perguntas que passam pela busca e pelo filtro.
+ */
+static int coletar_pagina_perguntas(const Banco_perguntas *banco, const char *busca, int dificuldade, int pagina, int indices[PERGUNTAS_POR_PAGINA])
+{
+    const bool busca_ativa = busca[0] != '\0'; // Só ativa a busca se tiver algo escrito no input.
+    // atoi converte os dígitos do campo em int, então "007" e "7" buscam o mesmo ID.
+    const int id_procurado = atoi(busca);
+    const int inicio = pagina * PERGUNTAS_POR_PAGINA;
+    int total = 0;
+
+    for (int i = 0; i < banco->quant_perguntas; i++) {
+        const Pergunta *pergunta = &banco->perguntas[i];
+        // Com a busca preenchida, só passam perguntas cujo ID é igual ao digitado.
+        if (busca_ativa && pergunta->identificador != id_procurado)
+            continue;
+        // O filtro 0 aceita todas. Qualquer outro valor exige que a dificuldade coincida.
+        if (dificuldade != 0 && (int)pergunta->dificuldade != dificuldade)
+            continue;
+
+        // total é o índice deste resultado na lista filtrada, antes de contar a pergunta atual.
+        int linha = total - inicio;
+        if (linha >= 0 && linha < PERGUNTAS_POR_PAGINA)
+            indices[linha] = i;
+
+        total++;
+    }
+
+    return total;
+}
+/**
+ * @brief Calcula a área usada para desenhar e clicar em uma linha.
+ * @param painel Área que contém a listagem.
+ * @param linha Posição na página, começando em zero.
+ * @return Retângulo da linha na tela lógica.
+ */
+static Rectangle faixa_pergunta(Rectangle painel, int linha)
+{
+    const float recuo = 12;    // Margem esquerda e direita das faixas.
+    const float topo = 49;     // Espaço entre o topo do painel e a primeira faixa.
+    const float altura = 43;   // Altura de uma faixa.
+    const float intervalo = 6; // Espaço livre entre duas faixas.
+
+    return (Rectangle){painel.x + recuo, painel.y + topo + linha * (altura + intervalo),
+                       painel.width - 2 * recuo, altura};
+}
+
+/**
+ * @brief Lê dígitos e Backspace para atualizar o campo de busca.
+ * @param busca Texto editável do campo.
+ * @param capacidade Tamanho do vetor, incluindo espaço para o '\0'.
+ * @return Verdadeiro se o conteúdo foi alterado.
+ */
+static bool atualizar_busca_id(char *busca, size_t capacidade)
+{
+    size_t tamanho = strlen(busca); // Usa o tipo retornado por strlen e também usado por sizeof.
+    bool mudou = false;
+
+    if (tamanho > 0 && IsKeyPressed(KEY_BACKSPACE)) {
+        busca[--tamanho] = '\0';
+        mudou = true;
+    }
+
+    // GetCharPressed lê o próximo caractere digitado. O laço consome a fila até receber 0.
+    for (int tecla = GetCharPressed(); tecla != 0; tecla = GetCharPressed()) {
+        if (tecla < '0' || tecla > '9' || tamanho + 1 >= capacidade)
+            continue;
+
+        busca[tamanho] = (char)tecla;
+        tamanho++;             // Avança para a posição onde vai ficar o terminador.
+        busca[tamanho] = '\0'; // Mantém a string terminada após cada dígito.
+        mudou = true;
+    }
+
+    return mudou;
+}
+
 enum
 {
     AJUDA_BURRO,
@@ -220,50 +347,13 @@ static void aplicar_ajuda(int ajuda, const Pergunta *pergunta, DicasPergunta *di
  */
 static void desenhar_gruta(Font fonte, EstadoGruta estado, int ovos_restantes, bool mostrar_dragao)
 {
-    const float margem = 24.0f;                                                // Margem lateral e recuo da mensagem dentro da gruta.
-    const float altura_chao = 52.0f;                                           // Altura da faixa cinza no fundo do cenário.
-    const Rectangle cenario = {margem, 80, LARGURA_BASE - 2.0f * margem, 360}; // A largura desconta as duas margens.
-    const float centro_x = cenario.x + cenario.width / 2.0f;                   // Centro do cenário na horizontal.
-    const float chao_y = cenario.y + cenario.height - altura_chao;             // Sobe 52 px da borda inferior até o topo do chão.
-    const float tamanho_texto = 24.0f;                                         // Tamanho dos rótulos da prévia.
-
-    DrawTextEx(fonte, "Gruta", (Vector2){24, 24}, tamanho_texto, 1, BLACK);
-    DrawRectangleRec(cenario, DARKGRAY);
-    DrawRectangleRec((Rectangle){cenario.x, chao_y, cenario.width, altura_chao}, GRAY);
-
-    if (!mostrar_dragao) {
-        DrawTextEx(fonte, "A gruta está vazia.", (Vector2){cenario.x + margem, cenario.y + margem}, tamanho_texto, 1, RAYWHITE);
-        return;
-    }
-
-    const float altura_ouro = 28.0f * estado;                                                                 // Cada tamanho acrescenta 28 px de altura.
-    const float largura_ouro = 150.0f + 48.0f * estado;                                                       // Base de 150 px mais 48 px por tamanho.
-    const Rectangle ouro = {centro_x - largura_ouro / 2.0f, chao_y - altura_ouro, largura_ouro, altura_ouro}; // Vai do centro à borda esquerda e do chão ao topo.
-
-    const float largura_dragao = 120.0f;                                                                                // Largura do bloco provisório do dragão.
-    const float altura_dragao = 64.0f;                                                                                  // Altura do bloco provisório do dragão.
-    const Rectangle dragao = {centro_x - largura_dragao / 2.0f, ouro.y - altura_dragao, largura_dragao, altura_dragao}; // Centraliza o dragão e apoia sua base sobre o ouro.
-    if (estado != GRUTA_VAZIA)
-        DrawRectangleRec(ouro, GOLD);
-    DrawRectangleRec(dragao, MAROON);
-    const Vector2 medida_rotulo = MeasureTextEx(fonte, "Dragão", tamanho_texto, 1);
-    const Vector2 posicao_rotulo = {dragao.x + (dragao.width - medida_rotulo.x) / 2.0f, dragao.y + (dragao.height - medida_rotulo.y) / 2.0f}; // Divide o espaço livre para centralizar o rótulo.
-    DrawTextEx(fonte, "Dragão", posicao_rotulo, tamanho_texto, 1, RAYWHITE);
-
-    const float largura_filhote = 44.0f;     // Largura do bloco de cada filhote.
-    const float altura_filhote = 32.0f;      // Altura do bloco de cada filhote.
-    const float espaco_ouro_filhote = 24.0f; // Distância entre a pilha e o filhote.
-    const float posicoes_filhotes[] = {
-        ouro.x - espaco_ouro_filhote - largura_filhote, // Borda esquerda do filhote à esquerda da pilha.
-        ouro.x + ouro.width + espaco_ouro_filhote,      // Borda esquerda do filhote à direita da pilha.
-    };
-    for (int i = 0; i < ovos_restantes && i < 2; i++) {
-        Rectangle filhote = {posicoes_filhotes[i], chao_y - altura_filhote, largura_filhote, altura_filhote}; // Apoia a base do filhote no chão.
-        DrawRectangleRec(filhote, ORANGE);
-    }
+    DrawTextEx(fonte, "Gruta", (Vector2){24, 24}, 24, 1, BLACK);
+    desenhar_arte_gruta(estado, ovos_restantes, mostrar_dragao);
+    if (!mostrar_dragao)
+        DrawTextEx(fonte, "A gruta está vazia.", (Vector2){48, 104}, 24, 1, RAYWHITE);
 }
 
-void executar_tela_teste(const Banco_perguntas *banco)
+void executar_tela_teste(Banco_perguntas *banco)
 {
     Tela tela_atual = TELA_MENU;
     EstadoGruta estado_gruta = GRUTA_VAZIA;
@@ -272,14 +362,47 @@ void executar_tela_teste(const Banco_perguntas *banco)
     const int ovos_teste[] = {0, 0, 1, 2};                              // Filhotes para cada teste.
     Partida partida;
     const Pergunta *pergunta_atual = NULL;
+    int questao_exibida = 0; // Mantém o número na tela até o próximo sorteio, mesmo após o renascimento.
     Dificuldade dificuldade_em_falta = 0;
     bool faltam_perguntas = false;
-    Resultado_resposta retorno_resposta;
-    int retorno_retirada;
 
     // Botões.
-    const Rectangle jogar = {48, 188, 280, 52};
+    const Rectangle jogar = {586, 205, 318, 44}; // Primeira linha da coluna.
+    const float passo = jogar.height + 12;       // 12px livres entre as linhas, agindo como um gap.
+
+    // Todas as posições verticais são a chamada do Y do componente anterior + passo (gap).
+    const Rectangle ranking = {jogar.x, jogar.y + passo, jogar.width, jogar.height};
+    const Rectangle gerenciar = {jogar.x, ranking.y + passo, jogar.width, jogar.height};
+    const Rectangle creditos = {jogar.x, gerenciar.y + passo, 151, jogar.height};
+    const Rectangle sair = {creditos.x + creditos.width + 9, creditos.y, 158, jogar.height};
     const Rectangle voltar = {24, 464, 200, 52};
+
+    // Elementos da tela de gerenciamento de perguntas.
+    int pagina_perguntas = 0;
+    int id_selecionado = -1;    // -1 indica que nenhuma pergunta foi selecionada.
+    int filtro_dificuldade = 0; // 0 mostra todas. As dificuldades válidas vão de 1 a 5.
+    const char *nomes_dificuldade[] = {
+        "Desconhecida",
+        "Muito fácil",
+        "Fácil",
+        "Média",
+        "Difícil",
+        "Muito difícil",
+    };
+    char busca_id[5] = "";      // Quatro dígitos do ID e o '\0' no final.
+    bool busca_em_foco = false; // O campo só recebe texto depois de um clique nele.
+
+    const Rectangle campo_busca = {24, 76, 360, 44};        // Área da busca no Figma.
+    const Rectangle botao_dificuldade = {400, 76, 229, 44}; // Área do filtro no Figma.
+    const Rectangle lista_perguntas = {24, 138, 912, 274};  // Painel da lista no Figma.
+    const Rectangle pagina_anterior = {650, voltar.y, 136, voltar.height};
+    const Rectangle pagina_seguinte = {800, voltar.y, 136, voltar.height};
+    const Rectangle nova_pergunta = {680, campo_busca.y, 256, campo_busca.height};
+    const Rectangle editar_pergunta = {246, voltar.y, 150, voltar.height};
+    const Rectangle remover_pergunta = {410, voltar.y, 150, voltar.height};
+    EditorPerguntas editor = {0};
+    const char *retorno_edicao = NULL;
+
     // Containers.
     const Rectangle mapa = {24, 88, 492, 325};
     const Rectangle quiz = {544, 88, 392, 325};
@@ -288,13 +411,15 @@ void executar_tela_teste(const Banco_perguntas *banco)
     const Rectangle acao_quiz = {quiz.x, voltar.y, 200, voltar.height}; // Botão de confirmar.
     int alternativa_selecionada = -1;
     bool resposta_confirmada = false;
-    bool resposta_correta = false;
+    Resultado_resposta resultado_resposta = 0; // Só é consultado depois de confirmar.
 
+    // A linha de ajudas começa 5 px abaixo da borda inferior da cena.
+    const float y_ajudas = mapa.y + mapa.height + 5;
     // Retângulos, nomes e usos seguem a mesma ordem dos índices das ajudas.
     const Rectangle ajuda_rec[TOTAL_AJUDAS] = {
-        {mapa.x + 16, mapa.y + 220, 148, 44},           // Recuo lateral de 16 px e linha de ajudas 220 px abaixo do topo.
-        {mapa.x + 16 + 156, mapa.y + 220, 148, 44},     // Um passo horizontal de 156 px: largura de 148 px mais 8 px de espaço.
-        {mapa.x + 16 + 2 * 156, mapa.y + 220, 148, 44}, // Dois passos horizontais a partir do recuo de 16 px, na mesma linha.
+        {mapa.x + 16, y_ajudas, 148, 44},           // Recuo lateral de 16 px.
+        {mapa.x + 16 + 156, y_ajudas, 148, 44},     // Cada passo soma 148 px de largura e 8 px de espaço.
+        {mapa.x + 16 + 2 * 156, y_ajudas, 148, 44}, // Dois passos a partir do mesmo recuo.
     };
     const char *nomes_ajuda[TOTAL_AJUDAS] = {"Burro", "Dragão", "Princesa"};
     int usos_ajuda[TOTAL_AJUDAS] = {0}; // Usos restantes em toda a partida.
@@ -330,7 +455,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
         CloseWindow();
         return;
     }
-    const int tamanho_titulo = 48;
+    const int tamanho_titulo = 58;
     Font fonte_titulo = carregar_fonte_interface(tamanho_titulo);
     if (!fonte_carregada(fonte_titulo)) {
         TraceLog(LOG_ERROR, "Falha ao carregar a fonte do título");
@@ -338,6 +463,8 @@ void executar_tela_teste(const Banco_perguntas *banco)
         CloseWindow();
         return;
     }
+
+    carregar_arte_cenas();
 
     int escala_da_fonte = 1;
     int ultima_escala_solicitada = 1;
@@ -356,7 +483,8 @@ void executar_tela_teste(const Banco_perguntas *banco)
             continue;
         }
 
-        // Converte as coordenadas do mouse para bater com a nova escala da janela.
+        // Para o mouse, fazemos o caminho janela → jogo: tiramos a margem e dividimos pela escala.
+        // Assim GetMousePosition() pode ser comparado diretamente com os retângulos de 960 × 540.
         SetMouseOffset(-(int)area_exibida.x, -(int)area_exibida.y);
         SetMouseScale(LARGURA_BASE / area_exibida.width, ALTURA_BASE / area_exibida.height);
 
@@ -398,7 +526,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
 
         if (tela_atual == TELA_JORNADA && !resposta_confirmada) {
             // Acumula a duração do último quadro enquanto a pergunta está aberta.
-            if ((partida.situacao == andamento) && pergunta_atual && !faltam_perguntas)
+            if (partida.situacao == andamento && pergunta_atual && !faltam_perguntas)
                 partida.tempo_ativo += GetFrameTime();
             // Só registra um clique em alternativa que ainda pode ser escolhida.
             for (int i = 0; i < 4; i++) {
@@ -422,20 +550,36 @@ void executar_tela_teste(const Banco_perguntas *banco)
         /* Bloco de validação de ações por telas */
         // Verifica ações na tela do MENU.
         if (tela_atual == TELA_MENU) {
-            if (janela_em_foco && IsKeyPressed(KEY_F2)) {
+            if (janela_em_foco && IsKeyPressed(KEY_F2)) { // Abre a prévia da gruta.
                 previa_gruta = true;
                 estado_gruta = GRUTA_VAZIA;
                 tela_atual = TELA_GRUTA;
             }
-            else if (confirmou || botao_clicado(jogar)) {
+            else if (botao_clicado(creditos))
+                tela_atual = TELA_CREDITOS;
+            else if (botao_clicado(gerenciar)) {
+                dificuldade_em_falta = 0;
+                faltam_perguntas = false;
+                pagina_perguntas = 0;
+                id_selecionado = -1;
+                filtro_dificuldade = 0;
+                busca_id[0] = '\0';
+                busca_em_foco = false;
+                retorno_edicao = NULL;
+                tela_atual = TELA_GERENCIAMENTO;
+            }
+            else if (botao_clicado(sair)) // Encerra o while principal.
+                break;
+            else if (confirmou || botao_clicado(jogar)) { // Inicia um novo jogo.
+                // A reserva de perguntas de cada dificuldade cobre também os renascimentos.
                 dificuldade_em_falta = verifica_banco_para_partida(banco);
-                if (dificuldade_em_falta == 0) { //verificando se não falta perguntas nas dificuldades
+                if (dificuldade_em_falta == 0) {
                     inicializa_partida(&partida);
                     pergunta_atual = sorteia_pergunta(banco, &partida);
                     faltam_perguntas = pergunta_atual == NULL;
 
-                    // Define a quantidade de ajudas disponiveis para cada tipo de ajuda.
                     if (!faltam_perguntas) {
+                        questao_exibida = partida.questao_atual;
                         usos_ajuda[AJUDA_BURRO] = 2;
                         usos_ajuda[AJUDA_DRAGAO] = 1;
                         usos_ajuda[AJUDA_PRINCESA] = 1;
@@ -451,17 +595,98 @@ void executar_tela_teste(const Banco_perguntas *banco)
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
             if (botao_clicado(voltar)) // Voltar nessa tela tem ação de cancelar
                 tela_atual = TELA_JORNADA;
-            else if (botao_clicado(acao_quiz)) {                // Confirma a retirada
-                retorno_retirada = confirma_retirada(&partida); // Chama a função que recebe o checkpoint da retirada
-                previa_gruta = false;
-                if (retorno_retirada >= 0) { //confirmando se a retirada tática funcionou
-                    if (retorno_retirada >= 10)
+            else if (botao_clicado(acao_quiz)) { // Confirma a retirada
+                int marco = confirma_retirada(&partida);
+                if (marco >= 0) {
+                    // O ouro corresponde ao último marco conquistado na partida.
+                    if (marco == 10)
                         estado_gruta = GRUTA_OURO_MEDIO;
-                    else if (retorno_retirada >= 5)
+                    else if (marco == 5)
                         estado_gruta = GRUTA_OURO_BAIXO;
                     else
                         estado_gruta = GRUTA_VAZIA;
+                    previa_gruta = false;
                     tela_atual = TELA_GRUTA;
+                }
+            }
+        }
+        else if (tela_atual == TELA_CREDITOS) {
+            if (botao_clicado(voltar))
+                tela_atual = TELA_MENU;
+        }
+        else if (tela_atual == TELA_GERENCIAMENTO) {
+            // Enquanto o formulário estiver aberto, ele recebe os cliques e o teclado da tela.
+            if (editor.modo != EDITOR_FECHADO) {
+                ModoEditorPerguntas modo = editor.modo;
+                if (atualizar_editor_perguntas(&editor, banco)) {
+                    // A gravação pode mudar a quantidade e a ordem das linhas. Recomeça a lista.
+                    pagina_perguntas = 0;
+                    id_selecionado = -1;
+                    retorno_edicao = modo == EDITOR_EXCLUIR ? "Pergunta excluída." : "Pergunta salva.";
+                    if (modo == EDITOR_NOVA) {
+                        // Limpa os filtros da busca para incluir a nova pergunta nos resultados.
+                        busca_id[0] = '\0';
+                        filtro_dificuldade = 0;
+                    }
+                }
+            }
+            else if (botao_clicado(voltar)) {
+                tela_atual = TELA_MENU;
+            }
+            else if (botao_clicado(nova_pergunta)) {
+                busca_em_foco = false;
+                retorno_edicao = NULL;
+                abrir_editor_perguntas(&editor, EDITOR_NOVA, NULL);
+            }
+            else if (id_selecionado >= 0 &&
+                     (botao_clicado(editar_pergunta) || botao_clicado(remover_pergunta))) {
+                // Busca pelo ID selecionado. O índice do vetor pode mudar após outra operação.
+                int indice = pesquisar_pergunta(banco, id_selecionado);
+                if (indice >= 0) {
+                    ModoEditorPerguntas modo = botao_clicado(editar_pergunta) ? EDITOR_ALTERAR : EDITOR_EXCLUIR;
+                    busca_em_foco = false;
+                    retorno_edicao = NULL;
+                    abrir_editor_perguntas(&editor, modo, &banco->perguntas[indice]);
+                }
+            }
+            else {
+                if (janela_em_foco && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                    busca_em_foco = botao_clicado(campo_busca);
+
+                // Só lê o teclado se o campo e a janela estiverem em foco.
+                // A leitura devolve true quando um dígito foi escrito ou apagado.
+                bool mudou_busca = busca_em_foco && janela_em_foco && atualizar_busca_id(busca_id, sizeof busca_id);
+                bool mudou_filtro = botao_clicado(botao_dificuldade);
+
+                if (mudou_filtro)
+                    filtro_dificuldade = filtro_dificuldade == muito_dificil ? 0 : filtro_dificuldade + 1;
+
+                if (mudou_busca || mudou_filtro) {
+                    pagina_perguntas = 0;
+                    id_selecionado = -1;
+                }
+
+                int indices[PERGUNTAS_POR_PAGINA];
+                int total = coletar_pagina_perguntas(banco, busca_id, filtro_dificuldade, pagina_perguntas, indices);
+                int inicio = pagina_perguntas * PERGUNTAS_POR_PAGINA;
+
+                // Navegação das páginas.
+                if (pagina_perguntas > 0 && botao_clicado(pagina_anterior)) {
+                    pagina_perguntas--;
+                    id_selecionado = -1;
+                }
+                else if (inicio + PERGUNTAS_POR_PAGINA < total && botao_clicado(pagina_seguinte)) {
+                    pagina_perguntas++;
+                    id_selecionado = -1;
+                }
+                else {
+                    for (int linha = 0; linha < PERGUNTAS_POR_PAGINA && inicio + linha < total; linha++) {
+                        if (botao_clicado(faixa_pergunta(lista_perguntas, linha))) {
+                            // A posição no vetor serve para ler a pergunta. O ID identifica o registro escolhido.
+                            id_selecionado = banco->perguntas[indices[linha]].identificador;
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -499,27 +724,23 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 alternativa_selecionada = -1;
         }
         // Enter, o botão de ação ou repetir o clique na alternativa confirmam a escolha.
-        else if (alternativa_selecionada >= 0 && (confirmou || botao_clicado(acao_quiz) || repetiu_alternativa)) {
-            // Confirma a resposta.
+        else if (!faltam_perguntas && alternativa_selecionada >= 0 &&
+                 (confirmou || botao_clicado(acao_quiz) || repetiu_alternativa)) {
             if (!resposta_confirmada) {
-                char resposta = 'A' + alternativa_selecionada; // Transforma o índice das alternativas em letras.
+                char resposta = 'A' + alternativa_selecionada;
+                // O quiz aplica as regras da partida. A tela guarda o resultado para dar o retorno ao jogador.
+                resultado_resposta = processa_resposta(&partida, pergunta_atual, resposta);
                 resposta_confirmada = true;
-
-                retorno_resposta = processa_resposta(&partida, pergunta_atual, resposta);
-
-                if (retorno_resposta == resposta_acerto || retorno_resposta == resposta_marco || retorno_resposta == resposta_vitoria)
-                    resposta_correta = true;
-                else
-                    resposta_correta = false;
             }
-            // Só avança em uma nova ação, depois de mostrar o resultado da resposta.
-            else if ((resposta_correta || retorno_resposta == resposta_renascimento) && partida.questao_atual < 15 && !faltam_perguntas) {
+            // Acertos, marcos e renascimentos deixam a partida em andamento.
+            else if (partida.situacao == andamento) {
                 const Pergunta *proxima = sorteia_pergunta(banco, &partida);
                 if (proxima == NULL)
                     faltam_perguntas = true;
                 else {
                     // Troca a pergunta só depois de um sorteio bem sucedido.
                     pergunta_atual = proxima;
+                    questao_exibida = partida.questao_atual;
                     alternativa_selecionada = -1;
                     resposta_confirmada = false;
                     // Efeitos somem ao trocar a pergunta. Os usos restantes resetam por partida.
@@ -532,96 +753,226 @@ void executar_tela_teste(const Banco_perguntas *banco)
             alternativa_selecionada = alternativa_clicada;
         }
 
-        // A câmera converte as coordenadas lógicas em coordenadas da janela.
+        // Para desenhar, a câmera faz o caminho jogo → janela: amplia pelo zoom e soma a margem.
         Camera2D camera = {.offset = {area_exibida.x, area_exibida.y}, .zoom = escala};
         BeginDrawing();
 
-        ClearBackground(BLACK);
-        BeginScissorMode((int)area_exibida.x, (int)area_exibida.y, (int)area_exibida.width,
-                         (int)area_exibida.height);
-        BeginMode2D(camera);
-        DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, RAYWHITE);
+        ClearBackground(BLACK); // Limpa a janela inteira, inclusive as barras que sobram ao redor do jogo.
+        // O recorte usa coordenadas da janela. Tudo que cair fora dessa área deixa as barras intactas.
+        BeginScissorMode((int)area_exibida.x, (int)area_exibida.y, (int)area_exibida.width, (int)area_exibida.height);
+        BeginMode2D(camera); // Daqui até EndMode2D, podemos desenhar nas coordenadas de 960 × 540.
+        bool usa_fundo_escuro = tela_atual == TELA_MENU ||
+                                tela_atual == TELA_CREDITOS ||
+                                tela_atual == TELA_GERENCIAMENTO;
+        Color fundo = usa_fundo_escuro ? COR_FUNDO_MENU : RAYWHITE;
+        DrawRectangle(0, 0, LARGURA_BASE, ALTURA_BASE, fundo);
 
+        /* Desenha as telas e seus elementos. */
         if (tela_atual == TELA_MENU) {
-            DrawTextEx(fonte_titulo, "Dragão do Milhão", (Vector2){48, 96}, tamanho_titulo, 1,
-                       BLACK);
-            desenhar_botao(fonte, jogar, "Jogar");
+            desenhar_painel((Rectangle){24, 24, 524, 492}, COR_ESCURO);
 
+            desenhar_arte_menu();
+
+            const char *linhas[] = {"Dragão do", "Milhão"};
+            const int passo_titulo = 70; // Distância entre o topo da primeira linha e o da segunda.
+            const int sombra = 2;        // Desenha a cópia escura 2 pixels à direita e abaixo na base 960 × 540 (4 em escala 2×).
+
+            for (int i = 0; i < 2; i++) {
+                Vector2 posicao = {582, 39 + i * passo_titulo}; // A primeira linha começa em (582, 39) no menu.
+                Vector2 posicao_sombra = {posicao.x + sombra, posicao.y + sombra};
+
+                DrawTextEx(fonte_titulo, linhas[i], posicao_sombra, tamanho_titulo, 1, BLACK);
+                DrawTextEx(fonte_titulo, linhas[i], posicao, tamanho_titulo, 1, COR_TEXTO_CLARO);
+            }
+
+            desenhar_botao_com_estado(fonte, jogar, "Jogar", BOTAO_PRIMARIO, true);
+            desenhar_botao_com_estado(fonte, ranking, "Ranking", BOTAO_SECUNDARIO, false);
+            desenhar_botao(fonte, gerenciar, "Gerenciar perguntas");
+            desenhar_botao(fonte, creditos, "Créditos");
+            desenhar_botao(fonte, sair, "Sair");
+
+            const Vector2 posicao_aviso = {jogar.x, sair.y + sair.height + 18}; // Espaço de 18 px abaixo dos botões.
             if (dificuldade_em_falta != 0) {
-                switch (dificuldade_em_falta) {
-                    case muito_facil:
-                        DrawTextEx(fonte, "O banco precisa de pelo menos 2 perguntas muito fáceis.", (Vector2){48, 260},
-                                   tamanho_corpo, 1, MAROON);
-                        break;
-
-                    case facil:
-                        DrawTextEx(fonte, "O banco precisa de pelo menos 2 perguntas fáceis.", (Vector2){48, 260},
-                                   tamanho_corpo, 1, MAROON);
-                        break;
-
-                    case medio:
-                        DrawTextEx(fonte, "O banco precisa de pelo menos 7 perguntas médias.", (Vector2){48, 260},
-                                   tamanho_corpo, 1, MAROON);
-                        break;
-
-                    case dificil:
-                        DrawTextEx(fonte, "O banco precisa de pelo menos 8 perguntas difíceis.", (Vector2){48, 260},
-                                   tamanho_corpo, 1, MAROON);
-                        break;
-
-                    case muito_dificil:
-                        DrawTextEx(fonte, "O banco precisa de pelo menos 9 perguntas muito difíceis.", (Vector2){48, 260},
-                                   tamanho_corpo, 1, MAROON);
-                        break;
-
-                    default:
-                        break;
-                }
+                DrawTextEx(fonte, "Faltam perguntas no banco.", posicao_aviso, 20, 1, COR_AVISO);
+                const char *nivel = TextFormat("Nível: %s", nomes_dificuldade[dificuldade_em_falta]);
+                DrawTextEx(fonte, nivel, (Vector2){posicao_aviso.x, posicao_aviso.y + 24}, 20, 1, COR_AVISO); // Distância à linha anterior.
             }
             else if (faltam_perguntas)
-                DrawTextEx(fonte, "Sem perguntas para iniciar.", (Vector2){48, 260},
-                           tamanho_corpo, 1, MAROON);
+                DrawTextEx(fonte, "Sem perguntas para iniciar.", posicao_aviso, 20, 1, COR_AVISO);
+        }
+        else if (tela_atual == TELA_CREDITOS) {
+            const Rectangle painel_equipe = quiz;
+            const float recuo = 18;      // Margem do texto dentro do painel da equipe.
+            const float passo_nome = 30; // Distância entre o topo de dois nomes consecutivos.
+            const float x_texto = painel_equipe.x + recuo;
+
+            DrawTextEx(fonte_titulo, "Créditos", (Vector2){mapa.x, 13}, 34, 1, COR_TEXTO_CLARO);
+
+            // Pinta o fundo e a borda antes do mapa. O véu escurece o mapa, e o dragão desenhado depois mantém suas cores.
+            desenhar_painel(mapa, COR_ESCURO);
+            desenhar_arte_creditos();
+
+            // Painel da equipe.
+            desenhar_painel(painel_equipe, COR_FACE_BOTAO);
+
+            Vector2 posicao_equipe = {x_texto, painel_equipe.y + recuo};
+            DrawTextEx(fonte_titulo, "Sete Copas", posicao_equipe, 32, 1, COR_TEXTO_CLARO);
+
+            // A divisória fica 61 px abaixo do topo e respeita o recuo dos dois lados.
+            Rectangle divisoria = {x_texto, painel_equipe.y + 61,
+                                   painel_equipe.width - 2 * recuo, 2};
+            DrawRectangleRec(divisoria, COR_MOLDURA_MAPA);
+
+            const char *membros[] = {
+                "Enzo Andreassa Pizza",
+                "Gabriel Yudi Honji",
+                "Murilo Henrique Alves Martins",
+            };
+
+            // O primeiro nome começa 80 px abaixo do topo, depois da divisória.
+            float y_nome = painel_equipe.y + 80;
+            for (int i = 0; i < 3; i++) {
+                DrawTextEx(fonte, membros[i], (Vector2){x_texto, y_nome}, 21, 1, COR_TEXTO_CLARO);
+                y_nome += passo_nome;
+            }
+
+            const float tamanho_rodape = 19; // Altura da fonte usada nas duas linhas.
+            const float passo_rodape = 24;   // Distância entre os topos das linhas, com 5 px de folga.
+            // DrawTextEx recebe o topo do texto. Subir uma altura de fonte deixa a margem livre abaixo da disciplina.
+            const float y_disciplina = painel_equipe.y + painel_equipe.height - recuo - tamanho_rodape;
+            DrawTextEx(fonte, "UTFPR Apucarana", (Vector2){x_texto, y_disciplina - passo_rodape}, tamanho_rodape, 1, COR_TEXTO_CLARO);
+            DrawTextEx(fonte, "Fundamentos de Programação 2", (Vector2){x_texto, y_disciplina}, tamanho_rodape, 1, COR_TEXTO_CLARO);
+
+            desenhar_botao(fonte, voltar, "Voltar");
+        }
+        else if (tela_atual == TELA_GERENCIAMENTO && editor.modo != EDITOR_FECHADO) {
+            desenhar_editor_perguntas(&editor, fonte, fonte_titulo);
+        }
+        else if (tela_atual == TELA_GERENCIAMENTO) {
+            const float x_id = lista_perguntas.x + 24;
+            const float x_enunciado = lista_perguntas.x + 110;
+            const float x_dificuldade = lista_perguntas.x + 712;
+            const float y_cabecalho = lista_perguntas.y + 18;
+            const float largura_enunciado = x_dificuldade - x_enunciado - 16; // Deixa 16 px antes da dificuldade.
+
+            DrawTextEx(fonte_titulo, "Gerenciar perguntas", (Vector2){lista_perguntas.x, 13}, 34, 1, COR_TEXTO_CLARO);
+            Color fundo_busca = busca_em_foco ? COR_FACE_SELECIONADA : COR_ESCURO;
+            desenhar_painel(campo_busca, fundo_busca);
+            const char *rotulo_busca = busca_id[0] == '\0' ? "Buscar por ID" : busca_id;
+            Vector2 posicao_busca = {campo_busca.x + 12, campo_busca.y + 13}; // Margem à esquerda e texto centralizado na altura.
+            DrawTextEx(fonte, rotulo_busca, posicao_busca, 18, 1, COR_TEXTO_CLARO);
+
+            const char *rotulo_filtro = filtro_dificuldade == 0 ? "Dificuldade: todas" : nomes_dificuldade[filtro_dificuldade];
+            desenhar_botao(fonte, botao_dificuldade, rotulo_filtro);
+            desenhar_botao_com_estado(fonte, nova_pergunta, "Nova pergunta", BOTAO_PRIMARIO, true);
+
+            desenhar_painel(lista_perguntas, COR_FACE_BOTAO);
+
+            // Escreve os cabeçalhos.
+            DrawTextEx(fonte, "ID", (Vector2){x_id, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+            DrawTextEx(fonte, "Enunciado", (Vector2){x_enunciado, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+            DrawTextEx(fonte, "Dificuldade", (Vector2){x_dificuldade, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
+
+            int indices[PERGUNTAS_POR_PAGINA];
+            int total = coletar_pagina_perguntas(banco, busca_id, filtro_dificuldade, pagina_perguntas, indices);
+            int inicio = pagina_perguntas * PERGUNTAS_POR_PAGINA;
+
+            // Desenha os mesmos resultados e retângulos que a lógica de clique usa.
+            for (int linha = 0; linha < PERGUNTAS_POR_PAGINA && inicio + linha < total; linha++) {
+                const Pergunta *pergunta = &banco->perguntas[indices[linha]];
+                Rectangle faixa = faixa_pergunta(lista_perguntas, linha);
+                float y_texto = faixa.y + 12; // Recuo vertical do texto dentro da faixa.
+
+                bool selecionada = pergunta->identificador == id_selecionado;
+                DrawRectangleRec(faixa, selecionada ? COR_FACE_SELECIONADA : COR_ESCURO);
+                if (selecionada)
+                    DrawRectangleLinesEx(faixa, 2, COR_BORDA_SELECIONADA); // Contorno de 2 px para destacar a escolha.
+
+                int dificuldade = pergunta->dificuldade;
+                if (dificuldade < muito_facil || dificuldade > muito_dificil)
+                    dificuldade = 0; // Usa o rótulo "Desconhecida" para valores fora da escala.
+
+                // %03d exibe o ID com pelo menos três dígitos, preenchendo com zeros à esquerda.
+                DrawTextEx(fonte, TextFormat("%03d", pergunta->identificador), (Vector2){x_id, y_texto}, 18, 1, COR_TEXTO_CLARO);
+                desenhar_previa_enunciado(fonte, pergunta->enunciado, (Vector2){x_enunciado, y_texto}, largura_enunciado);
+                DrawTextEx(fonte, nomes_dificuldade[dificuldade], (Vector2){x_dificuldade, y_texto}, 18, 1, COR_TEXTO_CLARO);
+            }
+
+            if (total == 0) {
+                const char *mensagem_lista = banco->quant_perguntas == 0 ? "Nenhuma pergunta cadastrada." : "Nenhuma pergunta encontrada.";
+                DrawTextEx(fonte, mensagem_lista, (Vector2){x_id, faixa_pergunta(lista_perguntas, 0).y}, 18, 1, COR_TEXTO_CLARO);
+            }
+
+            bool tem_anterior = pagina_perguntas > 0;
+            bool tem_proxima = inicio + PERGUNTAS_POR_PAGINA < total;
+            float y_pagina = lista_perguntas.y + lista_perguntas.height + 16; // Indicador abaixo do painel da lista.
+
+            DrawTextEx(fonte, TextFormat("Página %d", pagina_perguntas + 1), (Vector2){lista_perguntas.x, y_pagina}, 18, 1, COR_TEXTO_CLARO);
+            if (retorno_edicao != NULL)
+                DrawTextEx(fonte, retorno_edicao, (Vector2){180, y_pagina}, 18, 1, COR_TEXTO_CLARO);
+            desenhar_botao(fonte, voltar, "Voltar");
+            desenhar_botao_com_estado(fonte, editar_pergunta, "Editar", BOTAO_SECUNDARIO, id_selecionado >= 0);
+            desenhar_botao_com_estado(fonte, remover_pergunta, "Excluir", BOTAO_SECUNDARIO, id_selecionado >= 0);
+            desenhar_botao_com_estado(fonte, pagina_anterior, "Anterior", BOTAO_SECUNDARIO, tem_anterior);
+            desenhar_botao_com_estado(fonte, pagina_seguinte, "Próxima", BOTAO_SECUNDARIO, tem_proxima);
         }
         else if (tela_atual == TELA_JORNADA) {
             const int questoes_jornada = 8;
             const int total_questoes = 15;
-            bool em_batalha = partida.questao_atual > questoes_jornada;
+            bool em_batalha = questao_exibida > questoes_jornada;
+            bool renascendo = resposta_confirmada && resultado_resposta == resposta_renascimento;
 
             const char *nome_etapa = em_batalha ? "Batalha" : "Jornada";
-            const char *titulo_quiz;
-            if (resposta_confirmada && retorno_resposta == resposta_renascimento)
-                titulo_quiz = TextFormat("Renascimento.");
-            else
-                titulo_quiz = TextFormat("%s - Questão %d de %d", nome_etapa, partida.questao_atual, total_questoes);
+            const char *titulo_quiz = TextFormat("%s - Questão %d de %d", nome_etapa, questao_exibida, total_questoes);
             DrawTextEx(fonte, titulo_quiz, (Vector2){24, 24}, tamanho_corpo, 1, BLACK);
 
-            DrawRectangleRec(mapa, LIGHTGRAY);
+            // Alinha o contador de ovos à direita da cena, na mesma linha do título.
+            const char *ovos = TextFormat("Ovos: %d", partida.ovos_restantes);
+            float largura_ovos = MeasureTextEx(fonte, ovos, 20, 1).x;
+            DrawTextEx(fonte, ovos, (Vector2){mapa.x + mapa.width - largura_ovos, 24}, 20, 1, BLACK);
+
+            CenaQuiz cena = em_batalha ? CENA_BATALHA : CENA_JORNADA;
+            if (partida.situacao == derrota)
+                cena = em_batalha ? CENA_DERROTA : CENA_DERROTA_JORNADA; // Exibe o dragão caído no castelo ou na jornada dependendo até onde ele chegou.
+            else if (partida.situacao == vitoria)
+                cena = CENA_VITORIA;
+
+            desenhar_painel(mapa, COR_ESCURO);
+            desenhar_arte_quiz(cena);
+
             const char *titulo_cenario = em_batalha ? "Castelo do príncipe" : "Mapa aéreo";
-            const Vector2 posicao_titulo = {mapa.x + margem, mapa.y + 24}; // Título 24 px abaixo do topo do painel.
-            DrawTextEx(fonte, titulo_cenario, posicao_titulo, tamanho_corpo, 1, BLACK);
+            if (cena == CENA_DERROTA_JORNADA)
+                titulo_cenario = "Estrada para o castelo";
+            DrawTextEx(fonte, titulo_cenario, (Vector2){quiz.x, 24}, tamanho_corpo, 1, BLACK);
 
-            // Na batalha, desconta os 8 acertos ja feitos na jornada.
-            int acertos_etapa = em_batalha ? partida.acertos - questoes_jornada : partida.acertos;
-            int total_etapa = em_batalha ? total_questoes - questoes_jornada : questoes_jornada;
-            const char *progresso = TextFormat("%s: %d/%d", em_batalha ? "Golpes" : "Etapas", acertos_etapa, total_etapa);
-            const Vector2 posicao_progresso = {mapa.x + margem, mapa.y + 108}; // Indicador de progresso 108 px abaixo do topo.
-            DrawTextEx(fonte, progresso, posicao_progresso, tamanho_corpo, 1, BLACK);
+            const Vector2 posicao_progresso = {mapa.x, mapa.y - 39}; // Rótulo na segunda linha acima da cena.
+            if (renascendo) {
+                // Enquanto a pergunta anterior aparece, o progresso da partida já está no marco.
+                const char *marco = TextFormat("Marco: %d", partida.checkpoint);
+                DrawTextEx(fonte, marco, posicao_progresso, 20, 1, BLACK);
+            }
+            else {
+                int valor = em_batalha ? calcula_pv_principe(&partida) : partida.acertos;
+                int limite = em_batalha ? PV_MAX_PRINCIPE : questoes_jornada;
+                const char *progresso = TextFormat("%s: %d/%d", em_batalha ? "PV" : "Etapas", valor, limite);
+                DrawTextEx(fonte, progresso, posicao_progresso, 20, 1, BLACK);
 
-            // Copia a posição e altura da barra e reduz apenas a largura do preenchimento dela.
-            Rectangle fundo_vida = {mapa.x + margem, mapa.y + 142, mapa.width - 2.0f * margem, 20}; // Barra a 142 px do topo, entre as duas margens.
-            Rectangle preenchimento_vida = fundo_vida;
-            preenchimento_vida.width *= (float)acertos_etapa / total_etapa;
+                // A fração do valor que resta define a largura colorida da barra.
+                const float espaco_progresso = 164;                                                                 // Reserva a coluna do rótulo à esquerda da barra.
+                Rectangle fundo_vida = {mapa.x + espaco_progresso, mapa.y - 33, mapa.width - espaco_progresso, 16}; // Centraliza a barra no rótulo.
+                Rectangle preenchimento_vida = fundo_vida;
+                preenchimento_vida.width *= (float)valor / limite;
 
-            // Barra de vida do boss ou progressão
-            DrawRectangleRec(fundo_vida, RAYWHITE);
-            DrawRectangleRec(preenchimento_vida, em_batalha ? MAROON : DARKGREEN);
-            DrawRectangleLinesEx(fundo_vida, 2, DARKGRAY);
+                DrawRectangleRec(fundo_vida, RAYWHITE);
+                DrawRectangleRec(preenchimento_vida, em_batalha ? MAROON : DARKGREEN);
+                DrawRectangleLinesEx(fundo_vida, 2, DARKGRAY);
+            }
 
             // Mostra os usos restantes e apaga os botões indisponíveis.
             for (int i = 0; i < TOTAL_AJUDAS; i++) {
                 const char *rotulo = TextFormat("%s (%d)", nomes_ajuda[i], usos_ajuda[i]);
                 bool habilitado = ajuda_disponivel(i, usos_ajuda[i], &dicas, resposta_confirmada);
-                desenhar_botao_com_estado(fonte, ajuda_rec[i], rotulo, false, habilitado);
+                desenhar_botao_com_estado(fonte, ajuda_rec[i], rotulo, BOTAO_SECUNDARIO, habilitado);
             }
 
             // Mostra a revelação da Princesa quando ativa. Caso contrário, mostra o palpite do Burro.
@@ -631,8 +982,8 @@ void executar_tela_teste(const Banco_perguntas *banco)
             else if (dicas.palpite_burro != '\0')
                 texto_dica = TextFormat("Burro: apostaria na %c.", dicas.palpite_burro);
             if (texto_dica != NULL) {
-                Vector2 posicao_dica = {mapa.x + margem, mapa.y + 276}; // Reserva a linha a 276 px do topo, abaixo dos botões.
-                DrawTextEx(fonte, texto_dica, posicao_dica, tamanho_corpo, 1, BLACK);
+                Vector2 posicao_dica = {quiz.x, y_ajudas}; // Dica na mesma altura das ajudas, à direita da cena.
+                DrawTextEx(fonte, texto_dica, posicao_dica, 20, 1, BLACK);
             }
 
             // Desenha a caixa do quiz e o enunciado da questão.
@@ -647,7 +998,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 char letra = 'A' + i;
                 bool selecionado = i == alternativa_selecionada;
                 bool habilitado = !dicas.eliminadas[i] && !resposta_confirmada;
-                desenhar_botao_com_estado(fonte, alternativa_rec[i], rotulos[i], selecionado, habilitado);
+                desenhar_alternativa(fonte, alternativa_rec[i], rotulos[i], selecionado, habilitado);
 
                 // Desenha a marca da ajuda por cima do cartão e preserva a cor da seleção.
                 if (dicas.resposta_revelada && letra == pergunta_atual->resposta)
@@ -661,12 +1012,14 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 mensagem = "Sem perguntas para avançar.";
             // Define a mensagem dependendo se errou, acertou ou ganhou;
             else if (resposta_confirmada) {
-                if (retorno_resposta == resposta_renascimento) //Caso em que o jogador erra a
-                    mensagem = TextFormat("Você renascerá na questão %d.", partida.checkpoint + 1);
-                else if (!resposta_correta)
+                if (renascendo)
+                    mensagem = TextFormat("Ovo usado. Próxima: questão %d.", partida.checkpoint + 1);
+                else if (resultado_resposta == resposta_marco)
+                    mensagem = "Marco alcançado! Você ganhou um ovo.";
+                else if (resultado_resposta == resposta_derrota)
                     mensagem = "Resposta incorreta.";
-                else if (partida.questao_atual == 15)
-                    mensagem = "Quiz concluído, a princesa foi salva.";
+                else if (resultado_resposta == resposta_vitoria)
+                    mensagem = "Vitória! A princesa foi salva.";
                 else
                     mensagem = "Resposta correta!";
             }
@@ -674,12 +1027,11 @@ void executar_tela_teste(const Banco_perguntas *banco)
             else if (alternativa_selecionada >= 0)
                 mensagem = TextFormat("Alternativa '%c' selecionada.", 'A' + alternativa_selecionada); // Em C, aspas simples representa um caractere e aspas duplas representa uma string, por isso deve ser 'A', e não "A".
             if (mensagem != NULL) {
-                Vector2 posicao = {mapa.x + margem, mapa.y + 64.0f}; // Mensagem de seleção ou resultado, abaixo do título.
-                DrawTextEx(fonte, mensagem, posicao, tamanho_corpo, 1.0f, BLACK);
+                Vector2 posicao = {quiz.x, mapa.y - 39}; // Mensagem abaixo do título e acima da caixa de perguntas.
+                DrawTextEx(fonte, mensagem, posicao, 20, 1.0f, BLACK);
             }
 
-            bool pode_continuar = resposta_confirmada && ((retorno_resposta == resposta_renascimento) || resposta_correta) && partida.questao_atual < 15;
-            if (alternativa_selecionada >= 0 && !faltam_perguntas && (!resposta_confirmada || pode_continuar)) {
+            if (alternativa_selecionada >= 0 && !faltam_perguntas && partida.situacao == andamento) {
                 const char *rotulo = resposta_confirmada ? "Continuar" : "Confirmar";
                 desenhar_botao(fonte, acao_quiz, rotulo);
             }
@@ -690,7 +1042,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
                 desenhar_botao(fonte, voltar, "Ver gruta");
             else
                 // O !resposta_confimada significa que o botão desabilita após o usuário confirmar uma alternativa.
-                desenhar_botao_com_estado(fonte, voltar, "Retirada Tática", false, !resposta_confirmada);
+                desenhar_botao_com_estado(fonte, voltar, "Retirada Tática", BOTAO_SECUNDARIO, !resposta_confirmada);
         }
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
             DrawTextEx(fonte_titulo, "Retirada Tática", (Vector2){48, 96}, tamanho_titulo, 1, BLACK);
@@ -699,7 +1051,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
             desenhar_botao(fonte, acao_quiz, "Retirar");
         }
         else if (tela_atual == TELA_GRUTA) {
-            int filhotes = previa_gruta ? ovos_teste[estado_gruta] : 0;
+            int filhotes = previa_gruta ? ovos_teste[estado_gruta] : partida.ovos_restantes;
             // Uma retirada antes do primeiro marco deixa o dragão vivo no chão, sem pilha.
             bool mostrar_dragao = estado_gruta != GRUTA_VAZIA || (!previa_gruta && partida.situacao == retirada);
             desenhar_gruta(fonte, estado_gruta, filhotes, mostrar_dragao);
@@ -711,19 +1063,25 @@ void executar_tela_teste(const Banco_perguntas *banco)
                     texto_gruta = "Vitória! A princesa foi salva.";
                 else if (partida.situacao == derrota)
                     texto_gruta = "Derrota! A gruta está vazia.";
+                else if (partida.checkpoint > 0)
+                    texto_gruta = TextFormat("Retirada no marco %d.", partida.checkpoint);
                 else
-                    texto_gruta = TextFormat("Retirada: %d acertos", partida.acertos);
+                    texto_gruta = "Retirada antes do primeiro marco.";
             }
             // Divide o espaço vertical livre para alinhar o texto ao botão Voltar.
             const Vector2 posicao_texto = {quiz.x, voltar.y + (voltar.height - tamanho_corpo) / 2.0f};
             DrawTextEx(fonte, texto_gruta, posicao_texto, tamanho_corpo, 1, BLACK);
         }
 
+        // Sai das coordenadas do jogo, libera o recorte e apresenta o quadro pronto.
         EndMode2D();
         EndScissorMode();
         EndDrawing();
     }
 
+    descarregar_arte_cenas();
+
+    // Descarrega as fontes.
     UnloadFont(fonte_titulo);
     UnloadFont(fonte);
     CloseWindow();

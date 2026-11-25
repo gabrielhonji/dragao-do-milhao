@@ -17,6 +17,6 @@
  * @brief Abre a janela de teste usando o banco carregado.
  * @param banco Banco de perguntas mantido pela main.
  */
-void executar_tela_teste(const Banco_perguntas *banco);
+void executar_tela_teste(Banco_perguntas *banco);
 
 #endif
