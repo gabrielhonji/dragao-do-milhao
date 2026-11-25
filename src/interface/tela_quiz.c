@@ -198,16 +198,16 @@ AcaoQuiz atualizar_quiz(TelaQuiz *tela, const LayoutQuiz *layout, const Banco_pe
             return QUIZ_MOSTRAR_RESULTADO;
         return QUIZ_SEM_ACAO;
     }
-    // Consome o uso e aplica o efeito à pergunta que já está na tela.
+    // Consome o uso assim que o jogador pede a ajuda.
     else if (ajuda_clicada >= 0) {
         tela->usos_ajuda[ajuda_clicada]--;
+        if (ajuda_clicada == AJUDA_DRAGAO)
+            return QUIZ_ABRIR_SOPRO;
+
+        // Por enquanto, Burro e Princesa dão o efeito diretamente.
         if (ajuda_clicada == AJUDA_BURRO)
             tela->dicas.burro_usado = true;
-        // Na versão final aqui o minigame vai validar se realmente a ajuda vai ser aplicada.
-        aplicar_ajuda(ajuda_clicada, tela->pergunta_atual, &tela->dicas);
-
-        if (tela->alternativa_selecionada >= 0 && tela->dicas.eliminadas[tela->alternativa_selecionada])
-            tela->alternativa_selecionada = -1;
+        aplicar_efeito_ajuda_quiz(tela, ajuda_clicada);
     }
     // Enter, o botão de ação ou repetir o clique na alternativa confirmam a escolha.
     else if (!tela->faltam_perguntas && tela->alternativa_selecionada >= 0 &&
@@ -240,6 +240,15 @@ AcaoQuiz atualizar_quiz(TelaQuiz *tela, const LayoutQuiz *layout, const Banco_pe
     }
 
     return QUIZ_SEM_ACAO;
+}
+
+void aplicar_efeito_ajuda_quiz(TelaQuiz *tela, int ajuda)
+{
+    aplicar_ajuda(ajuda, tela->pergunta_atual, &tela->dicas);
+
+    // Se a ajuda apagou a escolha atual, o jogador precisa escolher outra.
+    if (tela->alternativa_selecionada >= 0 && tela->dicas.eliminadas[tela->alternativa_selecionada])
+        tela->alternativa_selecionada = -1;
 }
 
 void desenhar_quiz(const TelaQuiz *tela, const LayoutQuiz *layout, Font fonte, int tamanho_corpo)

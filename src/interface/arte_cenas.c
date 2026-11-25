@@ -37,6 +37,8 @@ typedef enum
     DRAGAO_CREDITOS,
     FUNDO_DERROTA_JORNADA,
     DRAGAO_CAIDO_JORNADA,
+    PATIO_SOPRO,
+    DRAGAO_SOPRO,
     TOTAL_ARTES,
 } Arte;
 
@@ -74,6 +76,8 @@ static ArteCena artes[TOTAL_ARTES] = {
     [DRAGAO_CREDITOS] = {"assets/visual/cenas/24/dragao_voo.png"},
     [FUNDO_DERROTA_JORNADA] = {"assets/visual/fundos/derrota_jornada.png"},
     [DRAGAO_CAIDO_JORNADA] = {"assets/visual/cenas/derrota_jornada/dragao_caido.png"},
+    [PATIO_SOPRO] = {"assets/visual/fundos/patio_sopro.png"},
+    [DRAGAO_SOPRO] = {"assets/visual/cenas/10/dragao_sopro.png"},
 };
 
 // A cor multiplica o RGB do sprite durante o desenho. O alfa 255 preserva a transparência do PNG.
@@ -117,6 +121,12 @@ static void desenhar_png_com_luz(Arte arte, int x, int y, Color luz)
 static void desenhar_png(Arte arte, int x, int y)
 {
     desenhar_png_com_luz(arte, x, y, WHITE);
+}
+
+void desenhar_arte_sopro(void)
+{
+    desenhar_png(PATIO_SOPRO, 160, 108);
+    desenhar_png_com_luz(DRAGAO_SOPRO, 190, 182, luz_patio);
 }
 
 // As coordenadas abaixo são as da coluna destino do manifesto de sprites v2.

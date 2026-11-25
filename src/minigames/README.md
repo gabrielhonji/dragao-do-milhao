@@ -1,21 +1,21 @@
 # Minigames do Dragão do Milhão
 
-Os protótipos do Enzo ficam nas subpastas do módulo. Para consultar as duas interfaces a partir de `telas.c`, inclua `../minigames/minigames.h`. O Makefile compila os dois módulos.
+Cada minigame tem uma subpasta com as regras e o estado da rodada. O Makefile compila as fontes dessas subpastas. A interface do Sopro fica em `src/interface/tela_sopro.c` e as trocas de tela ficam em `src/interface/telas.c`.
 
 ## Sopro Ancestral
 
-Chame `iniciarMinigameSopro()` uma vez quando o jogador abrir a tela. O marcador começa em 0 e vai até 50, depois volta. A zona de acerto é sorteada a cada tentativa.
+A ajuda do Dragão tem um uso por partida, consumido ao abrir a rodada. O jogador tem **5 segundos** para encher a barra de **0 a 100**. A carga sobe **7 pontos** a cada novo aperto de Espaço e cai **22 pontos por segundo**, com mínimo em zero. Chegar a 100 antes do prazo dá vitória.
 
-Em cada quadro dessa tela, chame `atualizarMinigame(GetFrameTime(), IsKeyPressed(KEY_SPACE))`. `IsKeyPressed` conta o momento do aperto. Para desenhar, leia `posicao_barra`, `zona_inicio` e `zona_final` pelo ponteiro retornado por `obterEstadoMinigameSopro()`. Divida cada posição por `50.0f` e multiplique pela largura da barra para obter o deslocamento em pixels.
+A interface guarda a rodada em uma variável `MinigameSopro` e chama `iniciarMinigameSopro(&sopro)` ao abrir a tela. Em cada quadro da rodada em andamento, chama `atualizarMinigame(&sopro, GetFrameTime(), janela_em_foco && IsKeyPressed(KEY_SPACE))`. `GetFrameTime()` fornece a duração do quadro em segundos e `IsKeyPressed` identifica cada novo aperto. A tela lê `sopro.carga` para preencher a barra e `sopro.tempo` para calcular o timer e a vinheta. O prazo usado na lógica e na tela vem de `SOPRO_TEMPO_LIMITE`.
 
-`obterResultadoMinigame()` retorna 0 enquanto a tentativa está em andamento, 1 se o jogador apertou na zona e -1 se apertou fora ou demorou 10 segundos.
+O campo `sopro.resultado` vale `0` durante a rodada, `1` na vitória e `-1` quando o tempo acaba. Ao clicar em **Voltar à pergunta**, o jogador retoma a pergunta que estava aberta. Na vitória, a ajuda elimina duas alternativas incorretas. Na derrota, as alternativas permanecem como estavam.
 
 ## Trote Certeiro
 
 `jogarMinigame_burro()` roda no terminal. O jogador informa duas posições de 0 a 5 por tentativa. Há seis cartas e três pares. Um par encontrado sai da rodada. Após dois pares errados, a partida termina. A função retorna 1 ao encontrar os três pares e -1 ao perder ou se a entrada for interrompida.
 
-Para virar uma tela do jogo, mova o baralho, os pares encontrados e as chances para um estado que possa ser atualizado a cada clique. A função atual usa `scanf` e espera pela entrada do terminal. Os dois protótipos usam o sorteio já inicializado pela aplicação.
+Para virar uma tela do jogo, mova o baralho, os pares encontrados e as chances para um estado que possa ser atualizado a cada clique. A função atual usa `scanf` e espera pela entrada do terminal. O baralho usa o sorteio já inicializado pela aplicação.
 
 ## Ligação com as ajudas
 
-As ajudas ainda aplicam seus efeitos diretamente no quiz. Ao criar as telas, gaste um uso da ajuda quando o minigame abrir e aplique o efeito à pergunta atual quando o resultado for 1. O Eco da Torre ainda precisa da própria implementação.
+Os botões do Burro e da Princesa ainda aplicam seus efeitos diretamente no quiz. Para integrar as próximas telas, siga o fluxo do Sopro e aplique a recompensa apenas ao voltar de uma rodada vencida. O protótipo do Eco da Torre fica em `minigame_flappybird/` e ainda precisa ser ligado à ajuda da Princesa.

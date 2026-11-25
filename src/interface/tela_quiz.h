@@ -56,6 +56,7 @@ typedef enum
     QUIZ_SEM_ACAO,
     QUIZ_VOLTAR_MENU,
     QUIZ_PEDIR_RETIRADA,
+    QUIZ_ABRIR_SOPRO,
     QUIZ_MOSTRAR_RESULTADO,
 } AcaoQuiz;
 
@@ -67,6 +68,13 @@ bool iniciar_quiz(TelaQuiz *tela, const Banco_perguntas *banco);
 
 /** @brief Atualiza cronômetro, ajudas, seleção e respostas e informa se é preciso trocar de tela. */
 AcaoQuiz atualizar_quiz(TelaQuiz *tela, const LayoutQuiz *layout, const Banco_perguntas *banco, bool confirmou);
+
+/**
+ * @brief Aplica a ajuda liberada à pergunta atual.
+ * @param tela Quiz com a pergunta, as dicas e a alternativa selecionada.
+ * @param ajuda Índice do botão cujo efeito foi liberado.
+ */
+void aplicar_efeito_ajuda_quiz(TelaQuiz *tela, int ajuda);
 
 /** @brief Desenha a cena, os indicadores da partida e a pergunta atual. */
 void desenhar_quiz(const TelaQuiz *tela, const LayoutQuiz *layout, Font fonte, int tamanho_corpo);
