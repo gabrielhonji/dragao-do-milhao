@@ -1,6 +1,6 @@
 # Minigames do Dragão do Milhão
 
-Cada minigame tem uma subpasta com as regras e o estado da rodada. O Makefile compila as fontes dessas subpastas. A interface do Sopro fica em `src/interface/tela_sopro.c` e as trocas de tela ficam em `src/interface/telas.c`.
+Cada minigame tem uma subpasta com as regras e o estado da rodada. O Makefile compila as fontes dessas subpastas. A interface do Sopro fica em `src/interface/minigames/tela_sopro.c` e as trocas de tela ficam em `src/interface/telas.c`.
 
 ## Sopro Ancestral
 

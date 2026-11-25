@@ -7,7 +7,7 @@
 #define EDITOR_PERGUNTAS_H
 
 #include <raylib.h>
-#include "../perguntas/banco_perguntas.h"
+#include "../../perguntas/banco_perguntas.h"
 
 typedef enum
 {

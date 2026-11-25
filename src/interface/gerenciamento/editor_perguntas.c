@@ -7,9 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "editor_perguntas.h"
-#include "componentes.h"
-#include "cores.h"
-#include "../perguntas/arquivos_perguntas.h"
+#include "../comum/componentes.h"
+#include "../comum/cores.h"
+#include "../../perguntas/arquivos_perguntas.h"
 
 enum
 {

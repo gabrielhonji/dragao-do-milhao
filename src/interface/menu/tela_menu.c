@@ -5,9 +5,9 @@
 
 #include <stddef.h>
 #include "tela_menu.h"
-#include "arte_cenas.h"
-#include "componentes.h"
-#include "cores.h"
+#include "../comum/arte_cenas.h"
+#include "../comum/componentes.h"
+#include "../comum/cores.h"
 
 BotoesMenu montar_botoes_menu(void)
 {

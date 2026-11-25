@@ -10,19 +10,19 @@
  */
 
 #include "telas.h"
-#include "arte_cenas.h"
-#include "componentes.h"
-#include "cores.h"
+#include "comum/arte_cenas.h"
+#include "comum/componentes.h"
+#include "comum/cores.h"
 #include "../quiz/quiz.h"
-#include "tela_menu.h"
-#include "tela_creditos.h"
-#include "tela_ranking.h"
-#include "tela_registro.h"
-#include "tela_gruta.h"
-#include "tela_gerenciamento.h"
-#include "tela_quiz.h"
-#include "tela_retirada.h"
-#include "tela_sopro.h"
+#include "menu/tela_menu.h"
+#include "menu/tela_creditos.h"
+#include "ranking/tela_ranking.h"
+#include "ranking/tela_registro.h"
+#include "partida/tela_gruta.h"
+#include "gerenciamento/tela_gerenciamento.h"
+#include "partida/tela_quiz.h"
+#include "partida/tela_retirada.h"
+#include "minigames/tela_sopro.h"
 
 typedef enum
 {

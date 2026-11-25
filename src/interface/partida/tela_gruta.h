@@ -6,8 +6,8 @@
 #ifndef TELA_GRUTA_H
 #define TELA_GRUTA_H
 
-#include "arte_cenas.h"
-#include "../quiz/quiz.h"
+#include "../comum/arte_cenas.h"
+#include "../../quiz/quiz.h"
 
 typedef struct
 {

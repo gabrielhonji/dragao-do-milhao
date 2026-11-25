@@ -5,9 +5,9 @@
 
 #include <string.h>
 #include "tela_quiz.h"
-#include "arte_cenas.h"
-#include "componentes.h"
-#include "cores.h"
+#include "../comum/arte_cenas.h"
+#include "../comum/componentes.h"
+#include "../comum/cores.h"
 
 static const char *const nomes_ajuda[TOTAL_AJUDAS] = {"Burro", "Dragão", "Princesa"};
 

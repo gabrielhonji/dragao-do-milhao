@@ -6,8 +6,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include "tela_ranking.h"
-#include "componentes.h"
-#include "cores.h"
+#include "../comum/componentes.h"
+#include "../comum/cores.h"
 
 void carregar_ranking(TelaRanking *ranking)
 {

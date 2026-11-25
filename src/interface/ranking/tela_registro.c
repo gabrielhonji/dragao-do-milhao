@@ -5,9 +5,9 @@
 
 #include <string.h>
 #include "tela_registro.h"
-#include "../quiz/arquivo_partidas.h"
-#include "componentes.h"
-#include "cores.h"
+#include "../../quiz/arquivo_partidas.h"
+#include "../comum/componentes.h"
+#include "../comum/cores.h"
 
 bool atualizar_registro(TelaRegistro *tela, const Partida *partida, Rectangle salvar,
                        bool janela_em_foco, bool confirmou)

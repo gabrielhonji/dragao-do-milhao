@@ -4,9 +4,9 @@
  */
 
 #include "tela_sopro.h"
-#include "arte_cenas.h"
-#include "componentes.h"
-#include "cores.h"
+#include "../comum/arte_cenas.h"
+#include "../comum/componentes.h"
+#include "../comum/cores.h"
 
 static const Rectangle voltar_sopro = {600, 484, 200, 44}; // À direita da mensagem de resultado.
 
