@@ -37,6 +37,10 @@ typedef enum
     DRAGAO_CREDITOS,
     FUNDO_DERROTA_JORNADA,
     DRAGAO_CAIDO_JORNADA,
+    TROTE_VERSO,
+    TROTE_FOGO,
+    TROTE_OVO,
+    TROTE_CARTA_SELADA,
     TOTAL_ARTES,
 } Arte;
 
@@ -74,6 +78,10 @@ static ArteCena artes[TOTAL_ARTES] = {
     [DRAGAO_CREDITOS] = {"assets/visual/cenas/24/dragao_voo.png"},
     [FUNDO_DERROTA_JORNADA] = {"assets/visual/fundos/derrota_jornada.png"},
     [DRAGAO_CAIDO_JORNADA] = {"assets/visual/cenas/derrota_jornada/dragao_caido.png"},
+    [TROTE_VERSO] = {"assets/visual/icones/trote_carta_fechada.png"},
+    [TROTE_FOGO] = {"assets/visual/icones/trote_carta_fogo.png"},
+    [TROTE_OVO] = {"assets/visual/icones/trote_carta_ovo.png"},
+    [TROTE_CARTA_SELADA] = {"assets/visual/cenas/12/carta_selada.png"},
 };
 
 // A cor multiplica o RGB do sprite durante o desenho. O alfa 255 preserva a transparência do PNG.
@@ -117,6 +125,24 @@ static void desenhar_png_com_luz(Arte arte, int x, int y, Color luz)
 static void desenhar_png(Arte arte, int x, int y)
 {
     desenhar_png_com_luz(arte, x, y, WHITE);
+}
+
+void desenhar_arte_carta_burro(Rectangle area, int simbolo)
+{
+    const Arte faces[] = {TROTE_FOGO, TROTE_OVO, TROTE_CARTA_SELADA};
+    bool revelada = simbolo >= 0 && simbolo < 3;
+    Arte arte = revelada ? faces[simbolo] : TROTE_VERSO;
+    Texture2D textura = artes[arte].textura;
+    if (!IsTextureValid(textura))
+        return;
+
+    // Uma escala inteira mantém os pixels do símbolo nítidos.
+    float escala = revelada ? 2.0f : 3.0f;
+    Vector2 posicao = {
+        area.x + (area.width - textura.width * escala) / 2,
+        area.y + (area.height - textura.height * escala) / 2,
+    };
+    DrawTextureEx(textura, posicao, 0.0f, escala, WHITE);
 }
 
 // As coordenadas abaixo são as da coluna destino do manifesto de sprites v2.

@@ -38,6 +38,13 @@ void desenhar_arte_menu(void);
 void desenhar_arte_creditos(void);
 
 /**
+ * @brief Desenha o sprite de uma carta do Trote Certeiro.
+ * @param area Retângulo da carta, usado para centralizar o sprite.
+ * @param simbolo Tipo da carta revelada de 0 a 2 ou -1 para desenhar o verso.
+ */
+void desenhar_arte_carta_burro(Rectangle area, int simbolo);
+
+/**
  * @brief Desenha o fundo e os personagens do trecho atual do quiz.
  * @param cena Composição correspondente ao progresso ou ao resultado da partida.
  */

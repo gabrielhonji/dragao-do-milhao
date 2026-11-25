@@ -17,6 +17,7 @@
 #include "cores.h"
 #include "editor_perguntas.h"
 #include "../quiz/quiz.h"
+#include "../minigames/minigames.h"
 
 typedef enum
 {
@@ -26,6 +27,7 @@ typedef enum
     TELA_GRUTA,
     TELA_CREDITOS,
     TELA_GERENCIAMENTO,
+    TELA_BURRO,
 } Tela;
 enum
 {
@@ -316,8 +318,8 @@ static void aplicar_ajuda(int ajuda, const Pergunta *pergunta, DicasPergunta *di
     if (total_incorretas == 0)
         return;
 
-    // Os valores de 1 a 60 representam os 60% de chance de o Burro acertar.
-    if (ajuda == AJUDA_BURRO && GetRandomValue(1, 100) <= 60) {
+    // Os valores de 1 a 70 representam os 70% de chance de o Burro acertar.
+    if (ajuda == AJUDA_BURRO && GetRandomValue(1, 100) <= 70) {
         dicas->palpite_burro = pergunta->resposta;
         return;
     }
@@ -361,6 +363,7 @@ void executar_tela_teste(Banco_perguntas *banco)
     const int teclas_gruta[] = {KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR}; // Uma tecla por estado para testar sem precisar ficar jogando milhares de vezes.
     const int ovos_teste[] = {0, 0, 1, 2};                              // Filhotes para cada teste.
     Partida partida;
+    MinigameBurro burro;
     const Pergunta *pergunta_atual = NULL;
     int questao_exibida = 0; // Mantém o número na tela até o próximo sorteio, mesmo após o renascimento.
     Dificuldade dificuldade_em_falta = 0;
@@ -412,6 +415,12 @@ void executar_tela_teste(Banco_perguntas *banco)
     int alternativa_selecionada = -1;
     bool resposta_confirmada = false;
     Resultado_resposta resultado_resposta = 0; // Só é consultado depois de confirmar.
+
+    // Os mesmos retângulos servem para desenhar as cartas e detectar os cliques.
+    const Rectangle voltar_burro = {536, 480, 200, 44};
+    Rectangle cartas_burro[6];
+    for (int i = 0; i < 6; i++)
+        cartas_burro[i] = (Rectangle){248 + (i % 3) * 160, 140 + (i / 3) * 132, 144, 108};
 
     // A linha de ajudas começa 5 px abaixo da borda inferior da cena.
     const float y_ajudas = mapa.y + mapa.height + 5;
@@ -690,6 +699,26 @@ void executar_tela_teste(Banco_perguntas *banco)
                 }
             }
         }
+        else if (tela_atual == TELA_BURRO) {
+            if (burro.resultado == 0) {
+                if (burro.segunda_carta != -1) {
+                    atualizarMinigameBurro(&burro, GetFrameTime());
+                }
+                else {
+                    for (int i = 0; i < 6; i++) {
+                        if (botao_clicado(cartas_burro[i])) {
+                            selecionar_Carta_Burro(&burro, i);
+                            break;
+                        }
+                    }
+                }
+            }
+            else if (botao_clicado(voltar_burro)) {
+                if (burro.resultado == 1)
+                    aplicar_ajuda(AJUDA_BURRO, pergunta_atual, &dicas);
+                tela_atual = TELA_JORNADA;
+            }
+        }
         // Ações do botão de voltar em cada tela.
         else if (botao_clicado(voltar)) {
             if (tela_atual == TELA_GRUTA || faltam_perguntas)
@@ -712,12 +741,15 @@ void executar_tela_teste(Banco_perguntas *banco)
                 }
             }
         }
-        // Consome o uso e aplica o efeito à pergunta que já está na tela.
+        // Consome o uso do Burro ao abrir o minigame.
+        else if (ajuda_clicada == AJUDA_BURRO) {
+            usos_ajuda[AJUDA_BURRO]--;
+            dicas.burro_usado = true;
+            iniciarMinigameBurro(&burro);
+            tela_atual = TELA_BURRO;
+        }
         else if (ajuda_clicada >= 0) {
             usos_ajuda[ajuda_clicada]--;
-            if (ajuda_clicada == AJUDA_BURRO)
-                dicas.burro_usado = true;
-            // Na versão final aqui o minigame vai validar se realmente a ajuda vai ser aplicada.
             aplicar_ajuda(ajuda_clicada, pergunta_atual, &dicas);
 
             if (alternativa_selecionada >= 0 && dicas.eliminadas[alternativa_selecionada])
@@ -1043,6 +1075,35 @@ void executar_tela_teste(Banco_perguntas *banco)
             else
                 // O !resposta_confimada significa que o botão desabilita após o usuário confirmar uma alternativa.
                 desenhar_botao_com_estado(fonte, voltar, "Retirada Tática", BOTAO_SECUNDARIO, !resposta_confirmada);
+        }
+        else if (tela_atual == TELA_BURRO) {
+            const Rectangle tabuleiro = {224, 120, 512, 332};
+            DrawTextEx(fonte_titulo, "Trote Certeiro", (Vector2){224, 16}, tamanho_titulo, 1, COR_ESCURO);
+            DrawTextEx(fonte, "Vire duas cartas e encontre os três pares.", (Vector2){224, 80}, tamanho_corpo, 1, COR_ESCURO);
+            desenhar_painel(tabuleiro, COR_ESCURO);
+
+            bool pode_virar = burro.resultado == 0 && burro.segunda_carta == -1;
+            for (int i = 0; i < 6; i++) {
+                if (burro.encontradas[i])
+                    continue;
+
+                bool revelada = i == burro.primeira_carta || i == burro.segunda_carta;
+                EstiloBotao estilo = revelada ? BOTAO_SELECIONADO : BOTAO_SECUNDARIO;
+                desenhar_botao_com_estado(fonte, cartas_burro[i], "", estilo, pode_virar && !revelada);
+                desenhar_arte_carta_burro(cartas_burro[i], revelada ? burro.cartas[i] : -1);
+            }
+
+            const int tamanho_placar = 20;
+            DrawTextEx(fonte, TextFormat("Pares: %d/3", burro.pares_encontrados), (Vector2){248, 410}, tamanho_placar, 1, COR_TEXTO_CLARO);
+            const char *chances = TextFormat("Erros restantes: %d", burro.chances);
+            float largura_chances = MeasureTextEx(fonte, chances, tamanho_placar, 1).x;
+            DrawTextEx(fonte, chances, (Vector2){712 - largura_chances, 410}, tamanho_placar, 1, COR_TEXTO_CLARO);
+
+            if (burro.resultado != 0) {
+                const char *mensagem = burro.resultado == 1 ? "O Burro tem um palpite!" : "Você ficou sem chances.";
+                DrawTextEx(fonte, mensagem, (Vector2){224, 490}, tamanho_corpo, 1, COR_ESCURO);
+                desenhar_botao(fonte, voltar_burro, "Voltar à pergunta");
+            }
         }
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
             DrawTextEx(fonte_titulo, "Retirada Tática", (Vector2){48, 96}, tamanho_titulo, 1, BLACK);
