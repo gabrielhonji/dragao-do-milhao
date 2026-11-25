@@ -1,7 +1,7 @@
 BasedOnStyle: LLVM
 IndentWidth: 4
 UseTab: Never
-ColumnLimit: 100
+ColumnLimit: 0
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterControlStatement: MultiLine
@@ -12,6 +12,7 @@ BraceWrapping:
 AllowShortBlocksOnASingleLine: Never
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
+RemoveBracesLLVM: true
 AllowShortEnumsOnASingleLine: false
 IndentCaseLabels: true
 SortIncludes: Never
