@@ -14,7 +14,11 @@
 
 int jogarMinigame_burro(void)
 {
-    enum {TOTAL_CARTAS = 6, TOTAL_PARES = 3};
+    enum
+    {
+        TOTAL_CARTAS = 6,
+        TOTAL_PARES = 3
+    };
     int cartas[TOTAL_CARTAS] = {0, 0, 1, 1, 2, 2};
     int chances = 2;
     int pares_encontrados = 0;
@@ -54,4 +58,26 @@ int jogarMinigame_burro(void)
     }
 
     return pares_encontrados == TOTAL_PARES ? 1 : -1;
+}
+
+void iniciarMinigameBurro(MinigameBurro *jogo)
+{
+
+    for (int i = 0; i < 6; i++)
+        if (i < 2)
+            jogo->cartas[i] = 0;
+        else if (i < 4)
+            jogo->cartas[i] = 1;
+        else
+            jogo->cartas[i] = 2;
+            
+    for (int i = 0; i < 6; i++)
+        jogo->encontradas[i] = 0;
+
+    jogo->primeira_carta = -1;
+    jogo->segunda_carta = -1;
+    jogo->pares_encontrados = 0;
+    jogo->chances = 2;
+    jogo->tempo_revelacao = 0.0f;
+    jogo->resultado = 0;
 }

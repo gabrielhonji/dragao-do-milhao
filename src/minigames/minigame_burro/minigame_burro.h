@@ -7,10 +7,16 @@
 #ifndef MINIGAME_BURRO_H
 #define MINIGAME_BURRO_H
 
-/**
- * @brief Executa o jogo da memória pelo terminal.
- * @return 1 se encontrar os três pares e -1 se gastar as chances ou encerrar a entrada.
- */
-int jogarMinigame_burro(void);
+typedef struct{
+    int cartas[6]; //guarda o símbolo de cada carta
+    int encontradas[6]; //marca quais cartas já formaram par
+    int primeira_carta, segunda_carta; //guada os indices das cartas viradas na jogada atual
+    int pares_encontrados; //conta os pares resolvidos
+    int chances; //conta quantos pares errados a rodada ainda permite
+    float tempo_revelacao; //quanto tempo as duas cartas ficam visíveis
+    int resultado; //indica andamento(0), vitoria(1) ou derrota(-1)
+} MinigameBurro;
+
+void iniciarMinigameBurro(MinigameBurro *jogo);
 
 #endif
