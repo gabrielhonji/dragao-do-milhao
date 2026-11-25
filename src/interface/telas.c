@@ -1,7 +1,7 @@
 /**
  * @file telas.c
  * @author Gabriel Honji (gabrielhonji@alunos.utfpr.edu.br)
- * @brief Abre a janela de teste e alterna entre menu, quiz e gruta.
+ * @brief Mantém a janela, o loop da raylib e as transições entre telas.
  * @version 0.1
  * @date 2026-11-15
  *
@@ -21,6 +21,7 @@
 #include "tela_gruta.h"
 #include "tela_gerenciamento.h"
 #include "tela_quiz.h"
+#include "tela_retirada.h"
 
 typedef enum
 {
@@ -125,7 +126,6 @@ void executar_tela_teste(Banco_perguntas *banco)
     // Painéis reaproveitados pelo quiz e pelos créditos.
     const Rectangle mapa = {24, 88, 492, 325};
     const Rectangle quiz = {544, 88, 392, 325};
-
 
     TelaQuiz tela_quiz = {0};
     const LayoutQuiz layout_quiz = montar_layout_quiz(mapa, quiz, voltar);
@@ -242,9 +242,10 @@ void executar_tela_teste(Banco_perguntas *banco)
         }
         // Cancelar preserva a pergunta aberta. Confirmar encerra a tentativa no último marco.
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
-            if (botao_clicado(voltar)) // Voltar nessa tela tem ação de cancelar
+            AcaoRetirada acao = ler_acao_retirada(voltar, layout_quiz.acao_quiz);
+            if (acao == RETIRADA_CANCELAR)
                 tela_atual = TELA_JORNADA;
-            else if (botao_clicado(layout_quiz.acao_quiz)) { // Confirma a retirada
+            else if (acao == RETIRADA_CONFIRMAR) {
                 int marco = confirma_retirada(&tela_quiz.partida);
                 if (marco >= 0) {
                     preparar_gruta_retirada(&tela_gruta, marco);
@@ -323,10 +324,8 @@ void executar_tela_teste(Banco_perguntas *banco)
             desenhar_quiz(&tela_quiz, &layout_quiz, fonte, tamanho_corpo);
         }
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
-            DrawTextEx(fonte_titulo, "Retirada Tática", (Vector2){48, 96}, tamanho_titulo, 1, BLACK);
-            DrawTextEx(fonte, "Encerrar a tentativa e voltar à gruta?", (Vector2){48, 184}, tamanho_corpo, 1, BLACK);
-            desenhar_botao(fonte, voltar, "Cancelar");
-            desenhar_botao(fonte, layout_quiz.acao_quiz, "Retirar");
+            desenhar_retirada(fonte, fonte_titulo, tamanho_corpo, tamanho_titulo,
+                              voltar, layout_quiz.acao_quiz);
         }
         else if (tela_atual == TELA_REGISTRAR_RESULTADO) {
             desenhar_registro(&tela_registro, fonte, fonte_titulo, salvar_ranking);
