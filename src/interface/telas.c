@@ -22,6 +22,7 @@
 #include "gerenciamento/tela_gerenciamento.h"
 #include "partida/tela_quiz.h"
 #include "partida/tela_retirada.h"
+#include "minigames/tela_burro.h"
 #include "minigames/tela_sopro.h"
 
 typedef enum
@@ -29,6 +30,7 @@ typedef enum
     TELA_MENU,
     TELA_JORNADA,
     TELA_SOPRO,
+    TELA_BURRO,
     TELA_CONFIRMAR_RETIRADA,
     TELA_GRUTA,
     TELA_CREDITOS,
@@ -131,6 +133,7 @@ void executar_tela_teste(Banco_perguntas *banco)
 
     TelaQuiz tela_quiz = {0};
     MinigameSopro sopro = {0}; // É reiniciado ao abrir o desafio, sem trocar a pergunta.
+    MinigameBurro burro = {0};
     const LayoutQuiz layout_quiz = montar_layout_quiz(mapa, quiz, voltar);
     const Rectangle salvar_ranking = layout_quiz.acao_quiz; // Posição compartilhada no rodapé.
 
@@ -285,6 +288,10 @@ void executar_tela_teste(Banco_perguntas *banco)
                 iniciarMinigameSopro(&sopro);
                 tela_atual = TELA_SOPRO;
             }
+            else if (acao == QUIZ_ABRIR_BURRO) {
+                iniciarMinigameBurro(&burro);
+                tela_atual = TELA_BURRO;
+            }
             else if (acao == QUIZ_MOSTRAR_RESULTADO) {
                 preparar_gruta_final(&tela_gruta, tela_quiz.partida.situacao);
                 tela_atual = partida_entra_no_ranking(&tela_quiz.partida) ? TELA_REGISTRAR_RESULTADO : TELA_GRUTA;
@@ -295,6 +302,13 @@ void executar_tela_teste(Banco_perguntas *banco)
                 // O uso foi gasto ao abrir. A vitória libera o efeito na pergunta que ficou aberta.
                 if (sopro.resultado == 1)
                     aplicar_efeito_ajuda_quiz(&tela_quiz, AJUDA_DRAGAO);
+                tela_atual = TELA_JORNADA;
+            }
+        }
+        else if (tela_atual == TELA_BURRO) {
+            if (atualizar_tela_burro(&burro)) {
+                if (burro.resultado == 1)
+                    aplicar_efeito_ajuda_quiz(&tela_quiz, AJUDA_BURRO);
                 tela_atual = TELA_JORNADA;
             }
         }
@@ -340,6 +354,9 @@ void executar_tela_teste(Banco_perguntas *banco)
         }
         else if (tela_atual == TELA_SOPRO) {
             desenhar_sopro(&sopro, fonte, fonte_titulo, tamanho_corpo, tamanho_titulo, LARGURA_BASE, ALTURA_BASE);
+        }
+        else if (tela_atual == TELA_BURRO) {
+            desenhar_burro(&burro, fonte, fonte_titulo, tamanho_corpo, tamanho_titulo);
         }
         else if (tela_atual == TELA_CONFIRMAR_RETIRADA) {
             desenhar_retirada(fonte, fonte_titulo, tamanho_corpo, tamanho_titulo, voltar, layout_quiz.acao_quiz);
