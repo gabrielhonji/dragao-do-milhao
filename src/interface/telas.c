@@ -21,6 +21,7 @@
 #include "tela_menu.h"
 #include "tela_creditos.h"
 #include "tela_ranking.h"
+#include "tela_registro.h"
 
 typedef enum
 {
@@ -337,9 +338,7 @@ void executar_tela_teste(Banco_perguntas *banco)
 
     // Ranking e formulário de registro.
     TelaRanking tela_ranking = {0};
-    char nome_ranking[41] = "";                // Até 40 bytes de nome e o '\0'.
-    bool selecionar_nome = false;
-    const char *erro_ranking = NULL;
+    TelaRegistro tela_registro = {0};
 
     // Resultado e prévia da gruta.
     EstadoGruta estado_gruta = GRUTA_VAZIA;
@@ -549,9 +548,7 @@ void executar_tela_teste(Banco_perguntas *banco)
                 if (dificuldade_em_falta == 0) {
                     inicializa_partida(&partida);
                     // Cada tentativa começa com o formulário de registro limpo.
-                    nome_ranking[0] = '\0';
-                    selecionar_nome = false;
-                    erro_ranking = NULL;
+                    tela_registro = (TelaRegistro){0};
                     pergunta_atual = sorteia_pergunta(banco, &partida);
                     faltam_perguntas = pergunta_atual == NULL;
 
@@ -675,31 +672,8 @@ void executar_tela_teste(Banco_perguntas *banco)
             }
         }
         else if (tela_atual == TELA_REGISTRAR_RESULTADO) {
-            // Lê a digitação, o Backspace e o Ctrl+A do campo de nome.
-            if (janela_em_foco)
-                editar_texto(nome_ranking, sizeof nome_ranking, &selecionar_nome);
-
-            if (confirmou || botao_clicado(salvar_ranking)) {
-                // Pula espaços, tabs e quebras de linha. Chegar ao '\0' indica que o nome está em branco.
-                if (nome_ranking[strspn(nome_ranking, " \t\r\n")] == '\0') {
-                    erro_ranking = "Digite um nome para registrar o resultado.";
-                }
-                else {
-                    Registro_partida registro = {0};
-                    FILE *arquivo_ranking = NULL;
-
-                    // As duas funções retornam 0 no sucesso e um valor negativo na falha.
-                    if (preenche_registro_partida(&registro, &partida, nome_ranking) != 0)
-                        erro_ranking = "Não foi possível preparar o resultado.";
-                    else if (salvar_registro_partida(&registro, &arquivo_ranking) != 0)
-                        erro_ranking = "Falha ao salvar. Tente novamente.";
-                    else {
-                        // Sair do formulário após gravar impede salvar a mesma tentativa duas vezes.
-                        erro_ranking = NULL;
-                        tela_atual = TELA_GRUTA;
-                    }
-                }
-            }
+            if (atualizar_registro(&tela_registro, &partida, salvar_ranking, janela_em_foco, confirmou))
+                tela_atual = TELA_GRUTA;
         }
         // Ações do botão de voltar em cada tela.
         else if (botao_clicado(voltar)) {
@@ -999,18 +973,7 @@ void executar_tela_teste(Banco_perguntas *banco)
             desenhar_botao(fonte, acao_quiz, "Retirar");
         }
         else if (tela_atual == TELA_REGISTRAR_RESULTADO) {
-            const Rectangle campo_nome = {160, 180, 640, 48};
-            const Vector2 posicao_rotulo = {campo_nome.x, campo_nome.y - 40}; // Deixa o rótulo acima da caixa de texto.
-
-            DrawTextEx(fonte_titulo, "Registrar resultado", (Vector2){24, 24}, 34, 1, COR_TEXTO_CLARO);
-            DrawTextEx(fonte, "A lenda vai se lembrar de você como...", posicao_rotulo, 24, 1, COR_TEXTO_CLARO);
-            desenhar_campo(fonte, campo_nome, nome_ranking, true, selecionar_nome);
-            desenhar_botao_com_estado(fonte, salvar_ranking, "Salvar", BOTAO_PRIMARIO, true);
-
-            if (erro_ranking != NULL) {
-                const Vector2 posicao_erro = {campo_nome.x, campo_nome.y + campo_nome.height + 12}; // Deixa 12 px abaixo do campo.
-                DrawTextEx(fonte, erro_ranking, posicao_erro, 20, 1, COR_AVISO);
-            }
+            desenhar_registro(&tela_registro, fonte, fonte_titulo, salvar_ranking);
         }
         else if (tela_atual == TELA_GRUTA) {
             int filhotes = previa_gruta ? ovos_teste[estado_gruta] : partida.ovos_restantes;
