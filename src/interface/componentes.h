@@ -87,4 +87,13 @@ void editar_texto(char *texto, size_t capacidade, bool *selecionar_tudo);
  */
 void desenhar_campo(Font fonte, Rectangle area, const char *texto, bool ativo, bool selecionado);
 
+/**
+ * @brief Desenha uma linha e abrevia o texto quando passa da largura.
+ * @param fonte Fonte usada para medir e desenhar.
+ * @param texto Texto terminado em '\0'.
+ * @param posicao Canto superior esquerdo do texto.
+ * @param largura Largura disponível até a próxima coluna.
+ */
+void desenhar_previa_texto(Font fonte, const char *texto, Vector2 posicao, float largura);
+
 #endif

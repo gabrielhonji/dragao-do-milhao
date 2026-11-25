@@ -11,7 +11,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <errno.h> // Permite distinguir a primeira execução.
 #include "telas.h"
 #include "arte_cenas.h"
 #include "componentes.h"
@@ -21,6 +20,7 @@
 #include "../quiz/arquivo_partidas.h"
 #include "tela_menu.h"
 #include "tela_creditos.h"
+#include "tela_ranking.h"
 
 typedef enum
 {
@@ -133,49 +133,6 @@ static void desenhar_enunciado(Font fonte, Rectangle area, const Pergunta *pergu
     }
 
     DrawTextEx(fonte, texto, (Vector2){area.x, area.y}, tamanho, espacamento, BLACK);
-}
-
-/**
- * @brief Desenha o enunciado em uma linha e corta em um fim de palavra se passar da largura.
- *
- * @param fonte Fonte utilizada no enunciado.
- * @param texto Enunciado da questão a ser desenhada.
- * @param posicao Canto superior esquerdo da prévia.
- * @param largura Largura disponível até a próxima coluna.
- */
-static void desenhar_previa_enunciado(Font fonte, const char *texto, Vector2 posicao, float largura)
-{
-    const float tamanho = 18;
-    const float espacamento = 1;
-    // strpbrk procura em texto o primeiro '\r' ou '\n' e retorna seu endereço, ou NULL se não encontrar.
-    // '\r' representa o retorno ao início da linha e aparece antes de '\n' em quebras CRLF.
-    if (strpbrk(texto, "\r\n") == NULL && MeasureTextEx(fonte, texto, tamanho, espacamento).x <= largura) {
-        DrawTextEx(fonte, texto, posicao, tamanho, espacamento, COR_TEXTO_CLARO);
-        return;
-    }
-
-    const char *fim_previa = texto;
-
-    // Como na quebra de linha do quiz, só mede nos separadores entre palavras.
-    for (const char *fim_palavra = texto; *fim_palavra != '\0'; fim_palavra++) {
-        char separador = *fim_palavra;
-        bool quebra_linha = separador == '\n' || separador == '\r';
-        if (separador != ' ' && !quebra_linha)
-            continue;
-
-        // Em %.*s, % abre a conversão, . indica um limite, * lê esse limite de um int e s indica uma string.
-        // A diferença entre os ponteiros dá o limite em bytes. Os três pontos finais são texto literal.
-        const char *trecho = TextFormat("%.*s...", (int)(fim_palavra - texto), texto);
-        if (MeasureTextEx(fonte, trecho, tamanho, espacamento).x > largura)
-            break;
-
-        fim_previa = fim_palavra;
-        if (quebra_linha)
-            break; // A prévia termina antes da quebra já presente no enunciado.
-    }
-
-    const char *previa = TextFormat("%.*s...", (int)(fim_previa - texto), texto);
-    DrawTextEx(fonte, previa, posicao, tamanho, espacamento, COR_TEXTO_CLARO);
 }
 
 /**
@@ -359,57 +316,6 @@ static void desenhar_gruta(Font fonte, EstadoGruta estado, int ovos_restantes, b
         DrawTextEx(fonte, "A gruta está vazia.", (Vector2){48, 104}, 24, 1, RAYWHITE);
 }
 
-/**
- * @brief Desenha a tabela ou o aviso de carregamento do ranking.
- * @param fonte Fonte dos registros e do botão Voltar.
- * @param fonte_titulo Fonte do título da tela.
- * @param voltar Área do botão que retorna ao menu.
- * @param registos_ranking Vetor de registros já ordenado.
- * @param total_ranking Quantidade de registros ou código de erro da leitura.
- */
-static void desenhar_ranking(Font fonte, Font fonte_titulo, Rectangle voltar, const Registro_partida *registos_ranking, int total_ranking)
-{
-    DrawTextEx(fonte_titulo, "Ranking", (Vector2){24, 24}, 34, 1, COR_TEXTO_CLARO);
-    desenhar_botao(fonte, voltar, "Voltar");
-
-    const Rectangle painel_ranking = {24, 80, 912, 348}; // Painel entre o título e o footer.
-    desenhar_painel(painel_ranking, COR_ESCURO);
-
-    const float y_cabecalho = 104;
-    const float altura_linha = 36; // Distância vertical entre os registros.
-    const float x_posicao = 48;
-    const float x_nome = 110;
-    const float x_acertos = 540;
-    const float x_ovos = 670;
-    const float x_tempo = 780;
-
-    if (total_ranking < 0)
-        DrawTextEx(fonte, "Não foi possível carregar o ranking.", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_AVISO);
-    else if (total_ranking == 0)
-        DrawTextEx(fonte, "Nenhum resultado foi registrado.", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-    else {
-        // Escreve os cabeçalhos.
-        DrawTextEx(fonte, "#", (Vector2){x_posicao, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-        DrawTextEx(fonte, "Nome", (Vector2){x_nome, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-        DrawTextEx(fonte, "Acertos", (Vector2){x_acertos, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-        DrawTextEx(fonte, "Ovos", (Vector2){x_ovos, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-        DrawTextEx(fonte, "Tempo", (Vector2){x_tempo, y_cabecalho}, 18, 1, COR_TEXTO_CLARO);
-
-        // Linhas de rankings.
-        const int limite_visivel = 8; // Quantidade de linhas que cabe no painel.
-        for (int i = 0; i < total_ranking && i < limite_visivel; i++) {
-            const Registro_partida *registro = &registos_ranking[i];
-            float y = y_cabecalho + (i + 1) * altura_linha; // A primeira linha vem depois do cabeçalho
-
-            DrawTextEx(fonte, TextFormat("%d", i + 1), (Vector2){x_posicao, y}, 18, 1, COR_TEXTO_CLARO);
-            desenhar_previa_enunciado(fonte, registro->nome_jogador, (Vector2){x_nome, y}, x_acertos - x_nome - 16); // Preserva 16px antes de Acertos.
-            DrawTextEx(fonte, TextFormat("%d", registro->progresso), (Vector2){x_acertos, y}, 18, 1, COR_TEXTO_CLARO);
-            DrawTextEx(fonte, TextFormat("%d", registro->ovos_restantes), (Vector2){x_ovos, y}, 18, 1, COR_TEXTO_CLARO);
-            DrawTextEx(fonte, TextFormat("%.2f s", registro->tempo_ativo), (Vector2){x_tempo, y}, 18, 1, COR_TEXTO_CLARO);
-        }
-    }
-}
-
 void executar_tela_teste(Banco_perguntas *banco)
 {
     // Navegação e botão compartilhado pelas telas.
@@ -430,8 +336,7 @@ void executar_tela_teste(Banco_perguntas *banco)
     };
 
     // Ranking e formulário de registro.
-    Registro_partida *registos_ranking = NULL; // Vetor alocado ao abrir o ranking.
-    int total_ranking = 0;                     // Quantidade de registros ou código de erro da leitura.
+    TelaRanking tela_ranking = {0};
     char nome_ranking[41] = "";                // Até 40 bytes de nome e o '\0'.
     bool selecionar_nome = false;
     const char *erro_ranking = NULL;
@@ -622,13 +527,7 @@ void executar_tela_teste(Banco_perguntas *banco)
             else if (acao == MENU_CREDITOS)
                 tela_atual = TELA_CREDITOS;
             else if (acao == MENU_RANKING) {
-                FILE *arquivo_ranking = NULL; // O leitor recebe seu endereço e abre o arquivo.
-                total_ranking = carregar_registro_partidas(&registos_ranking, &arquivo_ranking);
-
-                // Antes do primeiro resultado salvo, o arquivo ainda não existe.
-                if (total_ranking == -2 && errno == ENOENT) // A abertura falhou porque o arquivo ou caminho não existe.
-                    total_ranking = 0;
-
+                carregar_ranking(&tela_ranking);
                 tela_atual = TELA_RANKING;
             }
             else if (acao == MENU_GERENCIAR) {
@@ -691,8 +590,7 @@ void executar_tela_teste(Banco_perguntas *banco)
         }
         else if (tela_atual == TELA_RANKING) {
             if (botao_clicado(voltar)) {
-                free(registos_ranking);
-                registos_ranking = NULL; // Permite sair e abrir a tela de novo.
+                liberar_ranking(&tela_ranking);
                 tela_atual = TELA_MENU;
             }
         }
@@ -888,7 +786,7 @@ void executar_tela_teste(Banco_perguntas *banco)
             desenhar_menu(&botoes_menu, fonte, fonte_titulo, tamanho_titulo, nivel, faltam_perguntas);
         }
         else if (tela_atual == TELA_RANKING) {
-            desenhar_ranking(fonte, fonte_titulo, voltar, registos_ranking, total_ranking);
+            desenhar_ranking(&tela_ranking, fonte, fonte_titulo, voltar);
         }
         else if (tela_atual == TELA_CREDITOS) {
             desenhar_creditos(fonte, fonte_titulo, mapa, quiz, voltar);
@@ -942,7 +840,7 @@ void executar_tela_teste(Banco_perguntas *banco)
 
                 // %03d exibe o ID com pelo menos três dígitos, preenchendo com zeros à esquerda.
                 DrawTextEx(fonte, TextFormat("%03d", pergunta->identificador), (Vector2){x_id, y_texto}, 18, 1, COR_TEXTO_CLARO);
-                desenhar_previa_enunciado(fonte, pergunta->enunciado, (Vector2){x_enunciado, y_texto}, largura_enunciado);
+                desenhar_previa_texto(fonte, pergunta->enunciado, (Vector2){x_enunciado, y_texto}, largura_enunciado);
                 DrawTextEx(fonte, nomes_dificuldade[dificuldade], (Vector2){x_dificuldade, y_texto}, 18, 1, COR_TEXTO_CLARO);
             }
 
@@ -1143,6 +1041,7 @@ void executar_tela_teste(Banco_perguntas *banco)
         EndDrawing();
     }
 
+    liberar_ranking(&tela_ranking);
     descarregar_arte_cenas();
 
     // Descarrega as fontes.
