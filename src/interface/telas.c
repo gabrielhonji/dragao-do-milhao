@@ -397,6 +397,9 @@ void executar_tela_teste(const Banco_perguntas *banco)
         int ajuda_clicada = -1;                                     // Índice da ajuda clicada neste quadro, ou -1.
 
         if (tela_atual == TELA_JORNADA && !resposta_confirmada) {
+            // Acumula a duração do último quadro enquanto a pergunta está aberta.
+            if ((partida.situacao == andamento) && pergunta_atual && !faltam_perguntas)
+                partida.tempo_ativo += GetFrameTime();
             // Só registra um clique em alternativa que ainda pode ser escolhida.
             for (int i = 0; i < 4; i++) {
                 if (!dicas.eliminadas[i] && botao_clicado(alternativa_rec[i])) {
@@ -449,7 +452,7 @@ void executar_tela_teste(const Banco_perguntas *banco)
             if (botao_clicado(voltar)) // Voltar nessa tela tem ação de cancelar
                 tela_atual = TELA_JORNADA;
             else if (botao_clicado(acao_quiz)) {                // Confirma a retirada
-                retorno_retirada = confirma_retirada(&partida); //chama a função que recebe o checkpoint da retirada
+                retorno_retirada = confirma_retirada(&partida); // Chama a função que recebe o checkpoint da retirada
                 previa_gruta = false;
                 if (retorno_retirada >= 0) { //confirmando se a retirada tática funcionou
                     if (retorno_retirada >= 10)

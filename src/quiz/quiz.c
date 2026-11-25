@@ -27,6 +27,7 @@ void inicializa_partida(Partida *partidas)
     partidas->contador_ids_sorteados = 0;
     partidas->ovos_restantes = 0;
     partidas->checkpoint = 0;
+    partidas->tempo_ativo = 0.0;
     for (int i = 0; i < 25; i++)
         partidas->ids_sorteados[i] = -1; //um a um coloco os ids em -1
     for (int i = 0; i < 3; i++)

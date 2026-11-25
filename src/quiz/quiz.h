@@ -40,6 +40,7 @@ typedef struct
     int minigames_usados[3];    //indicará quais minigames já foram utilizados - valor 0 se ainda não foi usado e valor 1 se já foi usado
     int ovos_restantes;
     int checkpoint;
+    double tempo_ativo; //guarda o tempo da partida em segundos
 } Partida;
 
 void inicializa_partida(Partida *partidas);
